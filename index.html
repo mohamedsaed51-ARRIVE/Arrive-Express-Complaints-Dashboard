@@ -936,6 +936,22 @@
   .compare-mode-section{ padding:30px 40px 60px; max-width:1600px; margin:0 auto; }
   .compare-heading{ margin-bottom:16px; }
 
+  .compare-by-bar{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:10px;
+    padding:14px 18px; margin-bottom:16px; box-shadow:var(--shadow);
+  }
+  .compare-by-fgroup{ display:flex; flex-direction:column; gap:4px; }
+  .compare-by-fgroup label{ font-size:11px; color:var(--ink-faint); letter-spacing:.03em; font-weight:600; }
+  .compare-by-bar select{
+    appearance:none; background:var(--surface-alt); border:1px solid var(--line-strong);
+    border-radius:8px; padding:9px 14px; font-family:inherit; font-size:13px; color:var(--ink);
+    min-width:230px; cursor:pointer; font-weight:600;
+  }
+  .compare-by-bar select:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+  .compare-by-hint{ font-size:11.5px; color:var(--ink-faint); max-width:520px; line-height:1.5; }
+  @media (max-width:760px){ .compare-by-bar{ flex-direction:column; align-items:flex-start; } }
+
   .compare-toolbar{
     display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px;
     margin-bottom:16px;
@@ -982,13 +998,16 @@
   .compare-panel{
     background:var(--surface-alt); border:1px solid var(--line); border-radius:12px; padding:16px;
   }
-  .compare-panel-head{ margin-bottom:12px; }
+  .compare-panel-head{ margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
   .compare-panel-badge{
     display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
     padding:6px 14px; border-radius:20px; color:#fff;
   }
   .compare-panel-badge.left{ background:var(--navy); }
   .compare-panel-badge.right{ background:var(--gold); }
+  .compare-badge-value{ font-style:normal; font-weight:600; opacity:.9; }
+  .compare-badge-value:not(:empty)::before{ content:"— "; opacity:.7; }
+  .compare-panel-export{ padding:6px 12px; font-size:11.5px; }
 
   .compare-filter-bar{
     background:var(--surface); border:1px solid var(--line); border-radius:9px;
@@ -1374,12 +1393,30 @@
 <section class="compare-mode-section hidden" id="compareModeSection">
   <div class="section-heading compare-heading">
     <h2><span class="tag">Compare</span> وضع المقارنة</h2>
-    <span class="section-sub">قارن بين لوحتين مستقلتين بعوامل تصفية منفصلة (التاريخ، مسؤول الشكوى، الفرع، الحالة)</span>
+    <span class="section-sub">اختر معيار المقارنة، وستُحدَّث اللوحتان تلقائيًا بكل القيم المتاحة له من البيانات المحمّلة</span>
+  </div>
+
+  <div class="compare-by-bar" id="compareByBar">
+    <div class="fgroup compare-by-fgroup">
+      <label for="compareByField">قارن حسب (Compare By)</label>
+      <select id="compareByField">
+        <option value="branch">الفرع (Branch)</option>
+        <option value="type">نوع الشكوى (Complaint Type)</option>
+        <option value="status">حالة الشكوى (Complaint Status)</option>
+        <option value="owner">مسؤول الشكوى (Complaint Owner)</option>
+        <option value="sender">الراسل (Sender)</option>
+        <option value="bearer">الجهة المتحملة للتعويض (Compensation Bearer)</option>
+        <option value="reviewResult">نتيجة مراجعة التعويض (Review Result)</option>
+        <option value="confirm">حالة تأكيد المراجعة (Confirmation Status)</option>
+        <option value="month">الشهر (Month)</option>
+      </select>
+    </div>
+    <div class="compare-by-hint" id="compareByHint">تتم إضافة عوامل التصفية العامة (التاريخ، الشهر، إلخ) تلقائيًا كأساس للمقارنة قبل تطبيق القيمة المختارة لكل لوحة.</div>
   </div>
 
   <div class="compare-toolbar">
     <div class="compare-toolbar-actions">
-      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة عوامل التصفية (يسار ← يمين)</button>
+      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة القيمة (يسار ← يمين)</button>
       <button class="qa-btn" id="btnSwapFilters" type="button"><span class="qa-icon">⇄</span> تبديل اللوحتين</button>
       <button class="qa-btn" id="btnCloseCompare" type="button"><span class="qa-icon">✕</span> إغلاق وضع المقارنة</button>
     </div>
@@ -1390,28 +1427,13 @@
   <div class="compare-grid">
     <div class="compare-panel" data-panel="L">
       <div class="compare-panel-head">
-        <span class="compare-panel-badge left">اللوحة الأولى (يسار)</span>
+        <span class="compare-panel-badge left">اللوحة الأولى (يسار)<em class="compare-badge-value" id="cBadgeValue_L"></em></span>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة اليسرى"><span class="qa-icon">⬇</span> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="fgroup">
-          <label for="cOwner_L">مسؤول الشكوى</label>
-          <select id="cOwner_L"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cBranch_L">الفرع المتسبب</label>
-          <select id="cBranch_L"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cStatus_L">حالة الشكوى</label>
-          <select id="cStatus_L"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cDateFrom_L">تاريخ الشكوى من</label>
-          <input type="date" id="cDateFrom_L">
-        </div>
-        <div class="fgroup">
-          <label for="cDateTo_L">تاريخ الشكوى إلى</label>
-          <input type="date" id="cDateTo_L">
+          <label id="cValueLabel_L" for="cValue_L">القيمة</label>
+          <select id="cValue_L"><option value="">الكل</option></select>
         </div>
         <div class="compare-result-count"><b id="cResultCount_L">0</b> نتيجة</div>
       </div>
@@ -1493,28 +1515,13 @@
 
     <div class="compare-panel" data-panel="R">
       <div class="compare-panel-head">
-        <span class="compare-panel-badge right">اللوحة الثانية (يمين)</span>
+        <span class="compare-panel-badge right">اللوحة الثانية (يمين)<em class="compare-badge-value" id="cBadgeValue_R"></em></span>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة اليمنى"><span class="qa-icon">⬇</span> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="fgroup">
-          <label for="cOwner_R">مسؤول الشكوى</label>
-          <select id="cOwner_R"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cBranch_R">الفرع المتسبب</label>
-          <select id="cBranch_R"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cStatus_R">حالة الشكوى</label>
-          <select id="cStatus_R"><option value="">الكل</option></select>
-        </div>
-        <div class="fgroup">
-          <label for="cDateFrom_R">تاريخ الشكوى من</label>
-          <input type="date" id="cDateFrom_R">
-        </div>
-        <div class="fgroup">
-          <label for="cDateTo_R">تاريخ الشكوى إلى</label>
-          <input type="date" id="cDateTo_R">
+          <label id="cValueLabel_R" for="cValue_R">القيمة</label>
+          <select id="cValue_R"><option value="">الكل</option></select>
         </div>
         <div class="compare-result-count"><b id="cResultCount_R">0</b> نتيجة</div>
       </div>
@@ -3739,7 +3746,7 @@ function renderDataset(raw){
   drawBarcodes();
   updateFooterInfo();
   render();
-  if(typeof populateCompareFilters === 'function') populateCompareFilters();
+  if(typeof refreshCompareValueOptions === 'function') refreshCompareValueOptions(true);
   if(compareModeActive && typeof renderComparePanels === 'function') renderComparePanels();
 }
 
@@ -3979,38 +3986,154 @@ function updateCompareChartSet(set, rows){
   set.reviewResult.update();
 }
 
-// ---- Per-panel filtering (independent: Owner, Branch, Status, Date From/To) ----
+// ---- Generic comparison engine ----------------------------------------------------
+// Every comparable field is declared once in COMPARE_FIELDS. Each entry knows how to
+// (a) list its distinct selectable values from the loaded dataset (getOptions), and
+// (b) test whether a record belongs to a chosen value (match). Adding a brand-new
+// "Compare By" field in the future only requires one new entry here plus one
+// <option> in the #compareByField <select> — nothing else in the engine changes.
+const COMPARE_FIELDS = {
+  branch: {
+    label: 'الفرع',
+    getOptions: () => uniqueSorted('branch').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.branch === v
+  },
+  type: {
+    label: 'نوع الشكوى',
+    getOptions: () => uniqueSorted('type').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.type === v
+  },
+  status: {
+    label: 'حالة الشكوى',
+    getOptions: () => uniqueSorted('status').map(v => ({ value:v, label: STATUS_MAP[v] ? STATUS_MAP[v].label : v })),
+    match: (d, v) => d.status === v
+  },
+  owner: {
+    label: 'مسؤول الشكوى',
+    getOptions: () => uniqueSorted('owner').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.owner === v
+  },
+  sender: {
+    label: 'الراسل',
+    getOptions: () => uniqueSorted('complainant').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.complainant === v
+  },
+  bearer: {
+    label: 'الجهة المتحملة للتعويض',
+    getOptions: () => uniqueSorted('compensation_bearer').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.compensation_bearer === v
+  },
+  reviewResult: {
+    label: 'نتيجة مراجعة التعويض',
+    getOptions: () => uniqueSorted('compensation_review_result').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.compensation_review_result === v
+  },
+  confirm: {
+    label: 'حالة تأكيد المراجعة',
+    getOptions: () => ([{ value:'yes', label:'تم التأكيد' }, { value:'no', label:'لم يتم التأكيد' }]),
+    match: (d, v) => v === 'yes' ? !!d.confirm_review : !d.confirm_review
+  },
+  month: {
+    label: 'الشهر',
+    // Derived from date_added (YYYY-MM) rather than the raw `month` text field, so
+    // that e.g. "June 2026" and any other June are never conflated.
+    getOptions: () => {
+      const keys = [...new Set(DATA.map(d=>d.date_added).filter(Boolean).map(d=>d.slice(0,7)))].sort();
+      return keys.map(k=>{
+        const [y,m] = k.split('-');
+        const name = ARABIC_MONTHS[parseInt(m,10)-1] || m;
+        return { value:k, label:`${name} ${y}` };
+      });
+    },
+    match: (d, v) => !!d.date_added && d.date_added.slice(0,7) === v
+  }
+};
+
+let compareField = 'branch';
+
+function getCompareFieldConfig(){ return COMPARE_FIELDS[compareField] || COMPARE_FIELDS.branch; }
+
+// Base rows = every currently-active GLOBAL filter (Date From/To, Month, Owner,
+// Branch, Status, search, etc. — same logic as the main dashboard's getFiltered()).
+// The per-panel "Compare By" value is then applied on TOP of that shared base, so
+// a comparison is always: Global Filters + Left value  vs.  Global Filters + Right value.
+function getCompareBaseRows(){
+  return typeof getFiltered === 'function' ? getFiltered() : DATA.slice();
+}
+
 function getFilteredForPanel(suf){
-  const owner = document.getElementById('cOwner_'+suf).value;
-  const branch = document.getElementById('cBranch_'+suf).value;
-  const status = document.getElementById('cStatus_'+suf).value;
-  const dateFrom = document.getElementById('cDateFrom_'+suf).value;
-  const dateTo = document.getElementById('cDateTo_'+suf).value;
-  return DATA.filter(d=>{
-    if(owner && d.owner !== owner) return false;
-    if(branch && d.branch !== branch) return false;
-    if(status && d.status !== status) return false;
-    if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
-    if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
-    return true;
+  const base = getCompareBaseRows();
+  const val = document.getElementById('cValue_'+suf).value;
+  if(!val) return base;
+  const cfg = getCompareFieldConfig();
+  return base.filter(d => cfg.match(d, val));
+}
+
+// Fills the Left/Right "value" selects with the options belonging to the current
+// Compare By field, preserving each panel's previous selection when still valid,
+// and — only when nothing was picked yet — auto-selects the first two distinct
+// values (Left = 1st, Right = 2nd) so the panels always show something meaningful
+// as soon as a field is chosen, matching the "Left/Right auto-populate" requirement.
+function refreshCompareValueOptions(preserveSelection){
+  const cfg = getCompareFieldConfig();
+  const options = cfg.getOptions();
+
+  ['L','R'].forEach(suf=>{
+    const label = document.getElementById('cValueLabel_'+suf);
+    if(label) label.textContent = cfg.label;
+  });
+
+  const prev = { L: document.getElementById('cValue_L').value, R: document.getElementById('cValue_R').value };
+
+  ['L','R'].forEach(suf=>{
+    const sel = document.getElementById('cValue_'+suf);
+    while(sel.options.length){ sel.remove(0); }
+    const allOpt = document.createElement('option');
+    allOpt.value = ''; allOpt.textContent = 'الكل';
+    sel.appendChild(allOpt);
+    options.forEach(o=>{
+      const opt = document.createElement('option');
+      opt.value = o.value; opt.textContent = o.label;
+      sel.appendChild(opt);
+    });
+  });
+
+  const selL = document.getElementById('cValue_L');
+  const selR = document.getElementById('cValue_R');
+
+  if(preserveSelection && prev.L && [...selL.options].some(o=>o.value===prev.L)) selL.value = prev.L;
+  else if(options[0]) selL.value = options[0].value;
+
+  if(preserveSelection && prev.R && [...selR.options].some(o=>o.value===prev.R)) selR.value = prev.R;
+  else if(options[1]) selR.value = options[1].value;
+  else if(options[0]) selR.value = options[0].value;
+}
+
+function updateCompareBadges(){
+  const cfg = getCompareFieldConfig();
+  ['L','R'].forEach(suf=>{
+    const sel = document.getElementById('cValue_'+suf);
+    const badge = document.getElementById('cBadgeValue_'+suf);
+    if(!sel || !badge) return;
+    const chosen = sel.selectedOptions[0];
+    badge.textContent = (chosen && chosen.value) ? `${cfg.label}: ${chosen.textContent}` : '';
   });
 }
 
-function populateCompareFilters(){
-  ['L','R'].forEach(suf=>{
-    const prevOwner = document.getElementById('cOwner_'+suf).value;
-    const prevBranch = document.getElementById('cBranch_'+suf).value;
-    const prevStatus = document.getElementById('cStatus_'+suf).value;
-    fillSelect('cOwner_'+suf, uniqueSorted('owner'));
-    fillSelect('cBranch_'+suf, uniqueSorted('branch'));
-    fillSelect('cStatus_'+suf, uniqueSorted('status'));
-    const own = document.getElementById('cOwner_'+suf);
-    const brn = document.getElementById('cBranch_'+suf);
-    const sts = document.getElementById('cStatus_'+suf);
-    if(prevOwner && [...own.options].some(o=>o.value===prevOwner)) own.value = prevOwner;
-    if(prevBranch && [...brn.options].some(o=>o.value===prevBranch)) brn.value = prevBranch;
-    if(prevStatus && [...sts.options].some(o=>o.value===prevStatus)) sts.value = prevStatus;
-  });
+function exportPanelCsv(suf){
+  const rows = getFilteredForPanel(suf);
+  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_days'];
+  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
+  const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const lines = [headerLabels.map(escCsv).join(',')];
+  rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `compare_${suf === 'L' ? 'left' : 'right'}_${compareField}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function computeCompareSummaryMetrics(rows){
@@ -4099,9 +4222,19 @@ function renderComparePanels(){
   if(!compareModeActive || !compareChartsInitialized) return;
   const rowsL = getFilteredForPanel('L');
   const rowsR = getFilteredForPanel('R');
+  updateCompareBadges();
   renderComparePanel('L', rowsL);
   renderComparePanel('R', rowsR);
   renderCompareSummary(rowsL, rowsR);
+}
+
+// Called whenever the "Compare By" field changes: rebuilds the Left/Right value
+// selects for the new field (auto-picking the first two values), then refreshes
+// every KPI/chart/table/summary/export in both panels immediately.
+function onCompareFieldChange(){
+  compareField = document.getElementById('compareByField').value;
+  refreshCompareValueOptions(false);
+  renderComparePanels();
 }
 
 function toggleCompareMode(){
@@ -4111,7 +4244,8 @@ function toggleCompareMode(){
   const toggleBtn = document.getElementById('headerCompareToggle');
   const toggleLabel = document.getElementById('headerCompareLabel');
   if(compareModeActive){
-    populateCompareFilters();
+    compareField = document.getElementById('compareByField').value || compareField;
+    refreshCompareValueOptions(true);
     mainEl.classList.add('hidden');
     section.classList.remove('hidden');
     toggleBtn.classList.add('active');
@@ -4132,25 +4266,39 @@ function toggleCompareMode(){
 document.getElementById('headerCompareToggle').addEventListener('click', toggleCompareMode);
 document.getElementById('btnCloseCompare').addEventListener('click', ()=>{ if(compareModeActive) toggleCompareMode(); });
 
-['cOwner_L','cBranch_L','cStatus_L','cDateFrom_L','cDateTo_L','cOwner_R','cBranch_R','cStatus_R','cDateFrom_R','cDateTo_R'].forEach(id=>{
+document.getElementById('compareByField').addEventListener('change', onCompareFieldChange);
+['cValue_L','cValue_R'].forEach(id=>{
   document.getElementById(id).addEventListener('change', renderComparePanels);
 });
 
+document.getElementById('btnExportPanel_L').addEventListener('click', ()=> exportPanelCsv('L'));
+document.getElementById('btnExportPanel_R').addEventListener('click', ()=> exportPanelCsv('R'));
+
 document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
-  ['cOwner','cBranch','cStatus','cDateFrom','cDateTo'].forEach(prefix=>{
-    document.getElementById(prefix+'_R').value = document.getElementById(prefix+'_L').value;
-  });
+  document.getElementById('cValue_R').value = document.getElementById('cValue_L').value;
   renderComparePanels();
 });
 
 document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
-  ['cOwner','cBranch','cStatus','cDateFrom','cDateTo'].forEach(prefix=>{
-    const l = document.getElementById(prefix+'_L');
-    const r = document.getElementById(prefix+'_R');
-    const tmp = l.value; l.value = r.value; r.value = tmp;
-  });
+  const l = document.getElementById('cValue_L');
+  const r = document.getElementById('cValue_R');
+  const tmp = l.value; l.value = r.value; r.value = tmp;
   renderComparePanels();
 });
+
+// Global filters (Date From/To, Month, Owner, Branch, Status, Sender, Bearer,
+// Review Result, Confirmation, search, reset) act as the shared base for the
+// comparison — whenever any of them changes, refresh the compare panels too
+// (in addition to the main dashboard's own render()) so both stay in sync.
+['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{ if(compareModeActive) renderComparePanels(); });
+});
+let compareSearchTimer;
+document.getElementById('fSearch').addEventListener('input', ()=>{
+  clearTimeout(compareSearchTimer);
+  compareSearchTimer = setTimeout(()=>{ if(compareModeActive) renderComparePanels(); }, 180);
+});
+document.getElementById('btnReset').addEventListener('click', ()=>{ if(compareModeActive) renderComparePanels(); });
 // =================== End Compare Mode ===================
 
 
