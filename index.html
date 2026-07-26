@@ -943,12 +943,15 @@
   }
   .compare-by-fgroup{ display:flex; flex-direction:column; gap:4px; }
   .compare-by-fgroup label{ font-size:11px; color:var(--ink-faint); letter-spacing:.03em; font-weight:600; }
-  .compare-by-bar select{
-    appearance:none; background:var(--surface-alt); border:1px solid var(--line-strong);
-    border-radius:8px; padding:9px 14px; font-family:inherit; font-size:13px; color:var(--ink);
-    min-width:230px; cursor:pointer; font-weight:600;
+  .compare-by-checks{ display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:2px; }
+  .compare-by-check{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink);
+    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:20px;
+    padding:6px 12px; cursor:pointer; font-weight:600; transition:.15s ease; user-select:none;
   }
-  .compare-by-bar select:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+  .compare-by-check:hover{ border-color:var(--navy); }
+  .compare-by-check input[type=checkbox]{ accent-color:var(--navy); cursor:pointer; }
+  .compare-by-check:has(input:checked){ background:var(--navy); border-color:var(--navy); color:#fff; }
   .compare-by-hint{ font-size:11.5px; color:var(--ink-faint); max-width:520px; line-height:1.5; }
   @media (max-width:760px){ .compare-by-bar{ flex-direction:column; align-items:flex-start; } }
 
@@ -1014,6 +1017,7 @@
     padding:12px 14px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:14px;
   }
   .compare-filter-bar .fgroup{ display:flex; flex-direction:column; gap:4px; }
+  .compare-filter-fields{ display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
   .compare-filter-bar label{ font-size:10px; color:var(--ink-faint); letter-spacing:.03em; }
   .compare-filter-bar select, .compare-filter-bar input[type=date]{
     appearance:none; background:var(--surface-alt); border:1px solid var(--line-strong);
@@ -1393,30 +1397,30 @@
 <section class="compare-mode-section hidden" id="compareModeSection">
   <div class="section-heading compare-heading">
     <h2><span class="tag">Compare</span> وضع المقارنة</h2>
-    <span class="section-sub">اختر معيار المقارنة، وستُحدَّث اللوحتان تلقائيًا بكل القيم المتاحة له من البيانات المحمّلة</span>
+    <span class="section-sub">اختر عاملاً أو أكثر للمقارنة، وستظهر لكل عامل مختار قائمة قيمة مستقلة في كل لوحة</span>
   </div>
 
   <div class="compare-by-bar" id="compareByBar">
     <div class="fgroup compare-by-fgroup">
-      <label for="compareByField">قارن حسب (Compare By)</label>
-      <select id="compareByField">
-        <option value="branch">الفرع (Branch)</option>
-        <option value="type">نوع الشكوى (Complaint Type)</option>
-        <option value="status">حالة الشكوى (Complaint Status)</option>
-        <option value="owner">مسؤول الشكوى (Complaint Owner)</option>
-        <option value="sender">الراسل (Sender)</option>
-        <option value="bearer">الجهة المتحملة للتعويض (Compensation Bearer)</option>
-        <option value="reviewResult">نتيجة مراجعة التعويض (Review Result)</option>
-        <option value="confirm">حالة تأكيد المراجعة (Confirmation Status)</option>
-        <option value="month">الشهر (Month)</option>
-      </select>
+      <label>قارن حسب (اختر عاملاً أو أكثر)</label>
+      <div class="compare-by-checks" id="compareByChecks">
+        <label class="compare-by-check"><input type="checkbox" value="branch" checked> الفرع</label>
+        <label class="compare-by-check"><input type="checkbox" value="type"> نوع الشكوى</label>
+        <label class="compare-by-check"><input type="checkbox" value="status"> حالة الشكوى</label>
+        <label class="compare-by-check"><input type="checkbox" value="owner"> مسؤول الشكوى</label>
+        <label class="compare-by-check"><input type="checkbox" value="sender"> الراسل</label>
+        <label class="compare-by-check"><input type="checkbox" value="bearer"> الجهة المتحملة للتعويض</label>
+        <label class="compare-by-check"><input type="checkbox" value="reviewResult"> نتيجة مراجعة التعويض</label>
+        <label class="compare-by-check"><input type="checkbox" value="confirm"> حالة تأكيد المراجعة</label>
+        <label class="compare-by-check"><input type="checkbox" value="month"> الشهر</label>
+      </div>
     </div>
-    <div class="compare-by-hint" id="compareByHint">تتم إضافة عوامل التصفية العامة (التاريخ، الشهر، إلخ) تلقائيًا كأساس للمقارنة قبل تطبيق القيمة المختارة لكل لوحة.</div>
+    <div class="compare-by-hint" id="compareByHint">تتم إضافة عوامل التصفية العامة (التاريخ، الشهر، إلخ) تلقائيًا كأساس للمقارنة، ثم تُطبَّق فوقها كل القيم المختارة (بينها AND) لكل لوحة على حدة.</div>
   </div>
 
   <div class="compare-toolbar">
     <div class="compare-toolbar-actions">
-      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة القيمة (يسار ← يمين)</button>
+      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة القيم (يسار ← يمين)</button>
       <button class="qa-btn" id="btnSwapFilters" type="button"><span class="qa-icon">⇄</span> تبديل اللوحتين</button>
       <button class="qa-btn" id="btnCloseCompare" type="button"><span class="qa-icon">✕</span> إغلاق وضع المقارنة</button>
     </div>
@@ -1431,10 +1435,7 @@
         <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة اليسرى"><span class="qa-icon">⬇</span> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
-        <div class="fgroup">
-          <label id="cValueLabel_L" for="cValue_L">القيمة</label>
-          <select id="cValue_L"><option value="">الكل</option></select>
-        </div>
+        <div class="compare-filter-fields" id="compareFilterFields_L"></div>
         <div class="compare-result-count"><b id="cResultCount_L">0</b> نتيجة</div>
       </div>
 
@@ -1519,10 +1520,7 @@
         <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة اليمنى"><span class="qa-icon">⬇</span> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
-        <div class="fgroup">
-          <label id="cValueLabel_R" for="cValue_R">القيمة</label>
-          <select id="cValue_R"><option value="">الكل</option></select>
-        </div>
+        <div class="compare-filter-fields" id="compareFilterFields_R"></div>
         <div class="compare-result-count"><b id="cResultCount_R">0</b> نتيجة</div>
       </div>
 
@@ -3746,7 +3744,7 @@ function renderDataset(raw){
   drawBarcodes();
   updateFooterInfo();
   render();
-  if(typeof refreshCompareValueOptions === 'function') refreshCompareValueOptions(true);
+  if(typeof refreshCompareValueOptions === 'function') refreshCompareValueOptions();
   if(compareModeActive && typeof renderComparePanels === 'function') renderComparePanels();
 }
 
@@ -3987,11 +3985,14 @@ function updateCompareChartSet(set, rows){
 }
 
 // ---- Generic comparison engine ----------------------------------------------------
-// Every comparable field is declared once in COMPARE_FIELDS. Each entry knows how to
+// Comparable fields are declared once in COMPARE_FIELDS. Each entry knows how to
 // (a) list its distinct selectable values from the loaded dataset (getOptions), and
-// (b) test whether a record belongs to a chosen value (match). Adding a brand-new
-// "Compare By" field in the future only requires one new entry here plus one
-// <option> in the #compareByField <select> — nothing else in the engine changes.
+// (b) test whether a record belongs to a chosen value (match). The user can check
+// ANY combination of these fields in the "Compare By" checklist; each checked field
+// gets its own value-select in both the Left and Right panels, and a panel's rows
+// must match ALL of its selected values at once (AND). Adding a brand-new comparable
+// field only requires one new entry here plus one checkbox in #compareByChecks —
+// nothing else in the engine changes.
 const COMPARE_FIELDS = {
   branch: {
     label: 'الفرع',
@@ -4049,74 +4050,108 @@ const COMPARE_FIELDS = {
   }
 };
 
-let compareField = 'branch';
+// compareFields: the set of currently-active "Compare By" checkboxes (order-preserving).
+// Each active field gets its own value <select> per panel; a panel's rows must match
+// ALL of its active-field selections at once (logical AND), so the user can compare,
+// e.g., Branch=Cairo AND Status=Open  vs.  Branch=Alexandria AND Status=Closed.
+let compareFields = ['branch'];
 
-function getCompareFieldConfig(){ return COMPARE_FIELDS[compareField] || COMPARE_FIELDS.branch; }
+function getActiveCompareFields(){
+  return compareFields.filter(k => COMPARE_FIELDS[k]);
+}
+
+function fieldSelectId(suf, key){ return `cValue_${suf}__${key}`; }
 
 // Base rows = every currently-active GLOBAL filter (Date From/To, Month, Owner,
 // Branch, Status, search, etc. — same logic as the main dashboard's getFiltered()).
-// The per-panel "Compare By" value is then applied on TOP of that shared base, so
-// a comparison is always: Global Filters + Left value  vs.  Global Filters + Right value.
+// Each panel's chosen field values are then AND'ed on TOP of that shared base, so
+// a comparison is always: Global Filters + Left selections  vs.  Global Filters + Right selections.
 function getCompareBaseRows(){
   return typeof getFiltered === 'function' ? getFiltered() : DATA.slice();
 }
 
 function getFilteredForPanel(suf){
   const base = getCompareBaseRows();
-  const val = document.getElementById('cValue_'+suf).value;
-  if(!val) return base;
-  const cfg = getCompareFieldConfig();
-  return base.filter(d => cfg.match(d, val));
+  const activeFields = getActiveCompareFields();
+  if(!activeFields.length) return base;
+  return base.filter(d => activeFields.every(key=>{
+    const sel = document.getElementById(fieldSelectId(suf, key));
+    if(!sel) return true;
+    const val = sel.value;
+    if(!val) return true; // "الكل" for this field = no constraint from it
+    return COMPARE_FIELDS[key].match(d, val);
+  }));
 }
 
-// Fills the Left/Right "value" selects with the options belonging to the current
-// Compare By field, preserving each panel's previous selection when still valid,
-// and — only when nothing was picked yet — auto-selects the first two distinct
-// values (Left = 1st, Right = 2nd) so the panels always show something meaningful
-// as soon as a field is chosen, matching the "Left/Right auto-populate" requirement.
-function refreshCompareValueOptions(preserveSelection){
-  const cfg = getCompareFieldConfig();
-  const options = cfg.getOptions();
+// Rebuilds one panel's row of value-selects — one per currently-checked "Compare By"
+// field — preserving each select's previous value where it's still valid, and
+// auto-picking a sensible default (Left = 1st option, Right = 2nd option) for any
+// newly-added field so both panels always show a meaningful comparison immediately.
+function buildPanelValueSelects(suf){
+  const container = document.getElementById('compareFilterFields_'+suf);
+  if(!container) return;
 
-  ['L','R'].forEach(suf=>{
-    const label = document.getElementById('cValueLabel_'+suf);
-    if(label) label.textContent = cfg.label;
-  });
+  const prevValues = {};
+  container.querySelectorAll('select[data-field]').forEach(sel=>{ prevValues[sel.dataset.field] = sel.value; });
+  container.innerHTML = '';
 
-  const prev = { L: document.getElementById('cValue_L').value, R: document.getElementById('cValue_R').value };
+  getActiveCompareFields().forEach(key=>{
+    const cfg = COMPARE_FIELDS[key];
+    const options = cfg.getOptions();
 
-  ['L','R'].forEach(suf=>{
-    const sel = document.getElementById('cValue_'+suf);
-    while(sel.options.length){ sel.remove(0); }
+    const fgroup = document.createElement('div');
+    fgroup.className = 'fgroup';
+
+    const label = document.createElement('label');
+    label.textContent = cfg.label;
+    label.setAttribute('for', fieldSelectId(suf, key));
+
+    const select = document.createElement('select');
+    select.id = fieldSelectId(suf, key);
+    select.dataset.field = key;
+
     const allOpt = document.createElement('option');
     allOpt.value = ''; allOpt.textContent = 'الكل';
-    sel.appendChild(allOpt);
+    select.appendChild(allOpt);
     options.forEach(o=>{
       const opt = document.createElement('option');
       opt.value = o.value; opt.textContent = o.label;
-      sel.appendChild(opt);
+      select.appendChild(opt);
     });
+
+    if(prevValues[key] !== undefined && [...select.options].some(o=>o.value===prevValues[key])){
+      select.value = prevValues[key];
+    }else if(suf === 'L' && options[0]){
+      select.value = options[0].value;
+    }else if(suf === 'R' && options[1]){
+      select.value = options[1].value;
+    }else if(suf === 'R' && options[0]){
+      select.value = options[0].value;
+    }
+
+    select.addEventListener('change', renderComparePanels);
+    fgroup.appendChild(label);
+    fgroup.appendChild(select);
+    container.appendChild(fgroup);
   });
+}
 
-  const selL = document.getElementById('cValue_L');
-  const selR = document.getElementById('cValue_R');
-
-  if(preserveSelection && prev.L && [...selL.options].some(o=>o.value===prev.L)) selL.value = prev.L;
-  else if(options[0]) selL.value = options[0].value;
-
-  if(preserveSelection && prev.R && [...selR.options].some(o=>o.value===prev.R)) selR.value = prev.R;
-  else if(options[1]) selR.value = options[1].value;
-  else if(options[0]) selR.value = options[0].value;
+function refreshCompareValueOptions(){
+  buildPanelValueSelects('L');
+  buildPanelValueSelects('R');
 }
 
 function updateCompareBadges(){
-  const cfg = getCompareFieldConfig();
+  const activeFields = getActiveCompareFields();
   ['L','R'].forEach(suf=>{
-    const sel = document.getElementById('cValue_'+suf);
     const badge = document.getElementById('cBadgeValue_'+suf);
-    if(!sel || !badge) return;
-    const chosen = sel.selectedOptions[0];
-    badge.textContent = (chosen && chosen.value) ? `${cfg.label}: ${chosen.textContent}` : '';
+    if(!badge) return;
+    const parts = activeFields.map(key=>{
+      const sel = document.getElementById(fieldSelectId(suf, key));
+      if(!sel || !sel.value) return null;
+      return `${COMPARE_FIELDS[key].label}: ${sel.selectedOptions[0].textContent}`;
+    }).filter(Boolean);
+    badge.textContent = parts.join(' · ');
   });
 }
 
@@ -4131,7 +4166,7 @@ function exportPanelCsv(suf){
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `compare_${suf === 'L' ? 'left' : 'right'}_${compareField}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = `compare_${suf === 'L' ? 'left' : 'right'}_${getActiveCompareFields().join('-')}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -4230,10 +4265,12 @@ function renderComparePanels(){
 
 // Called whenever the "Compare By" field changes: rebuilds the Left/Right value
 // selects for the new field (auto-picking the first two values), then refreshes
-// every KPI/chart/table/summary/export in both panels immediately.
-function onCompareFieldChange(){
-  compareField = document.getElementById('compareByField').value;
-  refreshCompareValueOptions(false);
+// Called whenever the "Compare By" checkbox set changes: rebuilds the Left/Right
+// value-select rows for the newly active fields (auto-picking the first two values
+// for any brand-new field), then refreshes every KPI/chart/table/summary/export in
+// both panels immediately.
+function onCompareFieldsChange(){
+  refreshCompareValueOptions();
   renderComparePanels();
 }
 
@@ -4244,8 +4281,7 @@ function toggleCompareMode(){
   const toggleBtn = document.getElementById('headerCompareToggle');
   const toggleLabel = document.getElementById('headerCompareLabel');
   if(compareModeActive){
-    compareField = document.getElementById('compareByField').value || compareField;
-    refreshCompareValueOptions(true);
+    refreshCompareValueOptions();
     mainEl.classList.add('hidden');
     section.classList.remove('hidden');
     toggleBtn.classList.add('active');
@@ -4266,23 +4302,39 @@ function toggleCompareMode(){
 document.getElementById('headerCompareToggle').addEventListener('click', toggleCompareMode);
 document.getElementById('btnCloseCompare').addEventListener('click', ()=>{ if(compareModeActive) toggleCompareMode(); });
 
-document.getElementById('compareByField').addEventListener('change', onCompareFieldChange);
-['cValue_L','cValue_R'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', renderComparePanels);
+// At least one "Compare By" field must always stay checked — unchecking the last
+// one is reverted immediately instead of leaving the comparison with nothing to compare.
+document.getElementById('compareByChecks').addEventListener('change', (e)=>{
+  const cb = e.target;
+  if(!cb || cb.type !== 'checkbox') return;
+  const checked = [...document.querySelectorAll('#compareByChecks input[type=checkbox]:checked')];
+  if(checked.length === 0){
+    cb.checked = true;
+    return;
+  }
+  compareFields = checked.map(c=>c.value);
+  onCompareFieldsChange();
 });
 
 document.getElementById('btnExportPanel_L').addEventListener('click', ()=> exportPanelCsv('L'));
 document.getElementById('btnExportPanel_R').addEventListener('click', ()=> exportPanelCsv('R'));
 
 document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
-  document.getElementById('cValue_R').value = document.getElementById('cValue_L').value;
+  getActiveCompareFields().forEach(key=>{
+    const l = document.getElementById(fieldSelectId('L', key));
+    const r = document.getElementById(fieldSelectId('R', key));
+    if(l && r) r.value = l.value;
+  });
   renderComparePanels();
 });
 
 document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
-  const l = document.getElementById('cValue_L');
-  const r = document.getElementById('cValue_R');
-  const tmp = l.value; l.value = r.value; r.value = tmp;
+  getActiveCompareFields().forEach(key=>{
+    const l = document.getElementById(fieldSelectId('L', key));
+    const r = document.getElementById(fieldSelectId('R', key));
+    if(!l || !r) return;
+    const tmp = l.value; l.value = r.value; r.value = tmp;
+  });
   renderComparePanels();
 });
 
