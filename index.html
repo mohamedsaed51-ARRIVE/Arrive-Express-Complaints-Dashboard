@@ -1720,12 +1720,24 @@ const DEMO_DATA = [
 ];
 
 // ---------- Normalize ----------
+// Coerces any value coming back from the Google Sheets API (string, number,
+// boolean, Date object, null/undefined) into a safe string. Sheets cells can
+// silently change type (e.g. a "status" cell that used to contain text gets
+// typed as a number, or a date column comes back as a native Date object
+// after JSON serialization) — every downstream .trim()/.includes() call
+// assumes a string, so this boundary is the one place that must never throw.
+function safeStr(v){
+  if(v === null || v === undefined) return '';
+  if(v instanceof Date) return v.toISOString();
+  return String(v);
+}
 function normDate(s){
-  if(!s) return null;
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
-  const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if(s === null || s === undefined || s === '') return null;
+  const str = safeStr(s);
+  if(/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0,10);
+  const m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  return s;
+  return str;
 }
 
 const STATUS_MAP = {
@@ -1744,14 +1756,15 @@ function buildData(raw){
     ...d,
     date_added: normDate(d.date_added),
     review_date: normDate(d.review_date),
-    status: (d.status||'غير محدد').trim(),
-    owner: (d.owner||'غير محدد').trim(),
-    branch: (d.branch||'غير محدد').trim(),
-    type: (d.type||'غير محدد').trim(),
-    classification: (d.classification||'غير مصنف').trim(),
-    compensation_bearer: d.compensation_bearer ? d.compensation_bearer.trim() : null,
-    compensation_review_result: d.compensation_review_result ? d.compensation_review_result.trim() : null,
-    confirm_review: d.confirm_review ? d.confirm_review.trim() : null,
+    status: safeStr(d.status).trim() || 'غير محدد',
+    owner: safeStr(d.owner).trim() || 'غير محدد',
+    branch: safeStr(d.branch).trim() || 'غير محدد',
+    type: safeStr(d.type).trim() || 'غير محدد',
+    classification: safeStr(d.classification).trim() || 'غير مصنف',
+    compensation_bearer: (d.compensation_bearer !== null && d.compensation_bearer !== undefined && d.compensation_bearer !== '') ? safeStr(d.compensation_bearer).trim() : null,
+    compensation_review_result: (d.compensation_review_result !== null && d.compensation_review_result !== undefined && d.compensation_review_result !== '') ? safeStr(d.compensation_review_result).trim() : null,
+    confirm_review: (d.confirm_review !== null && d.confirm_review !== undefined && d.confirm_review !== '') ? safeStr(d.confirm_review).trim() : null,
+    investigation_result: (d.investigation_result !== null && d.investigation_result !== undefined && d.investigation_result !== '') ? safeStr(d.investigation_result).trim() : null,
   }));
 }
 
@@ -3713,23 +3726,16 @@ async function fetchDashboardData(){
     const controller = new AbortController();
     const timeoutId = setTimeout(()=>controller.abort(), 120000); // allow up to 2 minutes for slow formula-driven sheets
     try{
-      console.log("API URL:", currentApiUrl);
-
-res = await fetch(currentApiUrl, {
-  method: 'GET',
-  cache: 'no-store',
-  signal: controller.signal
-});
-
-console.log("Status:", res.status);
-console.log("URL:", res.url);
+      res = await fetch(currentApiUrl, { method:'GET', cache:'no-store', signal: controller.signal });
     }finally{
       clearTimeout(timeoutId);
     }
   }catch(networkErr){
-    const err = new Error('network'); err.kind = 'error'; throw err;
+    console.error('[fetchDashboardData] network request failed:', networkErr);
+    const err = new Error('network'); err.kind = 'error'; err.cause = networkErr; throw err;
   }
   if(!res.ok){
+    console.error('[fetchDashboardData] HTTP error status:', res.status);
     const err = new Error('http-'+res.status); err.kind = 'error'; throw err;
   }
   let json;
@@ -3737,13 +3743,25 @@ console.log("URL:", res.url);
     const rawText = (await res.text()).replace(/^\uFEFF/, '').trim();
     json = JSON.parse(rawText);
   }catch(parseErr){
-    const err = new Error('bad-json'); err.kind = 'error'; throw err;
+    console.error('[fetchDashboardData] JSON parse failed:', parseErr);
+    const err = new Error('bad-json'); err.kind = 'error'; err.cause = parseErr; throw err;
   }
   const rows = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
   if(!rows){
+    console.error('[fetchDashboardData] Unexpected JSON shape (expected an array or {data:[...]}):', json);
     const err = new Error('bad-format'); err.kind = 'error'; throw err;
   }
-  return mapApiRows(rows);
+  // NOTE: mapApiRows() is a pure data-normalization step — the HTTP request has
+  // already succeeded at this point. If it throws (e.g. an unexpected value type
+  // in a sheet column), that is NOT a connectivity problem, so it is tagged with
+  // a distinct 'mapping' kind instead of 'error'. This prevents data-shape bugs
+  // from being misreported to the user as "Disconnected" / "Failed to connect".
+  try{
+    return mapApiRows(rows);
+  }catch(mapErr){
+    console.error('[fetchDashboardData] Row mapping failed — connection is fine, data shape is not:', mapErr);
+    const err = new Error('mapping-failed'); err.kind = 'mapping'; err.cause = mapErr; throw err;
+  }
 }
 
 function renderDataset(raw){
@@ -3808,6 +3826,19 @@ async function loadDashboardData(opts){
       saveDataToCache(raw);
     }
   }catch(err){
+    // Always surface the real error in the console — previously this catch block
+    // discarded it entirely, which is why the API/network could be perfectly fine
+    // while the UI silently flipped to "Disconnected" with no trace of *why*.
+    console.error('[loadDashboardData] load failed:', err, err && err.cause ? { cause: err.cause } : '');
+
+    // Only a genuine connectivity failure (network unreachable, non-2xx HTTP
+    // status, or unparsable JSON) is a real "connection error". A failure that
+    // happens *after* the request already succeeded (err.kind === 'mapping', or
+    // any exception thrown while rendering already-fetched data) is a data/UI
+    // bug, not a disconnection — so it must never flip the connection chip to
+    // "🔴 غير متصل" / show "Failed to connect to server".
+    const isConnectivityError = !err || !err.kind || err.kind === 'error';
+
     // Keep whatever is currently on screen (demo data, cached data, or last good live data)
     // and just surface a small, non-blocking notification with a retry option. If we have
     // no data on screen at all yet, fall back to the local cache before giving up to demo view.
@@ -3815,13 +3846,13 @@ async function loadDashboardData(opts){
       const cached = loadDataFromCache();
       if(cached && cached.length){
         try{ renderDataset(cached); }catch(e){ console.error('Cached data render failed:', e); }
-        showRefreshBanner('error');
-      }else{
+        if(isConnectivityError) showRefreshBanner('error');
+      }else if(isConnectivityError){
         // No live data and nothing cached — automatically fall back to Demo Mode
         // so the dashboard is never left blank when the API is unreachable.
         try{ loadDemoData(); }catch(e){ console.error('Demo data render failed:', e); }
       }
-    }else{
+    }else if(isConnectivityError){
       showRefreshBanner('error');
     }
   }finally{
