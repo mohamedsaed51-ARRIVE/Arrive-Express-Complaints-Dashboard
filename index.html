@@ -3713,7 +3713,16 @@ async function fetchDashboardData(){
     const controller = new AbortController();
     const timeoutId = setTimeout(()=>controller.abort(), 120000); // allow up to 2 minutes for slow formula-driven sheets
     try{
-      res = await fetch(currentApiUrl, { method:'GET', cache:'no-store', signal: controller.signal });
+      console.log("API URL:", currentApiUrl);
+
+res = await fetch(currentApiUrl, {
+  method: 'GET',
+  cache: 'no-store',
+  signal: controller.signal
+});
+
+console.log("Status:", res.status);
+console.log("URL:", res.url);
     }finally{
       clearTimeout(timeoutId);
     }
