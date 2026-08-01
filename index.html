@@ -3585,6 +3585,7 @@ function hideSkeleton(){
 const connStatusChip = document.getElementById('connStatusChip');
 const connStatusLabel = document.getElementById('connStatusLabel');
 function setConnStatus(state){
+  console.log('%c[TRACE] setConnStatus("'+state+'") called from:', 'color:#e67e22;font-weight:bold', new Error().stack);
   if(!connStatusChip) return;
   connStatusChip.dataset.state = state;
   const labels = { live:'🟢 متصل', demo:'🟡 وضع تجريبي', error:'🔴 غير متصل' };
@@ -3593,23 +3594,25 @@ function setConnStatus(state){
 
 // ---------- Demo-mode banner (non-blocking) ----------
 const demoModeBanner = document.getElementById('demoModeBanner');
-function showDemoModeBanner(){ demoModeBanner?.classList.remove('hidden'); setConnStatus('demo'); }
-function hideDemoModeBanner(){ demoModeBanner?.classList.add('hidden'); setConnStatus('live'); }
+function showDemoModeBanner(){ console.log('[TRACE] showDemoModeBanner()'); demoModeBanner?.classList.remove('hidden'); setConnStatus('demo'); }
+function hideDemoModeBanner(){ console.log('[TRACE] hideDemoModeBanner() -> setConnStatus(live)'); demoModeBanner?.classList.add('hidden'); setConnStatus('live'); }
 
 // ---------- Slim non-blocking banner for connection problems (initial load + background refresh) ----------
 const refreshBanner = document.getElementById('refreshBanner');
 const refreshBannerMsg = document.getElementById('refreshBannerMsg');
 function showRefreshBanner(kind){
+  console.log('%c[TRACE] showRefreshBanner("'+kind+'") called from:', 'color:#e74c3c;font-weight:bold', new Error().stack);
   if(!refreshBanner) return;
   const presets = {
     'error': 'تعذّر الاتصال بالخادم — سيتم الاحتفاظ بآخر بيانات متاحة. اضغط "إعادة المحاولة الآن" أو تحقق من رابط الـ API من الإعدادات.',
     'empty': 'تم الاتصال بالخادم بنجاح، ولكن لم يتم العثور على أي سجلات.',
+    'render': 'تم استلام البيانات من الخادم بنجاح، ولكن حدث خطأ أثناء عرضها. راجع Console للتفاصيل.',
   };
   refreshBannerMsg.textContent = presets[kind] || presets['error'];
   refreshBanner.classList.remove('hidden');
   if(kind === 'error') setConnStatus('error');
 }
-function hideRefreshBanner(){ refreshBanner?.classList.add('hidden'); }
+function hideRefreshBanner(){ console.log('[TRACE] hideRefreshBanner()'); refreshBanner?.classList.add('hidden'); }
 
 // ---------- Settings modal (API URL) — always reachable, never disabled ----------
 function openSettingsModal(){
@@ -3721,56 +3724,70 @@ function mapApiRows(rows){
 
 // ---------- Fetch ----------
 async function fetchDashboardData(){
+  console.log('%c[TRACE] fetchDashboardData() START, currentApiUrl =', 'color:#2980b9;font-weight:bold', currentApiUrl);
   let res;
   try{
     const controller = new AbortController();
     const timeoutId = setTimeout(()=>controller.abort(), 120000); // allow up to 2 minutes for slow formula-driven sheets
     try{
       res = await fetch(currentApiUrl, { method:'GET', cache:'no-store', signal: controller.signal });
+      console.log('[TRACE] fetch() resolved. status=', res.status, 'ok=', res.ok, 'type=', res.type, 'redirected=', res.redirected, 'url=', res.url);
     }finally{
       clearTimeout(timeoutId);
     }
   }catch(networkErr){
-    console.error('[fetchDashboardData] network request failed:', networkErr);
+    console.error('[TRACE] fetch() THREW (network/CORS layer):', networkErr && networkErr.name, networkErr && networkErr.message, networkErr);
     const err = new Error('network'); err.kind = 'error'; err.cause = networkErr; throw err;
   }
   if(!res.ok){
-    console.error('[fetchDashboardData] HTTP error status:', res.status);
+    console.error('[TRACE] res.ok === false. HTTP status:', res.status, res.statusText);
     const err = new Error('http-'+res.status); err.kind = 'error'; throw err;
   }
   let json;
   try{
     const rawText = (await res.text()).replace(/^\uFEFF/, '').trim();
+    console.log('[TRACE] raw response length =', rawText.length, ' first 200 chars =', rawText.slice(0,200));
     json = JSON.parse(rawText);
+    console.log('[TRACE] JSON.parse succeeded. typeof json =', typeof json, Array.isArray(json) ? '(array, len '+json.length+')' : Object.keys(json||{}));
   }catch(parseErr){
-    console.error('[fetchDashboardData] JSON parse failed:', parseErr);
+    console.error('[TRACE] JSON.parse THREW:', parseErr);
     const err = new Error('bad-json'); err.kind = 'error'; err.cause = parseErr; throw err;
   }
   const rows = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : null);
   if(!rows){
-    console.error('[fetchDashboardData] Unexpected JSON shape (expected an array or {data:[...]}):', json);
+    console.error('[TRACE] Unexpected JSON shape (expected an array or {data:[...]}):', json);
     const err = new Error('bad-format'); err.kind = 'error'; throw err;
   }
+  console.log('[TRACE] rows extracted, count =', rows.length, ' sample row =', rows[0]);
   // NOTE: mapApiRows() is a pure data-normalization step — the HTTP request has
   // already succeeded at this point. If it throws (e.g. an unexpected value type
   // in a sheet column), that is NOT a connectivity problem, so it is tagged with
   // a distinct 'mapping' kind instead of 'error'. This prevents data-shape bugs
   // from being misreported to the user as "Disconnected" / "Failed to connect".
   try{
-    return mapApiRows(rows);
+    const mapped = mapApiRows(rows);
+    console.log('[TRACE] mapApiRows() succeeded, mapped count =', mapped.length);
+    return mapped;
   }catch(mapErr){
-    console.error('[fetchDashboardData] Row mapping failed — connection is fine, data shape is not:', mapErr);
+    console.error('[TRACE] mapApiRows() THREW — connection is fine, data shape is not:', mapErr);
     const err = new Error('mapping-failed'); err.kind = 'mapping'; err.cause = mapErr; throw err;
   }
 }
 
 function renderDataset(raw){
+  console.log('[TRACE] renderDataset() START, raw count =', raw && raw.length);
   DATA = buildData(raw);
+  console.log('[TRACE] buildData() OK, DATA.length =', DATA.length);
   populateFilters();
+  console.log('[TRACE] populateFilters() OK');
   updateMetaBar();
+  console.log('[TRACE] updateMetaBar() OK');
   drawBarcodes();
+  console.log('[TRACE] drawBarcodes() OK');
   updateFooterInfo();
+  console.log('[TRACE] updateFooterInfo() OK');
   render();
+  console.log('[TRACE] render() OK — renderDataset() COMPLETE');
   if(typeof refreshCompareValueOptions === 'function') refreshCompareValueOptions();
   if(compareModeActive && typeof renderComparePanels === 'function') renderComparePanels();
 }
@@ -3814,30 +3831,48 @@ async function loadDashboardData(opts){
   if(!isRefresh){ showSkeleton(); }
 
   try{
+    console.log('%c[TRACE] loadDashboardData() try block: calling fetchDashboardData()', 'color:#2980b9');
     const raw = await fetchDashboardData();
+    console.log('[TRACE] fetchDashboardData() RESOLVED, raw.length =', raw.length);
 
     if(!raw.length){
+      console.log('[TRACE] raw is empty -> showRefreshBanner("empty")');
       showRefreshBanner('empty');
     }else{
-      renderDataset(raw);
+      try{
+        renderDataset(raw);
+      }catch(renderErr){
+        // renderDataset() runs AFTER the fetch already succeeded. A failure in here
+        // (populateFilters/updateMetaBar/drawBarcodes/updateFooterInfo/render, or any
+        // future change to any of them) is a RENDER bug, not a connectivity problem —
+        // tag it explicitly so the classification below never confuses the two.
+        const err = new Error('render-failed'); err.kind = 'render'; err.cause = renderErr;
+        throw err;
+      }
+      console.log('%c[TRACE] renderDataset() completed without throwing', 'color:#27ae60');
       hideDemoModeBanner();
       hideRefreshBanner();
       hasLiveDataOnce = true;
       saveDataToCache(raw);
+      console.log('%c[TRACE] loadDashboardData() SUCCESS PATH COMPLETE — status should be "live"', 'color:#27ae60;font-weight:bold');
     }
   }catch(err){
     // Always surface the real error in the console — previously this catch block
     // discarded it entirely, which is why the API/network could be perfectly fine
     // while the UI silently flipped to "Disconnected" with no trace of *why*.
-    console.error('[loadDashboardData] load failed:', err, err && err.cause ? { cause: err.cause } : '');
+    console.error('%c[TRACE] loadDashboardData() CATCH — err.kind =', 'color:#e74c3c;font-weight:bold', err && err.kind, err, err && err.cause ? { cause: err.cause } : '');
 
-    // Only a genuine connectivity failure (network unreachable, non-2xx HTTP
-    // status, or unparsable JSON) is a real "connection error". A failure that
-    // happens *after* the request already succeeded (err.kind === 'mapping', or
-    // any exception thrown while rendering already-fetched data) is a data/UI
-    // bug, not a disconnection — so it must never flip the connection chip to
-    // "🔴 غير متصل" / show "Failed to connect to server".
-    const isConnectivityError = !err || !err.kind || err.kind === 'error';
+    // Only a genuine connectivity failure (network unreachable, non-2xx HTTP status,
+    // or unparsable JSON — all explicitly tagged err.kind === 'error' by
+    // fetchDashboardData) counts as a real "connection error". Everything else —
+    // an UNTAGGED exception, err.kind === 'mapping', or err.kind === 'render' — happened
+    // AFTER the request already succeeded, so it must NEVER flip the connection chip to
+    // "🔴 غير متصل" / show "Failed to connect to server". Previous version of this line
+    // defaulted an untagged error to "IS a connectivity error", which was itself the bug:
+    // any exception thrown inside renderDataset()'s sub-functions (not just buildData(),
+    // which was already hardened) was still being mislabeled as "Disconnected".
+    const isConnectivityError = !!(err && err.kind === 'error');
+    console.log('[TRACE] isConnectivityError =', isConnectivityError);
 
     // Keep whatever is currently on screen (demo data, cached data, or last good live data)
     // and just surface a small, non-blocking notification with a retry option. If we have
@@ -3854,6 +3889,8 @@ async function loadDashboardData(opts){
       }
     }else if(isConnectivityError){
       showRefreshBanner('error');
+    }else if(err && (err.kind === 'render' || err.kind === 'mapping')){
+      showRefreshBanner('render');
     }
   }finally{
     hideSkeleton();
