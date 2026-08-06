@@ -151,6 +151,74 @@
   }
   .filter-bar input[type=date]:hover{ border-color:var(--navy); }
   .filter-bar input[type=date]:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+
+  /* ---------- Multi-select filter (Autocomplete-style: search, chips, select-all/clear-all) ---------- */
+  .ms{ position:relative; width:210px; }
+  .ms-control{
+    appearance:none;
+    background:var(--surface-alt);
+    border:1px solid var(--line-strong);
+    border-radius:7px;
+    padding:6px 10px;
+    font-family:inherit;
+    font-size:12.5px;
+    color:var(--ink);
+    width:100%;
+    min-height:34px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .ms-control:hover{ border-color:var(--navy); }
+  .ms.open .ms-control, .ms-control:focus-visible{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
+  .ms-chips{ flex:1; display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap; min-width:0; }
+  .ms-chips .ms-placeholder{ color:var(--ink-faint); }
+  .ms-chip{
+    background:var(--navy); color:#fff; border-radius:10px; padding:2px 7px 2px 4px;
+    font-size:11px; display:inline-flex; align-items:center; gap:3px; flex:none; max-width:110px;
+  }
+  .ms-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ms-chip button{
+    background:rgba(255,255,255,0.25); border:none; border-radius:50%; color:#fff; cursor:pointer;
+    width:14px; height:14px; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0; flex:none;
+  }
+  .ms-chip button:hover{ background:rgba(255,255,255,0.45); }
+  .ms-chip-more{ font-size:11px; color:var(--ink-faint); flex:none; }
+  .ms-caret{ flex:none; color:var(--ink-faint); font-size:10px; transition:transform .15s ease; }
+  .ms.open .ms-caret{ transform:rotate(180deg); }
+  .ms-panel{
+    position:absolute; top:calc(100% + 4px); right:0; left:0; z-index:60;
+    background:var(--surface); border:1px solid var(--line-strong); border-radius:9px;
+    box-shadow:0 10px 30px rgba(24,38,51,0.18); padding:8px; display:none; min-width:230px;
+  }
+  .ms.open .ms-panel{ display:block; }
+  .ms-search{
+    width:100%; box-sizing:border-box; padding:7px 10px; border:1px solid var(--line);
+    border-radius:6px; background:var(--surface-alt); color:var(--ink); font-family:inherit; font-size:12.5px;
+    margin-bottom:6px;
+  }
+  .ms-search:focus{ outline:none; border-color:var(--navy); }
+  .ms-actions{ display:flex; gap:6px; margin-bottom:6px; }
+  .ms-actions button{
+    flex:1; background:var(--surface-alt); border:1px solid var(--line); border-radius:6px;
+    padding:5px 6px; font-size:11px; color:var(--navy); cursor:pointer; font-family:inherit;
+  }
+  .ms-actions button:hover{ background:var(--neutral-bg); border-color:var(--navy); }
+  .ms-options{ max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:1px; }
+  .ms-option{
+    display:flex; align-items:center; gap:7px; padding:6px 7px; border-radius:5px; cursor:pointer; font-size:12.5px; color:var(--ink);
+  }
+  .ms-option:hover{ background:var(--neutral-bg); }
+  .ms-option input[type=checkbox]{ accent-color:var(--navy); cursor:pointer; flex:none; }
+  .ms-option span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ms-empty{ padding:10px; text-align:center; color:var(--ink-faint); font-size:12px; }
+  @media (max-width:900px){
+    .ms{ width:100%; }
+    .ms-panel{ left:0; right:0; }
+  }
+
   .btn-reset{
     background:transparent; border:1px solid var(--line-strong); border-radius:7px;
     padding:8px 16px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; font-family:inherit;
@@ -166,7 +234,7 @@
   /* ---------- KPI waybill stubs (signature element) ---------- */
   .kpi-row{
     display:grid;
-    grid-template-columns:repeat(5, 1fr);
+    grid-template-columns:repeat(6, 1fr);
     gap:16px;
     margin-bottom:30px;
   }
@@ -917,6 +985,7 @@
     .filter-bar input[type=date]{
       width:100%; max-width:100%; min-width:0; box-sizing:border-box;
     }
+    .filter-bar .ms{ width:100%; }
     .filter-spacer{ display:none; }
     .filter-divider{ margin:0; }
     .filter-bar .result-count{ width:100%; text-align:center; }
@@ -1129,27 +1198,35 @@
 <div class="filter-bar" id="filterBar">
   <div class="fgroup">
     <label for="fOwner">مسؤول الشكوى</label>
-    <select id="fOwner"><option value="">الكل</option></select>
+    <select id="fOwner" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fBranch">الفرع المتسبب</label>
-    <select id="fBranch"><option value="">الكل</option></select>
+    <select id="fBranch" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fType">نوع الشكوى</label>
-    <select id="fType"><option value="">الكل</option></select>
+    <select id="fType" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fStatus">حالة الشكوى</label>
-    <select id="fStatus"><option value="">الكل</option></select>
+    <select id="fStatus" multiple></select>
   </div>
   <div class="fgroup">
-    <label for="fMonth">الشهر</label>
-    <select id="fMonth"><option value="">الكل</option></select>
+    <label for="fMonth">شهر إضافة الشكوى</label>
+    <select id="fMonth" multiple></select>
+  </div>
+  <div class="fgroup">
+    <label for="fClassification">تصنيف المشكلة</label>
+    <select id="fClassification" multiple></select>
+  </div>
+  <div class="fgroup">
+    <label for="fCompMonth">شهر التعويض</label>
+    <select id="fCompMonth" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fSender">اسم الراسل</label>
-    <select id="fSender"><option value="">الكل</option></select>
+    <select id="fSender" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fDateFrom">تاريخ الشكوى من</label>
@@ -1171,16 +1248,15 @@
 
   <div class="fgroup">
     <label for="fBearer">وظيفة المتحمل للتعويض</label>
-    <select id="fBearer"><option value="">الكل</option></select>
+    <select id="fBearer" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fReviewResult">نتيجة مراجعة التعويض</label>
-    <select id="fReviewResult"><option value="">الكل</option></select>
+    <select id="fReviewResult" multiple></select>
   </div>
   <div class="fgroup">
     <label for="fConfirm">التأكيد على المراجعة</label>
-    <select id="fConfirm">
-      <option value="">الكل</option>
+    <select id="fConfirm" multiple>
       <option value="yes">تم التأكيد</option>
       <option value="no">لم يتم التأكيد</option>
     </select>
@@ -1242,6 +1318,13 @@
       <div class="stub-value num" id="kpiSla">0</div>
       <div class="stub-sub" id="kpiSlaSub">—</div>
       <div class="stub-enh" id="kpiSlaEnh"></div>
+    </div>
+    <div class="stub accent-gold">
+      <div class="barcode" id="bc6"></div>
+      <div class="stub-label">SLA التعويض (يوم)</div>
+      <div class="stub-value num" id="kpiCompSla">0</div>
+      <div class="stub-sub" id="kpiCompSlaSub">—</div>
+      <div class="stub-enh" id="kpiCompSlaEnh"></div>
     </div>
   </section>
 
@@ -1752,35 +1835,224 @@ const STATUS_MAP = {
 // buildData() normalizes a raw records array (same shape as before) into DATA.
 let DATA = [];
 function buildData(raw){
-  return (raw||[]).map(d => ({
-    ...d,
-    date_added: normDate(d.date_added),
-    review_date: normDate(d.review_date),
-    status: safeStr(d.status).trim() || 'غير محدد',
-    owner: safeStr(d.owner).trim() || 'غير محدد',
-    branch: safeStr(d.branch).trim() || 'غير محدد',
-    type: safeStr(d.type).trim() || 'غير محدد',
-    classification: safeStr(d.classification).trim() || 'غير مصنف',
-    compensation_bearer: (d.compensation_bearer !== null && d.compensation_bearer !== undefined && d.compensation_bearer !== '') ? safeStr(d.compensation_bearer).trim() : null,
-    compensation_review_result: (d.compensation_review_result !== null && d.compensation_review_result !== undefined && d.compensation_review_result !== '') ? safeStr(d.compensation_review_result).trim() : null,
-    confirm_review: (d.confirm_review !== null && d.confirm_review !== undefined && d.confirm_review !== '') ? safeStr(d.confirm_review).trim() : null,
-    investigation_result: (d.investigation_result !== null && d.investigation_result !== undefined && d.investigation_result !== '') ? safeStr(d.investigation_result).trim() : null,
-  }));
+  return (raw||[]).map(d => {
+    const investigation_result_date = normDate(d.investigation_result_date);
+    const compensation_date = normDate(d.compensation_date);
+    const review_date = normDate(d.review_date);
+    // "شهر التعويض" (compensation month): prefer an explicit value, otherwise
+    // derive it from the compensation date, falling back to the review date —
+    // same fallback pattern used for the existing "month" field.
+    const compensation_month = safeStr(d.compensation_month).trim()
+      || monthNameFromDate(compensation_date)
+      || monthNameFromDate(review_date)
+      || '';
+    // "SLA التعويض": Compensation Date − Investigation Result Date, in days.
+    // Both dates must be present and valid, otherwise the record is excluded
+    // (kept null) so it never pollutes the average.
+    let sla_compensation_days = null;
+    if(investigation_result_date && compensation_date){
+      const a = new Date(compensation_date), b = new Date(investigation_result_date);
+      if(!isNaN(a) && !isNaN(b)) sla_compensation_days = Math.round((a-b)/86400000);
+    }
+    return {
+      ...d,
+      date_added: normDate(d.date_added),
+      review_date,
+      investigation_result_date,
+      compensation_date,
+      compensation_month,
+      sla_compensation_days,
+      status: safeStr(d.status).trim() || 'غير محدد',
+      owner: safeStr(d.owner).trim() || 'غير محدد',
+      branch: safeStr(d.branch).trim() || 'غير محدد',
+      type: safeStr(d.type).trim() || 'غير محدد',
+      classification: safeStr(d.classification).trim() || 'غير مصنف',
+      compensation_bearer: (d.compensation_bearer !== null && d.compensation_bearer !== undefined && d.compensation_bearer !== '') ? safeStr(d.compensation_bearer).trim() : null,
+      compensation_review_result: (d.compensation_review_result !== null && d.compensation_review_result !== undefined && d.compensation_review_result !== '') ? safeStr(d.compensation_review_result).trim() : null,
+      confirm_review: (d.confirm_review !== null && d.confirm_review !== undefined && d.confirm_review !== '') ? safeStr(d.confirm_review).trim() : null,
+      investigation_result: (d.investigation_result !== null && d.investigation_result !== undefined && d.investigation_result !== '') ? safeStr(d.investigation_result).trim() : null,
+    };
+  });
 }
+
+// ---------- Reusable Multi-Select filter component ----------
+// Wraps a native <select multiple> element (kept as the single source of truth so
+// everything downstream — getFiltered(), drillSet(), the 'change' listeners, the
+// reset button, the compare panel, countActiveFilters() — keeps working unchanged)
+// with a searchable Autocomplete-style dropdown: type-to-filter, checkbox options,
+// selected values shown as removable chips, and Select All / Clear All actions.
+const multiSelectRegistry = {};
+function escapeHtmlAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+
+function mountMultiSelect(id, opts={}){
+  const sel = document.getElementById(id);
+  if(!sel || multiSelectRegistry[id]) return;
+  sel.style.display = 'none';
+  sel.setAttribute('aria-hidden','true');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ms';
+  wrap.id = id + '_ms';
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(sel);
+
+  const control = document.createElement('button');
+  control.type = 'button';
+  control.className = 'ms-control';
+  control.setAttribute('aria-haspopup','listbox');
+  control.innerHTML = `<span class="ms-chips" id="${id}_chips"><span class="ms-placeholder">الكل</span></span><span class="ms-caret">▾</span>`;
+  wrap.appendChild(control);
+
+  const panel = document.createElement('div');
+  panel.className = 'ms-panel';
+  panel.innerHTML = `
+    <input type="text" class="ms-search" id="${id}_search" placeholder="${opts.searchPlaceholder || 'اكتب للبحث…'}" autocomplete="off">
+    <div class="ms-actions">
+      <button type="button" class="ms-select-all">تحديد الكل</button>
+      <button type="button" class="ms-clear-all">مسح الكل</button>
+    </div>
+    <div class="ms-options" id="${id}_options"></div>
+  `;
+  wrap.appendChild(panel);
+
+  const searchInput = panel.querySelector('.ms-search');
+  const optionsBox = panel.querySelector('.ms-options');
+  const selectAllBtn = panel.querySelector('.ms-select-all');
+  const clearAllBtn = panel.querySelector('.ms-clear-all');
+
+  function fireChange(){ sel.dispatchEvent(new Event('change', { bubbles:true })); }
+
+  function renderOptions(filterText=''){
+    const q = filterText.trim().toLowerCase();
+    optionsBox.innerHTML = '';
+    const allOpts = [...sel.options];
+    const visible = q ? allOpts.filter(o=> o.textContent.toLowerCase().includes(q)) : allOpts;
+    if(!visible.length){
+      optionsBox.innerHTML = '<div class="ms-empty">لا توجد نتائج</div>';
+      return;
+    }
+    visible.forEach(o=>{
+      const row = document.createElement('label');
+      row.className = 'ms-option';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = o.selected;
+      cb.addEventListener('change', ()=>{ o.selected = cb.checked; fireChange(); syncChips(); });
+      const span = document.createElement('span');
+      span.textContent = o.textContent;
+      row.appendChild(cb); row.appendChild(span);
+      optionsBox.appendChild(row);
+    });
+  }
+
+  function syncChips(){
+    const chipsBox = document.getElementById(id+'_chips');
+    if(!chipsBox) return;
+    const selected = [...sel.selectedOptions];
+    if(!selected.length){
+      chipsBox.innerHTML = '<span class="ms-placeholder">الكل</span>';
+      return;
+    }
+    const MAX_CHIPS = 2;
+    let html = '';
+    selected.slice(0, MAX_CHIPS).forEach(o=>{
+      html += `<span class="ms-chip" data-val="${escapeHtmlAttr(o.value)}"><span>${o.textContent}</span><button type="button" title="إزالة">✕</button></span>`;
+    });
+    if(selected.length > MAX_CHIPS) html += `<span class="ms-chip-more">+${selected.length - MAX_CHIPS}</span>`;
+    chipsBox.innerHTML = html;
+    chipsBox.querySelectorAll('.ms-chip button').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const val = btn.parentElement.dataset.val;
+        const opt = [...sel.options].find(o=>o.value === val);
+        if(opt){ opt.selected = false; fireChange(); }
+        syncMultiSelectUI(id);
+      });
+    });
+  }
+
+  function openPanel(){
+    document.querySelectorAll('.ms.open').forEach(el=>{ if(el!==wrap) el.classList.remove('open'); });
+    wrap.classList.add('open');
+    searchInput.value = '';
+    renderOptions('');
+    setTimeout(()=> searchInput.focus(), 0);
+  }
+  function closePanel(){ wrap.classList.remove('open'); }
+
+  control.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    wrap.classList.contains('open') ? closePanel() : openPanel();
+  });
+  searchInput.addEventListener('input', ()=> renderOptions(searchInput.value));
+  searchInput.addEventListener('click', e=> e.stopPropagation());
+  selectAllBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const q = searchInput.value.trim().toLowerCase();
+    [...sel.options].forEach(o=>{ if(!q || o.textContent.toLowerCase().includes(q)) o.selected = true; });
+    fireChange(); renderOptions(searchInput.value); syncChips();
+  });
+  clearAllBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    [...sel.options].forEach(o=> o.selected = false);
+    fireChange(); renderOptions(searchInput.value); syncChips();
+  });
+  document.addEventListener('click', (e)=>{ if(!wrap.contains(e.target)) closePanel(); });
+
+  syncChips();
+  multiSelectRegistry[id] = { renderOptions, syncChips };
+}
+
+// Re-syncs a multi-select's chip display + checkbox states from the underlying
+// <select multiple>'s current selection. Call after any programmatic change
+// (drillSet, reset, populateFilters refresh, etc.).
+function syncMultiSelectUI(id){
+  const inst = multiSelectRegistry[id];
+  if(!inst) return;
+  inst.syncChips();
+  const wrap = document.getElementById(id+'_ms');
+  if(wrap && wrap.classList.contains('open')){
+    const searchInput = document.getElementById(id+'_search');
+    inst.renderOptions(searchInput ? searchInput.value : '');
+  }
+}
+function syncAllMultiSelectUI(ids){ ids.forEach(syncMultiSelectUI); }
+// Reads the selected values of a multi-select filter as an array.
+function getSelValues(id){
+  const sel = document.getElementById(id);
+  if(!sel) return [];
+  return [...sel.selectedOptions].map(o=>o.value);
+}
+// Clears all selections on a multi-select filter (does not touch the DOM options).
+function clearMultiSelect(id){
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  [...sel.options].forEach(o=> o.selected = false);
+}
+
+// All filter-bar fields that are backed by the multi-select component.
+const MULTI_SELECT_IDS = ['fOwner','fBranch','fType','fStatus','fMonth','fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm'];
+MULTI_SELECT_IDS.forEach(id=> mountMultiSelect(id));
+// Every filter-bar control (multi-selects + date ranges) — used for the
+// change-listener wiring, the reset button, and the active-filter count.
+const ALL_FILTER_IDS = [...MULTI_SELECT_IDS, 'fDateFrom','fDateTo','fReviewFrom','fReviewTo'];
 
 // ---------- Populate filter dropdowns ----------
 function uniqueSorted(key){
   return [...new Set(DATA.map(d => d[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
 }
+// Rebuilds a multi-select's option list from a values array, preserving any
+// previously-selected values that still exist in the new list.
 function fillSelect(id, values){
   const sel = document.getElementById(id);
-  // keep the first ("الكل" / all) option, clear any previously injected options
-  while(sel.options.length > 1){ sel.remove(1); }
+  const prevSelected = new Set([...sel.selectedOptions].map(o=>o.value));
+  sel.innerHTML = '';
   values.forEach(v=>{
     const opt = document.createElement('option');
     opt.value = v; opt.textContent = v;
+    opt.selected = prevSelected.has(v);
     sel.appendChild(opt);
   });
+  syncMultiSelectUI(id);
 }
 const monthOrder = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
 let months = [];
@@ -1790,10 +2062,6 @@ let reviewDates = [];
 // Populates filter dropdowns from current DATA. Safe to call again after a
 // refresh — selections are preserved where the value still exists.
 function populateFilters(){
-  const selectIds = ['fOwner','fBranch','fType','fStatus','fBearer','fReviewResult','fSender','fMonth'];
-  const previousValues = {};
-  selectIds.forEach(id=>{ previousValues[id] = document.getElementById(id).value; });
-
   fillSelect('fOwner', uniqueSorted('owner'));
   fillSelect('fBranch', uniqueSorted('branch'));
   fillSelect('fType', uniqueSorted('type'));
@@ -1801,16 +2069,12 @@ function populateFilters(){
   fillSelect('fBearer', uniqueSorted('compensation_bearer'));
   fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
   fillSelect('fSender', uniqueSorted('complainant'));
+  fillSelect('fClassification', uniqueSorted('classification'));
   months = uniqueSorted('month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
   fillSelect('fMonth', months);
-
-  selectIds.forEach(id=>{
-    const sel = document.getElementById(id);
-    if(previousValues[id] && [...sel.options].some(o=>o.value === previousValues[id])){
-      sel.value = previousValues[id];
-    }
-  });
-
+  const compMonths = uniqueSorted('compensation_month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
+  fillSelect('fCompMonth', compMonths);
+  syncMultiSelectUI('fConfirm');
 }
 
 // Updates the header meta bar / date-range inputs from current DATA. Safe to
@@ -1841,7 +2105,7 @@ let barcodesDrawn = false;
 function drawBarcodes(){
   if(barcodesDrawn) return;
   barcodesDrawn = true;
-  ['bc1','bc2','bc3','bc4','bc5'].forEach(id=>{
+  ['bc1','bc2','bc3','bc4','bc5','bc6'].forEach(id=>{
     const el = document.getElementById(id);
     let html='';
     for(let i=0;i<14;i++){
@@ -1945,35 +2209,45 @@ function makeCharts(){
 makeCharts();
 
 // ---------- Filtering ----------
+// Each categorical filter is now a multi-select: an empty array means "no
+// restriction" (all values match); one or more selected values are matched
+// with OR semantics within the field, ANDed across fields — the standard
+// multi-select filter behavior.
 function getFiltered(){
-  const owner = document.getElementById('fOwner').value;
-  const branch = document.getElementById('fBranch').value;
-  const type = document.getElementById('fType').value;
-  const status = document.getElementById('fStatus').value;
-  const month = document.getElementById('fMonth').value;
-  const sender = document.getElementById('fSender').value;
+  const owner = getSelValues('fOwner');
+  const branch = getSelValues('fBranch');
+  const type = getSelValues('fType');
+  const status = getSelValues('fStatus');
+  const month = getSelValues('fMonth');
+  const classification = getSelValues('fClassification');
+  const compMonth = getSelValues('fCompMonth');
+  const sender = getSelValues('fSender');
   const dateFrom = document.getElementById('fDateFrom').value;
   const dateTo = document.getElementById('fDateTo').value;
   const search = document.getElementById('fSearch').value.trim().toLowerCase();
-  const bearer = document.getElementById('fBearer').value;
-  const reviewResult = document.getElementById('fReviewResult').value;
-  const confirm = document.getElementById('fConfirm').value;
+  const bearer = getSelValues('fBearer');
+  const reviewResult = getSelValues('fReviewResult');
+  const confirm = getSelValues('fConfirm');
   const reviewFrom = document.getElementById('fReviewFrom').value;
   const reviewTo = document.getElementById('fReviewTo').value;
 
   return DATA.filter(d=>{
-    if(owner && d.owner !== owner) return false;
-    if(branch && d.branch !== branch) return false;
-    if(type && d.type !== type) return false;
-    if(status && d.status !== status) return false;
-    if(month && d.month !== month) return false;
-    if(sender && d.complainant !== sender) return false;
+    if(owner.length && !owner.includes(d.owner)) return false;
+    if(branch.length && !branch.includes(d.branch)) return false;
+    if(type.length && !type.includes(d.type)) return false;
+    if(status.length && !status.includes(d.status)) return false;
+    if(month.length && !month.includes(d.month)) return false;
+    if(classification.length && !classification.includes(d.classification)) return false;
+    if(compMonth.length && !compMonth.includes(d.compensation_month)) return false;
+    if(sender.length && !sender.includes(d.complainant)) return false;
     if(dateFrom && (!d.date_added || d.date_added < dateFrom)) return false;
     if(dateTo && (!d.date_added || d.date_added > dateTo)) return false;
-    if(bearer && d.compensation_bearer !== bearer) return false;
-    if(reviewResult && d.compensation_review_result !== reviewResult) return false;
-    if(confirm === 'yes' && !d.confirm_review) return false;
-    if(confirm === 'no' && d.confirm_review) return false;
+    if(bearer.length && !bearer.includes(d.compensation_bearer)) return false;
+    if(reviewResult.length && !reviewResult.includes(d.compensation_review_result)) return false;
+    if(confirm.length && !(
+      (confirm.includes('yes') && d.confirm_review) ||
+      (confirm.includes('no') && !d.confirm_review)
+    )) return false;
     if(reviewFrom && (!d.review_date || d.review_date < reviewFrom)) return false;
     if(reviewTo && (!d.review_date || d.review_date > reviewTo)) return false;
     if(search){
@@ -2037,6 +2311,11 @@ function render(){
   const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  // SLA التعويض: average of (Compensation Date − Investigation Result Date) in
+  // days, over records where both dates are present and valid — computed once
+  // per record in buildData() (sla_compensation_days) and simply averaged here.
+  const compSlaVals = rows.map(d=>d.sla_compensation_days).filter(v=> typeof v === 'number' && isFinite(v));
+  const avgCompSla = compSlaVals.length ? (compSlaVals.reduce((a,b)=>a+b,0)/compSlaVals.length) : null;
 
   document.getElementById('kpiTotalSub').textContent = `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`;
   animateNumber(document.getElementById('kpiTotal'), total);
@@ -2048,6 +2327,9 @@ function render(){
   animateNumber(document.getElementById('kpiPending'), pending);
   document.getElementById('kpiSlaSub').textContent = `إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
   animateNumber(document.getElementById('kpiSla'), avgSla, { decimals:1 });
+  document.getElementById('kpiCompSlaSub').textContent = compSlaVals.length ? `${compSlaVals.length} حالة تحتوي على تاريخي التحقيق والتعويض` : 'لا تتوفر بيانات كافية';
+  if(avgCompSla === null){ document.getElementById('kpiCompSla').textContent = '—'; }
+  else { animateNumber(document.getElementById('kpiCompSla'), avgCompSla, { decimals:1 }); }
 
   updateCharts(rows);
   updateTable(rows);
@@ -2222,6 +2504,8 @@ function openModal(d){
       ${field('الحالة', statusBadge(d.status))}
       ${field('مبلغ التعويض', typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
       ${field('يتحمل التعويض', d.compensation_bearer)}
+      ${field('شهر التعويض', d.compensation_month)}
+      ${field('SLA التعويض (يوم)', typeof d.sla_compensation_days==='number' ? d.sla_compensation_days : '—')}
       ${fieldFull('ملاحظات', d.notes)}
     </div>
   `;
@@ -2233,7 +2517,7 @@ document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
 // ---------- Filter events ----------
-['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+ALL_FILTER_IDS.forEach(id=>{
   document.getElementById(id).addEventListener('change', render);
 });
 let searchTimer;
@@ -2242,7 +2526,8 @@ document.getElementById('fSearch').addEventListener('input', ()=>{
   searchTimer = setTimeout(render, 180);
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{
-  ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
+  MULTI_SELECT_IDS.forEach(id=>{ clearMultiSelect(id); syncMultiSelectUI(id); });
+  ['fDateFrom','fDateTo','fReviewFrom','fReviewTo'].forEach(id=> document.getElementById(id).value = '');
   document.getElementById('fSearch').value = '';
   extraFilter = null; extraFilterLabel = '';
   render();
@@ -3118,6 +3403,7 @@ function renderHandlerPerformance(rows){
   tbody.querySelectorAll('tr[data-owner]').forEach(tr=>{
     tr.addEventListener('click', ()=>{
       document.getElementById('fOwner').value = tr.dataset.owner;
+      syncMultiSelectUI('fOwner');
       render();
     });
   });
@@ -3310,8 +3596,9 @@ function renderKpiEnhancements(rows){
 
 // ---------- 4) Live statistics bar ----------
 function countActiveFilters(){
-  const ids = ['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fSearch','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
-  let n = ids.filter(id=> document.getElementById(id).value).length;
+  let n = MULTI_SELECT_IDS.filter(id=> getSelValues(id).length>0).length;
+  n += ['fDateFrom','fDateTo','fReviewFrom','fReviewTo'].filter(id=> document.getElementById(id).value).length;
+  if(document.getElementById('fSearch').value) n += 1;
   if(extraFilter) n += 1;
   return n;
 }
@@ -3407,7 +3694,7 @@ document.querySelectorAll('.panel h3').forEach(h=>{
 });
 
 // ---------- 8) Drill-down navigation on charts ----------
-function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; render(); } }
+function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; syncMultiSelectUI(id); render(); } }
 chartBranch.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBranch', chartBranch.data.labels[els[0].index]); } };
 chartStatus.options.onClick = (evt, els)=>{
   if(!els.length) return;
@@ -3675,6 +3962,7 @@ const ARABIC_FIELD_MAP = {
   'اسم المخطىء': 'faulty_person',
   'وظيفة المخطىء': 'faulty_person_job',
   'نتيجة التحقيق': 'investigation_result',
+  'تاريخ نتيجة التحقيق': 'investigation_result_date',
   'حالة الشكوى الحاليه': 'status',
   'التأكيد على المراجعه': 'confirm_review',
   'تارخ المراجعه': 'review_date',
@@ -3682,6 +3970,8 @@ const ARABIC_FIELD_MAP = {
   'وظيفه المتحمل': 'compensation_bearer',
   'نتيجه مراجعة التعويض': 'compensation_review_result',
   'رقم بوليصه التعويض': 'compensation_policy',
+  'شهر التعويض': 'compensation_month',
+  'تاريخ التعويض': 'compensation_date',
   'ملاحظات': 'notes',
   'sla': 'sla_days'
 };
@@ -3714,8 +4004,14 @@ function mapApiRecord(row){
   out.date_added = normDate(out.date_added);
   out.compensation_amount = toNumberOrNull(out.compensation_amount);
   out.sla_days = toNumberOrNull(out.sla_days);
+  out.investigation_result_date = normDate(out.investigation_result_date);
+  out.compensation_date = normDate(out.compensation_date);
   if(out.id !== undefined && out.id !== null) out.id = String(out.id).trim();
   if(!out.month) out.month = monthNameFromDate(out.date_added);
+  // "شهر التعويض" (compensation month): use the sheet column if present,
+  // otherwise derive it from the compensation date, falling back to the
+  // review date — mirrors how "month" itself falls back to date_added.
+  if(!out.compensation_month) out.compensation_month = monthNameFromDate(out.compensation_date) || monthNameFromDate(normDate(out.review_date));
   return out;
 }
 function mapApiRows(rows){
@@ -4416,10 +4712,11 @@ document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
 });
 
 // Global filters (Date From/To, Month, Owner, Branch, Status, Sender, Bearer,
-// Review Result, Confirmation, search, reset) act as the shared base for the
-// comparison — whenever any of them changes, refresh the compare panels too
-// (in addition to the main dashboard's own render()) so both stay in sync.
-['fOwner','fBranch','fType','fStatus','fMonth','fSender','fDateFrom','fDateTo','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'].forEach(id=>{
+// Review Result, Confirmation, Classification, Compensation Month, search, reset)
+// act as the shared base for the comparison — whenever any of them changes,
+// refresh the compare panels too (in addition to the main dashboard's own
+// render()) so both stay in sync.
+ALL_FILTER_IDS.forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{ if(compareModeActive) renderComparePanels(); });
 });
 let compareSearchTimer;
