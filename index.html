@@ -1498,7 +1498,19 @@
         <label class="compare-by-check"><input type="checkbox" value="month"> الشهر</label>
       </div>
     </div>
-    <div class="compare-by-hint" id="compareByHint">تتم إضافة عوامل التصفية العامة (التاريخ، الشهر، إلخ) تلقائيًا كأساس للمقارنة، ثم تُطبَّق فوقها كل القيم المختارة (بينها AND) لكل لوحة على حدة.</div>
+    <div class="compare-by-hint" id="compareByHint">تتم إضافة عوامل التصفية العامة (التاريخ، الشهر، إلخ) بالإضافة إلى تصنيف المشكلة وشهر التعويض المختارين أدناه تلقائيًا كأساس للمقارنة، ثم تُطبَّق فوقها كل القيم المختارة (بينها AND) لكل لوحة على حدة.</div>
+  </div>
+
+  <div class="compare-filter-bar" id="compareSharedFilterBar">
+    <div class="fgroup">
+      <label for="fClassificationCompare">تصنيف المشكلة</label>
+      <select id="fClassificationCompare" multiple></select>
+    </div>
+    <div class="fgroup">
+      <label for="fCompMonthCompare">شهر التعويض</label>
+      <select id="fCompMonthCompare" multiple></select>
+    </div>
+    <button class="qa-btn" id="btnCompareFilterReset" type="button"><span class="qa-icon">↺</span> إعادة تصفية المقارنة</button>
   </div>
 
   <div class="compare-toolbar">
@@ -2035,6 +2047,12 @@ MULTI_SELECT_IDS.forEach(id=> mountMultiSelect(id));
 // Every filter-bar control (multi-selects + date ranges) — used for the
 // change-listener wiring, the reset button, and the active-filter count.
 const ALL_FILTER_IDS = [...MULTI_SELECT_IDS, 'fDateFrom','fDateTo','fReviewFrom','fReviewTo'];
+// Comparison Mode's own shared filters (تصنيف المشكلة / شهر التعويض) — layered
+// on top of the main filter bar as an extra base restriction that applies to
+// BOTH comparison panels equally. Reuses the exact same mountMultiSelect()
+// component as the main dashboard filters (no duplicated markup/logic).
+const COMPARE_SHARED_FILTER_IDS = ['fClassificationCompare','fCompMonthCompare'];
+COMPARE_SHARED_FILTER_IDS.forEach(id=> mountMultiSelect(id));
 
 // ---------- Populate filter dropdowns ----------
 function uniqueSorted(key){
@@ -2075,6 +2093,9 @@ function populateFilters(){
   const compMonths = uniqueSorted('compensation_month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
   fillSelect('fCompMonth', compMonths);
   syncMultiSelectUI('fConfirm');
+  // Comparison Mode's shared filters mirror the same source columns.
+  fillSelect('fClassificationCompare', uniqueSorted('classification'));
+  fillSelect('fCompMonthCompare', compMonths);
 }
 
 // Updates the header meta bar / date-range inputs from current DATA. Safe to
@@ -4436,11 +4457,18 @@ function getActiveCompareFields(){
 function fieldSelectId(suf, key){ return `cValue_${suf}__${key}`; }
 
 // Base rows = every currently-active GLOBAL filter (Date From/To, Month, Owner,
-// Branch, Status, search, etc. — same logic as the main dashboard's getFiltered()).
+// Branch, Status, search, etc. — same logic as the main dashboard's getFiltered())
+// PLUS Comparison Mode's own shared filters (تصنيف المشكلة / شهر التعويض).
 // Each panel's chosen field values are then AND'ed on TOP of that shared base, so
-// a comparison is always: Global Filters + Left selections  vs.  Global Filters + Right selections.
+// a comparison is always: Global Filters + Compare Filters + Left selections  vs.
+// Global Filters + Compare Filters + Right selections.
 function getCompareBaseRows(){
-  return typeof getFiltered === 'function' ? getFiltered() : DATA.slice();
+  let rows = typeof getFiltered === 'function' ? getFiltered() : DATA.slice();
+  const cls = getSelValues('fClassificationCompare');
+  const compMonth = getSelValues('fCompMonthCompare');
+  if(cls.length) rows = rows.filter(d=> cls.includes(d.classification));
+  if(compMonth.length) rows = rows.filter(d=> compMonth.includes(d.compensation_month));
+  return rows;
 }
 
 function getFilteredForPanel(suf){
@@ -4719,12 +4747,24 @@ document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
 ALL_FILTER_IDS.forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{ if(compareModeActive) renderComparePanels(); });
 });
+// Comparison Mode's own shared filters (تصنيف المشكلة / شهر التعويض): affect
+// both panels immediately, just like the global filters above.
+COMPARE_SHARED_FILTER_IDS.forEach(id=>{
+  document.getElementById(id).addEventListener('change', ()=>{ if(compareModeActive) renderComparePanels(); });
+});
 let compareSearchTimer;
 document.getElementById('fSearch').addEventListener('input', ()=>{
   clearTimeout(compareSearchTimer);
   compareSearchTimer = setTimeout(()=>{ if(compareModeActive) renderComparePanels(); }, 180);
 });
 document.getElementById('btnReset').addEventListener('click', ()=>{ if(compareModeActive) renderComparePanels(); });
+// Comparison filter reset: clears تصنيف المشكلة + شهر التعويض (Comparison
+// Mode's own shared filters) without touching the main dashboard's global
+// filters, then refreshes both panels.
+document.getElementById('btnCompareFilterReset').addEventListener('click', ()=>{
+  COMPARE_SHARED_FILTER_IDS.forEach(id=>{ clearMultiSelect(id); syncMultiSelectUI(id); });
+  if(compareModeActive) renderComparePanels();
+});
 // =================== End Compare Mode ===================
 
 
