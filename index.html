@@ -1841,13 +1841,9 @@ function buildData(raw){
     const investigation_result_date = normDate(d.investigation_result_date);
     const compensation_date = normDate(d.compensation_date);
     const review_date = normDate(d.review_date);
-    // "شهر التعويض" (compensation month): prefer an explicit value, otherwise
-    // derive it from the compensation date, falling back to the review date —
-    // same fallback pattern used for the existing "month" field.
-    const compensation_month = safeStr(d.compensation_month).trim()
-      || monthNameFromDate(compensation_date)
-      || monthNameFromDate(review_date)
-      || '';
+    // "شهر التعويض" is taken only from the explicit sheet value.
+    // If the cell is cleared, it must not be inferred from any date.
+    const compensation_month = safeStr(d.compensation_month).trim() || '';
     // "SLA التعويض": Compensation Date − Investigation Result Date, in days.
     // Both dates must be present and valid, otherwise the record is excluded
     // (kept null) so it never pollutes the average.
@@ -4010,10 +4006,9 @@ function mapApiRecord(row){
   out.compensation_date = normDate(out.compensation_date);
   if(out.id !== undefined && out.id !== null) out.id = String(out.id).trim();
   if(!out.month) out.month = monthNameFromDate(out.date_added);
-  // "شهر التعويض" (compensation month): use the sheet column if present,
-  // otherwise derive it from the compensation date, falling back to the
-  // review date — mirrors how "month" itself falls back to date_added.
-  if(!out.compensation_month) out.compensation_month = monthNameFromDate(out.compensation_date) || monthNameFromDate(normDate(out.review_date));
+  // "شهر التعويض" is taken only from the sheet column.
+  // Never infer it from compensation_date or review_date after the cell is cleared.
+  out.compensation_month = safeStr(out.compensation_month).trim() || '';
   return out;
 }
 function mapApiRows(rows){
