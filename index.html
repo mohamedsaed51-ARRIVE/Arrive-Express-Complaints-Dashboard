@@ -2080,7 +2080,7 @@ function populateFilters(){
 function updateMetaBar(){
   document.getElementById('metaTotal').textContent = DATA.length;
   document.getElementById('metaBranches').textContent = uniqueSorted('branch').length;
-  const totalComp = DATA.reduce((s,d)=> s + (typeof d.compensation_amount==='number' ? d.compensation_amount : 0), 0);
+  const totalComp = DATA.reduce((s,d)=> s + (typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() ? d.compensation_amount : 0), 0);
   document.getElementById('metaComp').textContent = totalComp.toLocaleString('en-US');
   dates = DATA.map(d=>d.date_added).filter(Boolean).sort();
   if(dates.length){
@@ -2308,7 +2308,7 @@ function render(){
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
   const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
-  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()?d.compensation_amount:0), 0);
   // SLA التعويض: average of (Compensation Date − Investigation Result Date) in
   // days, over records where both dates are present and valid — computed once
   // per record in buildData() (sla_compensation_days) and simply averaged here.
@@ -2404,7 +2404,7 @@ function updateCharts(rows){
     if(!d.compensation_bearer) return;
     if(!bearerAgg[d.compensation_bearer]) bearerAgg[d.compensation_bearer] = {amount:0, count:0};
     bearerAgg[d.compensation_bearer].count += 1;
-    if(typeof d.compensation_amount === 'number') bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
+    if(typeof d.compensation_amount === 'number' && safeStr(d.compensation_month).trim()) bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
   });
   const bearerEntries = Object.entries(bearerAgg).sort((a,b)=> b[1].amount - a[1].amount);
   chartBearer.data.labels = bearerEntries.map(x=>x[0]);
@@ -2453,7 +2453,7 @@ function updateTable(rows){
       <td>${d.branch ?? ''}</td>
       <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
       <td>${statusBadge(d.status)}</td>
-      <td class="amount-cell">${typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
+      <td class="amount-cell">${typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
     </tr>
   `).join('');
 
@@ -2500,7 +2500,7 @@ function openModal(d){
       ${fieldFull('محتوى الشكوى', d.content)}
       ${field('نتيجة التحقيق', d.investigation_result)}
       ${field('الحالة', statusBadge(d.status))}
-      ${field('مبلغ التعويض', typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
+      ${field('مبلغ التعويض', typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
       ${field('يتحمل التعويض', d.compensation_bearer)}
       ${field('شهر التعويض', d.compensation_month)}
       ${field('SLA التعويض (يوم)', typeof d.sla_compensation_days==='number' ? d.sla_compensation_days : '—')}
@@ -2642,12 +2642,12 @@ function computeAlerts(rows){
   const compVals = rows.map(d=> d.compensation_amount).filter(v=> typeof v==='number');
   const compAvg = compVals.length ? compVals.reduce((a,b)=>a+b,0)/compVals.length : 0;
   const compThreshold = compAvg * 2;
-  const highCompRows = compVals.length ? rows.filter(d=> typeof d.compensation_amount==='number' && d.compensation_amount > compThreshold && compThreshold>0) : [];
+  const highCompRows = compVals.length ? rows.filter(d=> typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() && d.compensation_amount > compThreshold && compThreshold>0) : [];
   alerts.push({
     priority:'high', emoji:'🟡', label:'مرتفع',
     desc:`شكاوى بتعويض مرتفع بشكل غير معتاد (أكثر من ضعف متوسط التعويض الحالي البالغ ${Math.round(compAvg).toLocaleString('en-US')} ج.م)`,
     count: highCompRows.length,
-    onClick: ()=> setExtraFilter(d=> typeof d.compensation_amount==='number' && d.compensation_amount>compThreshold && compThreshold>0, 'تعويضات مرتفعة بشكل غير معتاد')
+    onClick: ()=> setExtraFilter(d=> typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() && d.compensation_amount>compThreshold && compThreshold>0, 'تعويضات مرتفعة بشكل غير معتاد')
   });
 
   // Handler performance drop: score declined meaningfully between the two halves of the current period
@@ -2716,9 +2716,9 @@ function computeCoreExecutiveMetrics(rows){
   const slaOk = slaVals.filter(v=> v<=7).length;
   const slaCompliance = slaVals.length ? Math.round((slaOk/slaVals.length)*100) : null;
   const avgResolution = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : null;
-  const totalComp = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  const totalComp = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()?d.compensation_amount:0), 0);
   const closureRate = total ? Math.round((closed/total)*100) : null;
-  const compRows = rows.filter(d=> typeof d.compensation_amount==='number');
+  const compRows = rows.filter(d=> typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim());
   const avgComp = compRows.length ? totalComp/compRows.length : null;
   const handlerCount = new Set(rows.filter(d=> d.owner && d.owner!=='غير محدد').map(d=>d.owner)).size;
   const avgPerHandler = handlerCount ? total/handlerCount : null;
@@ -2898,7 +2898,7 @@ function computeExecutiveSummary(rows){
     result.highestSlaHandler = withSla.slice().sort((a,b)=> b.slaCompliance-a.slaCompliance)[0];
   }
 
-  const compRows = rows.filter(d=> typeof d.compensation_amount === 'number');
+  const compRows = rows.filter(d=> typeof d.compensation_amount === 'number' && safeStr(d.compensation_month).trim());
   if(compRows.length){
     result.highestComp = compRows.slice().sort((a,b)=> b.compensation_amount-a.compensation_amount)[0];
   }
@@ -3166,7 +3166,7 @@ function computeInsights(rows){
 
   // Compensation bearer with highest liability
   const bearerAgg = {};
-  rows.forEach(d=>{ if(d.compensation_bearer && typeof d.compensation_amount==='number'){ bearerAgg[d.compensation_bearer]=(bearerAgg[d.compensation_bearer]||0)+d.compensation_amount; } });
+  rows.forEach(d=>{ if(d.compensation_bearer && typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()){ bearerAgg[d.compensation_bearer]=(bearerAgg[d.compensation_bearer]||0)+d.compensation_amount; } });
   const topBearer = Object.entries(bearerAgg).sort((a,b)=>b[1]-a[1])[0];
   const totalCompAgg = Object.values(bearerAgg).reduce((a,b)=>a+b,0);
   if(topBearer){
@@ -3238,7 +3238,7 @@ function computeActionCenter(rows){
   const order = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
   const monthKeys = Object.keys(byMonth).sort((a,b)=> order.indexOf(a)-order.indexOf(b));
   if(monthKeys.length>=2){
-    const compOf = arr=> arr.reduce((s,d)=> s+(typeof d.compensation_amount==='number'?d.compensation_amount:0),0);
+    const compOf = arr=> arr.reduce((s,d)=> s+(typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()?d.compensation_amount:0),0);
     const lastM = monthKeys[monthKeys.length-1], prevM = monthKeys[monthKeys.length-2];
     const lastComp = compOf(byMonth[lastM]), prevComp = compOf(byMonth[prevM]);
     if(prevComp>0 && lastComp > prevComp*1.2){
@@ -3430,7 +3430,7 @@ function computeTopPerformers(rows){
   // Top compensation cost grouped by complaint classification/reason
   const compByReason = {};
   rows.forEach(d=>{
-    if(typeof d.compensation_amount === 'number' && d.classification && d.classification!=='غير مصنف'){
+    if(typeof d.compensation_amount === 'number' && safeStr(d.compensation_month).trim() && d.classification && d.classification!=='غير مصنف'){
       compByReason[d.classification] = (compByReason[d.classification]||0) + d.compensation_amount;
     }
   });
@@ -3772,7 +3772,7 @@ function appendTableChunk(){
       <td>${d.branch ?? ''}</td>
       <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
       <td>${statusBadge(d.status)}</td>
-      <td class="amount-cell">${typeof d.compensation_amount==='number' ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
+      <td class="amount-cell">${typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim() ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
     </tr>
   `).join('');
   tbody.insertAdjacentHTML('beforeend', html);
@@ -4004,6 +4004,7 @@ function mapApiRecord(row){
   out.sla_days = toNumberOrNull(out.sla_days);
   out.investigation_result_date = normDate(out.investigation_result_date);
   out.compensation_date = normDate(out.compensation_date);
+   out.compensation_month = safeStr(out.compensation_month).trim() || '';
   if(out.id !== undefined && out.id !== null) out.id = String(out.id).trim();
   if(!out.month) out.month = monthNameFromDate(out.date_added);
   // "شهر التعويض" is taken only from the sheet column.
@@ -4334,7 +4335,7 @@ function updateCompareChartSet(set, rows){
     if(!d.compensation_bearer) return;
     if(!bearerAgg[d.compensation_bearer]) bearerAgg[d.compensation_bearer] = {amount:0, count:0};
     bearerAgg[d.compensation_bearer].count += 1;
-    if(typeof d.compensation_amount === 'number') bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
+    if(typeof d.compensation_amount === 'number' && safeStr(d.compensation_month).trim()) bearerAgg[d.compensation_bearer].amount += d.compensation_amount;
   });
   const bearerEntries = Object.entries(bearerAgg).sort((a,b)=> b[1].amount - a[1].amount);
   set.bearer.data.labels = bearerEntries.map(x=>x[0]);
@@ -4560,7 +4561,7 @@ function computeCompareSummaryMetrics(rows){
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
   const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
-  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()?d.compensation_amount:0), 0);
   return { total, acceptRate, avgSla, compSum };
 }
 
@@ -4617,7 +4618,7 @@ function renderComparePanel(suf, rows){
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
   const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
-  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number'?d.compensation_amount:0), 0);
+  const compSum = rows.reduce((s,d)=> s + (typeof d.compensation_amount==='number' && safeStr(d.compensation_month).trim()?d.compensation_amount:0), 0);
 
   setCompareText('kpiTotal_'+suf, total.toLocaleString('en-US'));
   setCompareText('kpiTotalSub_'+suf, `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`);
