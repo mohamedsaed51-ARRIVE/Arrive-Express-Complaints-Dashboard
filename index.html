@@ -1782,26 +1782,26 @@ const RAW_DATA = [];
 // so the dashboard is always populated and browsable instead of showing a blocked/empty state.
 // Field names already match the normalized shape expected by buildData().
 const DEMO_DATA = [
-  { id:'90001', owner:'Amir', admin:'Mariam Eid', complainant:'Yolive - يوليفي', policy:'ARV70001', content:'الراسل معترض على تحمل تكلفة الوزن الزايد بدون الرجوع اليه وابلاغه', type:'شكوى تخص الحسابات', date_added:'2026-06-15', month:'يونيو', branch:'الشرقيه', classification:'وزن زائد', investigation_result:'تم ابلاغ الوكيل و تم قبول التعويض بعد المراجعة', status:'تم قبول التعويض', compensation_amount:50, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-18', sla_days:2, faulty_person:'التوني الشرقيه', notes:'' },
-  { id:'90002', owner:'روان', admin:'Hager Shaban', complainant:'Gogoo - جوجو', policy:'RV70002', content:'الراسل موضح ان القطعه وصلته تالفة والفلاير غير سليم', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'الرئيسى', classification:'شحنه هالكه', investigation_result:'تم التبليغ على جروب المرتجعات', status:'تم قبول التعويض', compensation_amount:220, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:1, faulty_person:'', notes:'' },
-  { id:'90003', owner:'Amir', admin:'Merna Hany', complainant:'فكرة - Fekra', policy:'ARV70003', content:'شحنة مفقودة لا يوجد ابديت منذ عدة ايام', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'البحيره', classification:'تاخير مرتجع', investigation_result:'في انتظار افادة الوكيل', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', sla_days:2, faulty_person:'وكيل البحيره', notes:'' },
-  { id:'90004', owner:'روان', admin:'Mariam Eid', complainant:'pandora', policy:'RV70004', content:'الراسل معترض ان الاوردر وصل للعميله متكسر', type:'شكوى تخص التوصيل', date_added:'2026-06-15', month:'يونيو', branch:'المنوفيه', classification:'شحنه هالكه', investigation_result:'المندوب اكد تسليم الشحنه سليمة من الفرع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'المنشاوى', notes:'' },
-  { id:'90005', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70005', content:'الاوردر عباره عن كابل شحن وراس شاحن ووصل ناقص', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'الاوردر وصل للعميله مقفول وفتحت امام المندوب', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'', notes:'' },
-  { id:'90006', owner:'Amir', admin:'Mostafa Nasr', complainant:'Civa - سيفا', policy:'ARV70006', content:'رجع للراسل محتوى غير محتوى القطعه', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'الهرم', classification:'مرتجع متبدل', investigation_result:'تم التواصل مع المندوب وتأكيد استلام الشحنه', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', sla_days:3, faulty_person:'احمد سمير', notes:'' },
-  { id:'90007', owner:'منة', admin:'Aya Atef', complainant:'ياقوت استور', policy:'RV70007', content:'كان من المفترض رجوع قطعتين وتم رجوع قطعه واحده فقط', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'جارى مراجعة الكاميرات للتأكد من محتوى المرتجع', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, sla_days:null, faulty_person:'', notes:'' },
-  { id:'90008', owner:'روان', admin:'Hager Shaban', complainant:'اخوان عثماني للملابس الداخليه', policy:'MR70008', content:'العميل دافع مصاريف شحن اكثر من المطلوب', type:'شكوى تخص التوصيل', date_added:'2026-06-15', month:'يونيو', branch:'not mentioned', classification:'خطأ راسل', investigation_result:'تم التواصل مع المرسل اليه وتأكيد المبلغ الصحيح', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-21', sla_days:6, faulty_person:'', notes:'' },
-  { id:'90009', owner:'منة', admin:'Merna Hany', complainant:'Skin Soap - سكين سوب', policy:'ARV70009', content:'الشحنة متقفلة تهرب بعد الوصول ولا يوجد اثبات', type:'شكوى تخص الحسابات', date_added:'2026-06-15', month:'يونيو', branch:'الصعيد', classification:'سلوك مندوب', investigation_result:'لا يوجد اثبات تهرب من الوكيل', status:'تم قبول التعويض', compensation_amount:100, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:2, faulty_person:'ادم الصعيد', notes:'' },
-  { id:'90010', owner:'منة', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر داخل رفض استلام والشحن المدفوع اقل من المطلوب', type:'شكوى تخص الحسابات', date_added:'2026-06-14', month:'يونيو', branch:'القليوبيه', classification:'سلوك مندوب', investigation_result:'مراجعة المندوب وتأكيد المبلغ المدفوع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'', notes:'' },
-  { id:'90011', owner:'روان', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر تسليم جزئي واقل من السعر المتفق عليه', type:'شكوى تخص الحسابات', date_added:'2026-06-14', month:'يونيو', branch:'مدينه نصر', classification:'سلوك مندوب', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'تم قبول التعويض', compensation_amount:60, compensation_bearer:'مندوب', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:2, faulty_person:'محمد الجزار', notes:'' },
-  { id:'90012', owner:'روان', admin:'Mostafa Nasr', complainant:'Miss candy - ميس كاندى', policy:'AV70012', content:'العميل دفع اكثر من المبلغ المقفول على السيستم', type:'شكوى تخص أداء المناديب', date_added:'2026-06-14', month:'يونيو', branch:'المنوفيه', classification:'سلوك مندوب', investigation_result:'تم التواصل مع المرسل اليه لتأكيد المبلغ', status:'تم قبول التعويض', compensation_amount:10, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'المنشاوى', notes:'' },
-  { id:'90013', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70013', content:'العميل بلغ ان الاوردر لم يصل ضمن المرتجعات', type:'شكوى تخص المرتجعات', date_added:'2026-06-14', month:'يونيو', branch:'الرئيسى', classification:'مرتجع مفقود', investigation_result:'تبين ان الشحنه لم يتم ارجاعها فى نفس اليوم', status:'تم قبول التعويض', compensation_amount:375, compensation_bearer:'المرتجعات', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', sla_days:3, faulty_person:'', notes:'' },
-  { id:'90014', owner:'منة', admin:'Mostafa Nasr', complainant:'OREA', policy:'AV70014', content:'الاوردر كان قطعتين ورجع قطعه واحده', type:'شكوى تخص المرتجعات', date_added:'2026-06-13', month:'يونيو', branch:'اسكندريه', classification:'مرتجع متبدل', investigation_result:'تم العثور على القطعه لدى عميل آخر', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-07-01', sla_days:18, faulty_person:'احمد عادل محمود', notes:'' },
-  { id:'90015', owner:'منة', admin:'Nada Mohamed', complainant:'italian express - ايطاليان اكسبريس', policy:'AV70015', content:'وزن الشحنه اتغير بدون ابلاغ الابعاد المستخدمة', type:'شكوى تخص التوصيل', date_added:'2026-06-13', month:'يونيو', branch:'not mentioned', classification:'وزن زائد', investigation_result:'لا يوجد ابعاد حقيقية تثبت زيادة الوزن', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-14', sla_days:1, faulty_person:'', notes:'' },
-  { id:'90016', owner:'روان', admin:'Nada Mohamed', complainant:'Raz_راز', policy:'', content:'اختلاف فى عدد الشحنات المستلمة من المندوب', type:'شكوى تخص التوصيل', date_added:'2026-06-09', month:'يونيو', branch:'الرئيسى', classification:'شحنه مفقوده', investigation_result:'جارى مراجعة الكاميرات وتفريغها', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, sla_days:null, faulty_person:'', notes:'' },
-  { id:'90017', owner:'منة', admin:'Reham Hamdy', complainant:'ايزيس - ezzis', policy:'ARV70017', content:'الاوردر رجع للراسل فيه تلف وتم ارسال الصور', type:'شكوى تخص التوصيل', date_added:'2026-06-11', month:'يونيو', branch:'حدائق القبه', classification:'شحنه هالكه', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'التعويض مسبقا', compensation_amount:1195, compensation_bearer:'مندوب', compensation_review_result:'تم التعويض مسبقا', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:5, faulty_person:'محمد الجزار', notes:'الشحنه تم التعويض عنها مسبقا' },
-  { id:'90018', owner:'منة', admin:'Reham Hamdy', complainant:'حياه - Hayah', policy:'ARV70018', content:'الاوردر رجع للراسل خطأ منتجات غير خاصة به', type:'شكوى تخص المرتجعات', date_added:'2026-06-11', month:'يونيو', branch:'المؤسسه', classification:'مرتجع متبدل', investigation_result:'المرتجع واضح انه جديد ومتبدل مع اكونت آخر', status:'تم قبول التعويض', compensation_amount:1345, compensation_bearer:'موظف اوبريشين', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:5, faulty_person:'مدحت سعيد', notes:'' },
-  { id:'90019', owner:'منة', admin:'Amany Hassan', complainant:'ميكس اند ماكس', policy:'ARV70019', content:'المرسل اليه بلغت انها دفعت مصاريف شحن اعلى', type:'شكوى تخص التوصيل', date_added:'2026-05-20', month:'مايو', branch:'الشرقيه', classification:'خطأ وكيل', investigation_result:'العميله لا ترد على المكالمات للمراجعة', status:'غير محدد', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'', review_date:null, sla_days:1, faulty_person:'', notes:'' },
-  { id:'90020', owner:'Amir', admin:'KHM Womens wear', complainant:'KHM Womens wear', policy:'', content:'تحصيل الاوردر اقل من المتفق عليه والفرق مطلوب رده', type:'شكوى تخص الحسابات', date_added:'2026-05-18', month:'مايو', branch:'الصعيد', classification:'عدم تنفيذ طلب خاص بالعميل', investigation_result:'تم ابلاغ الوكيل ولم يتم الرد بافادة', status:'تم قبول التعويض', compensation_amount:70, compensation_bearer:'وكيل', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', sla_days:4, faulty_person:'احمد نصر', notes:'' },
+  { id:'90001', owner:'Amir', admin:'Mariam Eid', complainant:'Yolive - يوليفي', policy:'ARV70001', content:'الراسل معترض على تحمل تكلفة الوزن الزايد بدون الرجوع اليه وابلاغه', type:'شكوى تخص الحسابات', date_added:'2026-06-15', investigation_result_date:'2026-06-17', month:'يونيو', branch:'الشرقيه', classification:'وزن زائد', investigation_result:'تم ابلاغ الوكيل و تم قبول التعويض بعد المراجعة', status:'تم قبول التعويض', compensation_amount:50, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-18', compensation_date:'2026-06-18', sla_days:2, faulty_person:'التوني الشرقيه', notes:'' },
+  { id:'90002', owner:'روان', admin:'Hager Shaban', complainant:'Gogoo - جوجو', policy:'RV70002', content:'الراسل موضح ان القطعه وصلته تالفة والفلاير غير سليم', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', investigation_result_date:'2026-06-16', month:'يونيو', branch:'الرئيسى', classification:'شحنه هالكه', investigation_result:'تم التبليغ على جروب المرتجعات', status:'تم قبول التعويض', compensation_amount:220, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', compensation_date:'2026-06-16', sla_days:1, faulty_person:'', notes:'' },
+  { id:'90003', owner:'Amir', admin:'Merna Hany', complainant:'فكرة - Fekra', policy:'ARV70003', content:'شحنة مفقودة لا يوجد ابديت منذ عدة ايام', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', investigation_result_date:'2026-06-17', month:'يونيو', branch:'البحيره', classification:'تاخير مرتجع', investigation_result:'في انتظار افادة الوكيل', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', compensation_date:null, sla_days:2, faulty_person:'وكيل البحيره', notes:'' },
+  { id:'90004', owner:'روان', admin:'Mariam Eid', complainant:'pandora', policy:'RV70004', content:'الراسل معترض ان الاوردر وصل للعميله متكسر', type:'شكوى تخص التوصيل', date_added:'2026-06-15', investigation_result_date:'2026-06-18', month:'يونيو', branch:'المنوفيه', classification:'شحنه هالكه', investigation_result:'المندوب اكد تسليم الشحنه سليمة من الفرع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', compensation_date:null, sla_days:3, faulty_person:'المنشاوى', notes:'' },
+  { id:'90005', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70005', content:'الاوردر عباره عن كابل شحن وراس شاحن ووصل ناقص', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', investigation_result_date:'2026-06-18', month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'الاوردر وصل للعميله مقفول وفتحت امام المندوب', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', compensation_date:null, sla_days:3, faulty_person:'', notes:'' },
+  { id:'90006', owner:'Amir', admin:'Mostafa Nasr', complainant:'Civa - سيفا', policy:'ARV70006', content:'رجع للراسل محتوى غير محتوى القطعه', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', investigation_result_date:'2026-06-18', month:'يونيو', branch:'الهرم', classification:'مرتجع متبدل', investigation_result:'تم التواصل مع المندوب وتأكيد استلام الشحنه', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-18', compensation_date:null, sla_days:3, faulty_person:'احمد سمير', notes:'' },
+  { id:'90007', owner:'منة', admin:'Aya Atef', complainant:'ياقوت استور', policy:'RV70007', content:'كان من المفترض رجوع قطعتين وتم رجوع قطعه واحده فقط', type:'شكوى تخص المرتجعات', date_added:'2026-06-15', investigation_result_date:null, month:'يونيو', branch:'not mentioned', classification:'مرتجع مفقود', investigation_result:'جارى مراجعة الكاميرات للتأكد من محتوى المرتجع', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, compensation_date:null, sla_days:null, faulty_person:'', notes:'' },
+  { id:'90008', owner:'روان', admin:'Hager Shaban', complainant:'اخوان عثماني للملابس الداخليه', policy:'MR70008', content:'العميل دافع مصاريف شحن اكثر من المطلوب', type:'شكوى تخص التوصيل', date_added:'2026-06-15', investigation_result_date:'2026-06-21', month:'يونيو', branch:'not mentioned', classification:'خطأ راسل', investigation_result:'تم التواصل مع المرسل اليه وتأكيد المبلغ الصحيح', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-21', compensation_date:null, sla_days:6, faulty_person:'', notes:'' },
+  { id:'90009', owner:'منة', admin:'Merna Hany', complainant:'Skin Soap - سكين سوب', policy:'ARV70009', content:'الشحنة متقفلة تهرب بعد الوصول ولا يوجد اثبات', type:'شكوى تخص الحسابات', date_added:'2026-06-15', investigation_result_date:'2026-06-17', month:'يونيو', branch:'الصعيد', classification:'سلوك مندوب', investigation_result:'لا يوجد اثبات تهرب من الوكيل', status:'تم قبول التعويض', compensation_amount:100, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', compensation_date:'2026-06-17', sla_days:2, faulty_person:'ادم الصعيد', notes:'' },
+  { id:'90010', owner:'منة', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر داخل رفض استلام والشحن المدفوع اقل من المطلوب', type:'شكوى تخص الحسابات', date_added:'2026-06-14', investigation_result_date:'2026-06-17', month:'يونيو', branch:'القليوبيه', classification:'سلوك مندوب', investigation_result:'مراجعة المندوب وتأكيد المبلغ المدفوع', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-17', compensation_date:null, sla_days:3, faulty_person:'', notes:'' },
+  { id:'90011', owner:'روان', admin:'FirsTOne Fashion', complainant:'FirsTOne Fashion', policy:'', content:'الاوردر تسليم جزئي واقل من السعر المتفق عليه', type:'شكوى تخص الحسابات', date_added:'2026-06-14', investigation_result_date:'2026-06-16', month:'يونيو', branch:'مدينه نصر', classification:'سلوك مندوب', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'تم قبول التعويض', compensation_amount:60, compensation_bearer:'مندوب', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', compensation_date:'2026-06-16', sla_days:2, faulty_person:'محمد الجزار', notes:'' },
+  { id:'90012', owner:'روان', admin:'Mostafa Nasr', complainant:'Miss candy - ميس كاندى', policy:'AV70012', content:'العميل دفع اكثر من المبلغ المقفول على السيستم', type:'شكوى تخص أداء المناديب', date_added:'2026-06-14', investigation_result_date:'2026-06-17', month:'يونيو', branch:'المنوفيه', classification:'سلوك مندوب', investigation_result:'تم التواصل مع المرسل اليه لتأكيد المبلغ', status:'تم قبول التعويض', compensation_amount:10, compensation_bearer:'الشركه', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', compensation_date:'2026-06-17', sla_days:3, faulty_person:'المنشاوى', notes:'' },
+  { id:'90013', owner:'منة', admin:'Amany Hassan', complainant:'Creativo - كرياتيفو', policy:'ARV70013', content:'العميل بلغ ان الاوردر لم يصل ضمن المرتجعات', type:'شكوى تخص المرتجعات', date_added:'2026-06-14', investigation_result_date:'2026-06-17', month:'يونيو', branch:'الرئيسى', classification:'مرتجع مفقود', investigation_result:'تبين ان الشحنه لم يتم ارجاعها فى نفس اليوم', status:'تم قبول التعويض', compensation_amount:375, compensation_bearer:'المرتجعات', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-17', compensation_date:'2026-06-17', sla_days:3, faulty_person:'', notes:'' },
+  { id:'90014', owner:'منة', admin:'Mostafa Nasr', complainant:'OREA', policy:'AV70014', content:'الاوردر كان قطعتين ورجع قطعه واحده', type:'شكوى تخص المرتجعات', date_added:'2026-06-13', investigation_result_date:'2026-07-01', month:'يونيو', branch:'اسكندريه', classification:'مرتجع متبدل', investigation_result:'تم العثور على القطعه لدى عميل آخر', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-07-01', compensation_date:null, sla_days:18, faulty_person:'احمد عادل محمود', notes:'' },
+  { id:'90015', owner:'منة', admin:'Nada Mohamed', complainant:'italian express - ايطاليان اكسبريس', policy:'AV70015', content:'وزن الشحنه اتغير بدون ابلاغ الابعاد المستخدمة', type:'شكوى تخص التوصيل', date_added:'2026-06-13', investigation_result_date:'2026-06-14', month:'يونيو', branch:'not mentioned', classification:'وزن زائد', investigation_result:'لا يوجد ابعاد حقيقية تثبت زيادة الوزن', status:'تم رفض التعويض', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:'2026-06-14', compensation_date:null, sla_days:1, faulty_person:'', notes:'' },
+  { id:'90016', owner:'روان', admin:'Nada Mohamed', complainant:'Raz_راز', policy:'', content:'اختلاف فى عدد الشحنات المستلمة من المندوب', type:'شكوى تخص التوصيل', date_added:'2026-06-09', investigation_result_date:null, month:'يونيو', branch:'الرئيسى', classification:'شحنه مفقوده', investigation_result:'جارى مراجعة الكاميرات وتفريغها', status:'جارى التحقيق', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'TRUE', review_date:null, compensation_date:null, sla_days:null, faulty_person:'', notes:'' },
+  { id:'90017', owner:'منة', admin:'Reham Hamdy', complainant:'ايزيس - ezzis', policy:'ARV70017', content:'الاوردر رجع للراسل فيه تلف وتم ارسال الصور', type:'شكوى تخص التوصيل', date_added:'2026-06-11', investigation_result_date:'2026-06-16', month:'يونيو', branch:'حدائق القبه', classification:'شحنه هالكه', investigation_result:'تم ابلاغ الاوبريشن على الجروب', status:'التعويض مسبقا', compensation_amount:1195, compensation_bearer:'مندوب', compensation_review_result:'تم التعويض مسبقا', confirm_review:'TRUE', review_date:'2026-06-16', compensation_date:'2026-06-16', sla_days:5, faulty_person:'محمد الجزار', notes:'الشحنه تم التعويض عنها مسبقا' },
+  { id:'90018', owner:'منة', admin:'Reham Hamdy', complainant:'حياه - Hayah', policy:'ARV70018', content:'الاوردر رجع للراسل خطأ منتجات غير خاصة به', type:'شكوى تخص المرتجعات', date_added:'2026-06-11', investigation_result_date:'2026-06-16', month:'يونيو', branch:'المؤسسه', classification:'مرتجع متبدل', investigation_result:'المرتجع واضح انه جديد ومتبدل مع اكونت آخر', status:'تم قبول التعويض', compensation_amount:1345, compensation_bearer:'موظف اوبريشين', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', compensation_date:'2026-06-16', sla_days:5, faulty_person:'مدحت سعيد', notes:'' },
+  { id:'90019', owner:'منة', admin:'Amany Hassan', complainant:'ميكس اند ماكس', policy:'ARV70019', content:'المرسل اليه بلغت انها دفعت مصاريف شحن اعلى', type:'شكوى تخص التوصيل', date_added:'2026-05-20', investigation_result_date:'2026-05-21', month:'مايو', branch:'الشرقيه', classification:'خطأ وكيل', investigation_result:'العميله لا ترد على المكالمات للمراجعة', status:'غير محدد', compensation_amount:null, compensation_bearer:null, compensation_review_result:null, confirm_review:'', review_date:null, compensation_date:null, sla_days:1, faulty_person:'', notes:'' },
+  { id:'90020', owner:'Amir', admin:'KHM Womens wear', complainant:'KHM Womens wear', policy:'', content:'تحصيل الاوردر اقل من المتفق عليه والفرق مطلوب رده', type:'شكوى تخص الحسابات', date_added:'2026-05-18', investigation_result_date:'2026-05-22', month:'مايو', branch:'الصعيد', classification:'عدم تنفيذ طلب خاص بالعميل', investigation_result:'تم ابلاغ الوكيل ولم يتم الرد بافادة', status:'تم قبول التعويض', compensation_amount:70, compensation_bearer:'وكيل', compensation_review_result:'To be paid', confirm_review:'TRUE', review_date:'2026-06-16', compensation_date:'2026-06-16', sla_days:4, faulty_person:'احمد نصر', notes:'' },
 ];
 
 // ---------- Normalize ----------
@@ -1838,27 +1838,43 @@ const STATUS_MAP = {
 let DATA = [];
 function buildData(raw){
   const mapped = (raw||[]).map(d => {
+    const date_added = normDate(d.date_added);
     const investigation_result_date = normDate(d.investigation_result_date);
     const compensation_date = normDate(d.compensation_date);
     const review_date = normDate(d.review_date);
     // "شهر التعويض" is taken only from the explicit sheet value.
     // If the cell is cleared, it must not be inferred from any date.
     const compensation_month = safeStr(d.compensation_month).trim() || '';
-    // "SLA التعويض": Compensation Date − Investigation Result Date, in days.
-    // Both dates must be present and valid, otherwise the record is excluded
-    // (kept null) so it never pollutes the average.
+    // ---------- Single source of truth for both SLA calculations ----------
+    // 1) "SLA حل الشكوى" (complaint resolution SLA):
+    //    تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى، بالأيام.
+    //    Both dates must be present and valid, otherwise the record is
+    //    excluded (kept null) so it never pollutes any average/compliance
+    //    calculation anywhere in the dashboard. The legacy `sla_days` value
+    //    coming from the sheet is NEVER used as the source for this figure.
+    let sla_resolution_days = null;
+    if(date_added && investigation_result_date){
+      const a = new Date(investigation_result_date), b = new Date(date_added);
+      if(!isNaN(a) && !isNaN(b)) sla_resolution_days = Math.round((a-b)/86400000);
+    }
+    // 2) "SLA تنفيذ التعويض" (compensation execution SLA):
+    //    تاريخ التعويض − تاريخ إضافة الشكوى، بالأيام. This is fully
+    //    independent from sla_resolution_days above — it is NOT derived from
+    //    investigation_result_date. Both dates must be present and valid,
+    //    otherwise the record is excluded (kept null).
     let sla_compensation_days = null;
-    if(investigation_result_date && compensation_date){
-      const a = new Date(compensation_date), b = new Date(investigation_result_date);
+    if(date_added && compensation_date){
+      const a = new Date(compensation_date), b = new Date(date_added);
       if(!isNaN(a) && !isNaN(b)) sla_compensation_days = Math.round((a-b)/86400000);
     }
     return {
       ...d,
-      date_added: normDate(d.date_added),
+      date_added,
       review_date,
       investigation_result_date,
       compensation_date,
       compensation_month,
+      sla_resolution_days,
       sla_compensation_days,
       status: safeStr(d.status).trim() || 'غير محدد',
       owner: safeStr(d.owner).trim() || 'غير محدد',
@@ -1896,19 +1912,19 @@ function buildData(raw){
 
 // ---------- Unified compensation calculation ----------
 // Single source of truth for "is this row's compensation_amount valid to use".
-// A compensation amount is only ever countable when:
-//   1) compensation_amount is a real, finite number, AND
-//   2) compensation_month is explicitly set on that row (non-empty after trim).
-// If compensation_month is blank, the amount must NEVER be summed anywhere —
-// not in a KPI, not in a chart, not in a panel/export. Every place in this file
-// that touches compensation_amount goes through these three helpers instead of
-// re-implementing the check, so the logic can never drift out of sync with the
-// "شهر التعويض" filter (getFiltered() already narrows rows to the selected
-// month(s) before these helpers run, so summing "countable" amounts on already-
-// filtered rows is exactly "sum of rows whose compensation_month = the selected
-// month").
+// A compensation amount is countable whenever it is a real, finite number —
+// full stop. It must NEVER depend on any other column (e.g. "شهر التعويض")
+// being filled in, because that would silently drop legitimate compensation
+// amounts from every total/KPI/chart whenever that unrelated cell happens to
+// be blank in the sheet, causing the dashboard's totals to stop matching the
+// sheet's own compensation_amount column. Every place in this file that
+// touches compensation_amount goes through these three helpers instead of
+// re-implementing the check, and they always run on the SAME filtered row
+// set produced by getFiltered() (or a subset of it), so "total compensation"
+// is always exactly "sum of compensation_amount over the currently filtered
+// rows" — never a differently-filtered or unfiltered set.
 function isCompensationCountable(d){
-  return !!d && typeof d.compensation_amount === 'number' && isFinite(d.compensation_amount) && !!safeStr(d.compensation_month).trim();
+  return !!d && typeof d.compensation_amount === 'number' && isFinite(d.compensation_amount);
 }
 function compensationAmountOf(d){
   return isCompensationCountable(d) ? d.compensation_amount : 0;
@@ -2096,6 +2112,37 @@ function fillSelect(id, values){
   });
   syncMultiSelectUI(id);
 }
+// Same as fillSelect(), but for options whose displayed label differs from
+// the underlying filter value (used for the "شهر إضافة الشكوى" filter, whose
+// value is a YYYY-MM key derived from date_added while the label shown to
+// the user is the Arabic month name + year).
+function fillSelectPairs(id, options){
+  const sel = document.getElementById(id);
+  const prevSelected = new Set([...sel.selectedOptions].map(o=>o.value));
+  sel.innerHTML = '';
+  options.forEach(({value, label})=>{
+    const opt = document.createElement('option');
+    opt.value = value; opt.textContent = label;
+    opt.selected = prevSelected.has(value);
+    sel.appendChild(opt);
+  });
+  syncMultiSelectUI(id);
+}
+// Builds the "شهر إضافة الشكوى" options strictly from date_added (YYYY-MM),
+// never from the raw `month` text column — the text column can drift from
+// the actual date (data-entry typos) and, more importantly, carries no year,
+// so two different years sharing a month name (e.g. two "يونيو"s) would
+// otherwise be merged into one filter option and their compensation totals
+// summed together. Keying by YYYY-MM guarantees "اختيار شهر" always isolates
+// exactly the complaints whose date_added falls in that specific month/year.
+function dateAddedMonthOptions(){
+  const keys = [...new Set(DATA.map(d=>d.date_added).filter(Boolean).map(d=>d.slice(0,7)))].sort();
+  return keys.map(k=>{
+    const [y,m] = k.split('-');
+    const name = ARABIC_MONTHS[parseInt(m,10)-1] || m;
+    return { value:k, label:`${name} ${y}` };
+  });
+}
 const monthOrder = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
 let months = [];
 let dates = [];
@@ -2113,7 +2160,9 @@ function populateFilters(){
   fillSelect('fSender', uniqueSorted('complainant'));
   fillSelect('fClassification', uniqueSorted('classification'));
   months = uniqueSorted('month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
-  fillSelect('fMonth', months);
+  // "شهر إضافة الشكوى": keyed by date_added (YYYY-MM), not the raw `month`
+  // text column — see dateAddedMonthOptions() for why.
+  fillSelectPairs('fMonth', dateAddedMonthOptions());
   const compMonths = uniqueSorted('compensation_month').sort((a,b)=> monthOrder.indexOf(a)-monthOrder.indexOf(b));
   fillSelect('fCompMonth', compMonths);
   syncMultiSelectUI('fConfirm');
@@ -2278,7 +2327,7 @@ function getFiltered(){
     if(branch.length && !branch.includes(d.branch)) return false;
     if(type.length && !type.includes(d.type)) return false;
     if(status.length && !status.includes(d.status)) return false;
-    if(month.length && !month.includes(d.month)) return false;
+    if(month.length && !(d.date_added && month.includes(d.date_added.slice(0,7)))) return false;
     if(classification.length && !classification.includes(d.classification)) return false;
     if(compMonth.length && !compMonth.includes(d.compensation_month)) return false;
     if(sender.length && !sender.includes(d.complainant)) return false;
@@ -2350,10 +2399,13 @@ function render(){
   const pending = rows.filter(d=> d.status.includes('جارى') || d.status.includes('التحقيق')).length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  // SLA حل الشكوى: average of (تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى) in
+  // days, over records where both dates are present and valid — computed once
+  // per record in buildData() (sla_resolution_days) and simply averaged here.
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = sumCompensation(rows);
-  // SLA التعويض: average of (Compensation Date − Investigation Result Date) in
+  // SLA تنفيذ التعويض: average of (تاريخ التعويض − تاريخ إضافة الشكوى) in
   // days, over records where both dates are present and valid — computed once
   // per record in buildData() (sla_compensation_days) and simply averaged here.
   const compSlaVals = rows.map(d=>d.sla_compensation_days).filter(v=> typeof v === 'number' && isFinite(v));
@@ -2609,12 +2661,12 @@ function computeAlerts(rows){
   const alerts = [];
 
   // Complaints exceeding SLA target (7 days)
-  const slaBreach = rows.filter(d=> typeof d.sla_days==='number' && d.sla_days > 7);
+  const slaBreach = rows.filter(d=> typeof d.sla_resolution_days==='number' && d.sla_resolution_days > 4);
   alerts.push({
     priority:'crit', emoji:'🔴', label:'حرج',
-    desc:'شكاوى تجاوزت مدة الحل المستهدفة (7 أيام)',
+    desc:'شكاوى تجاوزت مدة الحل المستهدفة (4 أيام)',
     count: slaBreach.length,
-    onClick: ()=> setExtraFilter(d=> typeof d.sla_days==='number' && d.sla_days>7, 'شكاوى تجاوزت SLA')
+    onClick: ()=> setExtraFilter(d=> typeof d.sla_resolution_days==='number' && d.sla_resolution_days>4, 'شكاوى تجاوزت SLA')
   });
 
   // Complaint Handlers with rapidly increasing complaints (last 7 days vs previous 7 days)
@@ -2756,8 +2808,8 @@ function computeCoreExecutiveMetrics(rows){
   const isOpen = d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'));
   const open = rows.filter(isOpen).length;
   const closed = total - open;
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
-  const slaOk = slaVals.filter(v=> v<=7).length;
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v==='number');
+  const slaOk = slaVals.filter(v=> v<=4).length;
   const slaCompliance = slaVals.length ? Math.round((slaOk/slaVals.length)*100) : null;
   const avgResolution = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : null;
   const totalComp = sumCompensation(rows);
@@ -2811,8 +2863,8 @@ function computeHealthScore(rows){
   // Each factor is normalized to a 0-100 sub-score, then combined with fixed weights.
   const closureScore = m.closureRate===null ? 50 : m.closureRate;
   const slaScore = m.slaCompliance===null ? 50 : m.slaCompliance;
-  // Avg resolution time: target 7 days = 100, degrading to 0 at 21 days (3x target).
-  const resScore = m.avgResolution===null ? 100 : Math.max(0, Math.min(100, 100 - ((m.avgResolution-7)/14)*100));
+  // Avg resolution time: target 4 days = 100, degrading to 0 at 12 days (3x target).
+  const resScore = m.avgResolution===null ? 100 : Math.max(0, Math.min(100, 100 - ((m.avgResolution-4)/8)*100));
   // Pending ratio: 0% open = 100, 100% open = 0.
   const pendingRatio = m.total ? m.open/m.total : 0;
   const pendingScore = Math.max(0, Math.min(100, 100 - pendingRatio*100));
@@ -2955,10 +3007,10 @@ function computeExecutiveSummary(rows){
       .sort((a,b)=> b.days-a.days)[0];
   }
 
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v==='number');
   result.avgResolution = slaVals.length ? slaVals.reduce((a,b)=>a+b,0)/slaVals.length : null;
 
-  const avgSlaOfArr = arr=>{ const v=arr.map(d=>d.sla_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  const avgSlaOfArr = arr=>{ const v=arr.map(d=>d.sla_resolution_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
 
   // Monthly performance comparison
   const monthOrder = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -3009,8 +3061,8 @@ function computeExecutiveSummary(rows){
       recos.push({ icon:'📈', text:`حجم الشكاوى ارتفع بنسبة ${pct}% خلال آخر 7 أيام مقارنة بالأسبوع السابق — يُنصح بمتابعة السبب قبل تفاقمه.` });
     }
   }
-  if(result.avgResolution !== null && result.avgResolution > 7){
-    recos.push({ icon:'⏱', text:`متوسط زمن الحل الحالي ${result.avgResolution.toFixed(1)} يوم، أعلى من المهلة المستهدفة (7 أيام) — يُنصح بتسريع دورة المراجعة.` });
+  if(result.avgResolution !== null && result.avgResolution > 4){
+    recos.push({ icon:'⏱', text:`متوسط زمن الحل الحالي ${result.avgResolution.toFixed(1)} يوم، أعلى من المهلة المستهدفة (4 أيام) — يُنصح بتسريع دورة المراجعة.` });
   }
   if(!recos.length){
     recos.push({ icon:'✅', text:'لا توجد تنبيهات إدارية عاجلة ضمن عوامل التصفية الحالية — الأداء ضمن الحدود المستهدفة.' });
@@ -3173,7 +3225,7 @@ function computeInsights(rows){
 
   // Month-over-month resolution time comparison
   const byMonth = {};
-  rows.forEach(d=>{ if(d.month && typeof d.sla_days==='number'){ (byMonth[d.month]=byMonth[d.month]||[]).push(d.sla_days); } });
+  rows.forEach(d=>{ if(d.month && typeof d.sla_resolution_days==='number'){ (byMonth[d.month]=byMonth[d.month]||[]).push(d.sla_resolution_days); } });
   const monthKeys = Object.keys(byMonth);
   if(monthKeys.length >= 2){
     const order = ['يناير','فبراير','مارس','ابريل','أبريل','مايو','يونيو','يوليو','اغسطس','أغسطس','سبتمبر','اكتوبر','أكتوبر','نوفمبر','ديسمبر'];
@@ -3188,7 +3240,7 @@ function computeInsights(rows){
             impact:'تحسّن زمن الحل ينعكس إيجابًا على رضا العملاء ويقلل من تصعيد الشكاوى.',
             action:'توثيق ما تغيّر في سير العمل هذا الشهر للحفاظ على التحسّن.', priority:'low' }
         : { problem:`متوسط زمن حل الشكاوى ازداد بمقدار <b>${Math.abs(diff).toFixed(1)}</b> يوم في ${lastM} مقارنة بـ ${prevM}.`,
-            impact:'زمن حل أبطأ يرفع خطر تجاوز مهلة SLA المستهدفة (7 أيام) ويؤثر على رضا العملاء.',
+            impact:'زمن حل أبطأ يرفع خطر تجاوز مهلة SLA المستهدفة (4 أيام) ويؤثر على رضا العملاء.',
             action:'مراجعة مراحل سير العمل الحالية لتحديد أسباب التأخير في هذا الشهر.',
             priority: Math.abs(diff)>=3?'critical':Math.abs(diff)>=1.5?'high':'medium' });
     }
@@ -3313,12 +3365,12 @@ function computeActionCenter(rows){
   }
 
   // SLA compliance
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v==='number');
-  const slaCompliance = slaVals.length ? (slaVals.filter(v=>v<=7).length/slaVals.length)*100 : null;
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v==='number');
+  const slaCompliance = slaVals.length ? (slaVals.filter(v=>v<=4).length/slaVals.length)*100 : null;
   if(slaCompliance!==null && slaCompliance<70){
     actions.push({
       icon:'🎯', title:'تحسين الالتزام بمهلة SLA',
-      desc:`الالتزام الحالي بمهلة الحل (7 أيام) هو ${Math.round(slaCompliance)}% فقط.`,
+      desc:`الالتزام الحالي بمهلة الحل (4 أيام) هو ${Math.round(slaCompliance)}% فقط.`,
       owner:'مدير جودة خدمة العملاء', impact:'رفع رضا العملاء وتقليل خطر التصعيد المرتبط بتأخر الحل',
       priority: slaCompliance<50?'critical':'high'
     });
@@ -3367,7 +3419,7 @@ function computeHandlerPerformance(rows){
     h.count++;
     const isOpen = d.status && (d.status.includes('جارى')||d.status.includes('التحقيق'));
     if(isOpen){ h.open++; } else { h.closed++; }
-    if(typeof d.sla_days==='number'){ h.slaVals.push(d.sla_days); h.slaTotal++; if(d.sla_days<=7) h.slaOk++; }
+    if(typeof d.sla_resolution_days==='number'){ h.slaVals.push(d.sla_resolution_days); h.slaTotal++; if(d.sla_resolution_days<=4) h.slaOk++; }
   });
   const list = Object.values(handlers).map(h=>{
     h.avgSla = h.slaVals.length ? h.slaVals.reduce((a,c)=>a+c,0)/h.slaVals.length : 0;
@@ -3577,7 +3629,7 @@ function renderKpiEnhancements(rows){
   const acceptRateOf = arr => { const dec = decidedOf(arr); const acc = arr.filter(d=>d.status && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length; return dec.length ? (acc/dec.length)*100 : null; };
   const rejectedPctOf = arr => { const dec = decidedOf(arr); const rej = arr.filter(d=>d.status && d.status.includes('رفض')).length; return dec.length ? (rej/dec.length)*100 : null; };
   const pendingPctOf = arr => arr.length ? (arr.filter(isOpen).length/arr.length)*100 : null;
-  const avgSlaOf = arr => { const v = arr.map(d=>d.sla_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  const avgSlaOf = arr => { const v = arr.map(d=>d.sla_resolution_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
 
   // Total complaints
   const totalSeries = lastNDatesSeries(rows, 14, arr=>arr.length);
@@ -3624,7 +3676,7 @@ function renderKpiEnhancements(rows){
   `;
 
   // Avg resolution time (lower is better)
-  const slaTarget = 7;
+  const slaTarget = 4;
   const slaCurr = avgSlaOf(rows);
   const slaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=avgSlaOf(arr); return v===null?0:v; });
   const slaAch = slaCurr===null ? 100 : Math.round(Math.min(100, (slaTarget/Math.max(slaCurr,0.001))*100));
@@ -3670,7 +3722,7 @@ document.getElementById('qaFullscreen').addEventListener('click', ()=>{
 });
 document.getElementById('qaExport').addEventListener('click', ()=>{
   const rows = getFiltered();
-  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_days'];
+  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
   const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
   const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const lines = [headerLabels.map(escCsv).join(',')];
@@ -3710,7 +3762,7 @@ const tooltipContent = {
   kpiAcceptRate: ()=> ({ title:'نسبة قبول التعويض', note:'نسبة الحالات المقبولة من إجمالي الحالات المقررة (مقبول أو مرفوض). إجراء مقترح: قارن النسبة عبر الفروع لتحديد التفاوت في معايير القبول.' }),
   kpiRejected: ()=> ({ title:'تعويضات مرفوضة', note:'عدد الشكاوى التي تم رفض التعويض عنها. إجراء مقترح: راجع أسباب الرفض المتكررة ضمن قسم التصنيف.' }),
   kpiPending: ()=> ({ title:'قيد التحقيق', note:'شكاوى لم يُبتّ فيها بعد. إجراء مقترح: تابع الحالات المفتوحة منذ أكثر من 5 أيام عبر مركز التنبيهات.' }),
-  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'متوسط عدد الأيام من تاريخ الشكوى حتى الحل. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 7 أيام.' })
+  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'متوسط عدد الأيام من تاريخ الشكوى حتى الحل. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 4 أيام.' })
 };
 const smartTip = document.getElementById('smartTooltip');
 function showTip(el, html){
@@ -4583,7 +4635,7 @@ function updateCompareBadges(){
 
 function exportPanelCsv(suf){
   const rows = getFilteredForPanel(suf);
-  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_days'];
+  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
   const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
   const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const lines = [headerLabels.map(escCsv).join(',')];
@@ -4603,7 +4655,7 @@ function computeCompareSummaryMetrics(rows){
   const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = sumCompensation(rows);
   return { total, acceptRate, avgSla, compSum };
@@ -4660,7 +4712,7 @@ function renderComparePanel(suf, rows){
   const pending = rows.filter(d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'))).length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
-  const slaVals = rows.map(d=>d.sla_days).filter(v=> typeof v === 'number');
+  const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = sumCompensation(rows);
 
