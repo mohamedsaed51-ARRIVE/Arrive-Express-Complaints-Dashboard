@@ -359,6 +359,20 @@
   .modal-body .field.full{ grid-column:1 / -1; }
   .modal-body .field .l{ font-size:10.5px; color:var(--ink-faint); margin-bottom:3px; letter-spacing:.03em; }
   .modal-body .field .v{ font-size:13px; color:var(--ink); }
+  /* Wider modal variant used for the Smart Insights drill-down (needs room for a
+     small results table); the standard complaint modal keeps its normal width. */
+  .modal.modal-wide{ max-width:860px; }
+  .drilldown-summary{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px 16px;
+    padding:2px 0 4px;
+  }
+  .drilldown-summary .field .l{ font-size:10.5px; color:var(--ink-faint); margin-bottom:3px; letter-spacing:.03em; }
+  .drilldown-summary .field .v{ font-size:14px; color:var(--ink); font-weight:600; }
+  .drilldown-section-title{ font-size:12px; font-weight:700; color:var(--ink-faint); letter-spacing:.02em; margin:14px 0 8px; }
+  .drilldown-table thead th{ text-align:right; padding:8px 10px; font-size:11px; color:var(--ink-faint); font-weight:600; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+  .drilldown-table tbody tr{ border-bottom:1px solid var(--line); cursor:pointer; }
+  .drilldown-table tbody tr:hover{ background:var(--surface-alt); }
+  .drilldown-table td{ padding:8px 10px; vertical-align:middle; color:var(--ink); font-size:12px; }
 
   footer{ text-align:center; padding:24px; font-size:11px; color:var(--ink-faint); }
 
@@ -416,6 +430,37 @@
   }
   .active-alert-chip button{ background:none; border:none; color:inherit; cursor:pointer; font-size:13px; line-height:1; padding:0; }
 
+  /* ---- Unified "Active Filters" bar (task 4) ----
+     Shows every currently-active filter — manual selections, date ranges,
+     search text, and chart-driven drill-downs — as one removable chip each.
+     Reads directly from the same DOM filter elements getFiltered() reads
+     from, so it can never drift out of sync with the actual applied filters. */
+  .active-filters-bar{
+    display:none; align-items:center; gap:8px; flex-wrap:wrap;
+    background:var(--surface); border-bottom:1px solid var(--line);
+    padding:10px 40px;
+  }
+  .active-filters-bar.has-filters{ display:flex; }
+  .active-filters-label{ font-size:11.5px; font-weight:700; color:var(--ink-faint); white-space:nowrap; }
+  .active-filter-chip{
+    display:inline-flex; align-items:center; gap:8px; background:var(--surface-alt); color:var(--navy-deep);
+    border:1px solid var(--line-strong); border-radius:20px; padding:5px 10px 5px 12px; font-size:11.5px; font-weight:600;
+  }
+  .active-filter-chip.is-alert{ background:var(--pending-bg); color:var(--pending); border-color:transparent; }
+  .active-filter-chip button{
+    background:rgba(0,0,0,0.06); border:none; color:inherit; cursor:pointer; font-size:11px; line-height:1;
+    width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; padding:0;
+  }
+  .active-filter-chip button:hover{ background:var(--rejected); color:#fff; }
+  .active-filters-clear-all{
+    background:none; border:none; color:var(--navy); font-size:11.5px; font-weight:700; cursor:pointer;
+    font-family:inherit; text-decoration:underline; padding:4px 2px; margin-inline-start:4px;
+  }
+  .active-filters-clear-all:hover{ color:var(--rejected); }
+  @media (max-width: 1100px){
+    .active-filters-bar{ padding:9px 18px; }
+  }
+
   /* ---- Section heading shared style ---- */
   .section-heading{ display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 14px; gap:12px; flex-wrap:wrap; }
   .section-heading h2{ font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; color:var(--navy-deep); display:flex; align-items:center; gap:9px; }
@@ -470,9 +515,11 @@
   .exec-stat-card{
     background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--navy);
     border-radius:9px; padding:12px 14px; display:flex; flex-direction:column; gap:5px;
-    transition:transform .15s ease, box-shadow .15s ease;
+    transition:transform .15s ease, box-shadow .15s ease; cursor:pointer;
   }
   .exec-stat-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
+  .exec-stat-card:focus-visible{ outline:2px solid var(--navy); outline-offset:2px; }
+  .exec-stat-cta{ font-size:10.5px; color:var(--navy); margin-top:2px; }
   .exec-stat-card.tone-gold{ border-right-color:var(--gold); }
   .exec-stat-card.tone-accept{ border-right-color:var(--accepted); }
   .exec-stat-card.tone-reject{ border-right-color:var(--rejected); }
@@ -699,7 +746,7 @@
 
   /* ---- Print ---- */
   @media print{
-    .control-bar, .filter-bar, .quick-actions, .theme-toggle, .header-actions, #smartTooltip, #pageSkeleton{ display:none !important; }
+    .control-bar, .filter-bar, .active-filters-bar, .quick-actions, .theme-toggle, .header-actions, #smartTooltip, #pageSkeleton{ display:none !important; }
     body{ background:#fff; }
   }
 
@@ -1270,6 +1317,8 @@
     <input type="date" id="fReviewTo">
   </div>
 </div>
+
+<div class="active-filters-bar" id="activeFiltersBar"></div>
 
 <main>
 
@@ -2361,6 +2410,83 @@ function setExtraFilter(fn, label){
 }
 function clearExtraFilter(){ extraFilter = null; extraFilterLabel = ''; render(); }
 
+// ---------- Unified "Active Filters" bar (task 4) ----------
+// Human-readable labels for every filter field that can appear as a chip.
+// This is display-only metadata; it does not participate in filtering logic.
+const FILTER_FIELD_LABELS = {
+  fOwner:'مسؤول الشكوى', fBranch:'الفرع المتسبب', fType:'نوع الشكوى', fStatus:'حالة الشكوى',
+  fMonth:'شهر إضافة الشكوى', fClassification:'تصنيف المشكلة', fCompMonth:'شهر التعويض',
+  fSender:'اسم الراسل', fBearer:'وظيفة المتحمل للتعويض', fReviewResult:'نتيجة مراجعة التعويض',
+  fConfirm:'التأكيد على المراجعة',
+  fDateFrom:'تاريخ الشكوى من', fDateTo:'تاريخ الشكوى إلى',
+  fReviewFrom:'تاريخ المراجعة من', fReviewTo:'تاريخ المراجعة إلى',
+};
+// Clears exactly one filter field (multi-select, date input, or the search
+// box) and re-renders — used by both the × on a chip and, indirectly, by
+// chart drill-downs that reuse the very same filter elements (drillSet()).
+function clearSingleFilter(id){
+  if(MULTI_SELECT_IDS.includes(id)){
+    clearMultiSelect(id);
+    syncMultiSelectUI(id);
+  } else {
+    document.getElementById(id).value = '';
+  }
+  render();
+}
+// Builds and wires the "الفلاتر النشطة" bar. Reads its state from the exact
+// same DOM elements getFiltered() reads from (the multi-selects, date
+// inputs, search box) plus the chart/alert-driven extraFilter — so it is
+// always a live reflection of what's actually applied, never a separate copy
+// of filter state. Called at the end of every render() pass.
+function renderActiveFilters(){
+  const wrap = document.getElementById('activeFiltersBar');
+  if(!wrap) return;
+  const chips = [];
+
+  MULTI_SELECT_IDS.forEach(id=>{
+    const sel = document.getElementById(id);
+    const selectedOpts = sel ? [...sel.selectedOptions] : [];
+    if(!selectedOpts.length) return;
+    const valuesLabel = selectedOpts.map(o=> o.textContent).join('، ');
+    chips.push({ label:`${FILTER_FIELD_LABELS[id] || id}: ${valuesLabel}`, onRemove: ()=> clearSingleFilter(id) });
+  });
+
+  ['fDateFrom','fDateTo','fReviewFrom','fReviewTo'].forEach(id=>{
+    const val = document.getElementById(id).value;
+    if(val) chips.push({ label:`${FILTER_FIELD_LABELS[id]}: ${val}`, onRemove: ()=> clearSingleFilter(id) });
+  });
+
+  const searchVal = document.getElementById('fSearch').value.trim();
+  if(searchVal) chips.push({ label:`بحث: ${searchVal}`, onRemove: ()=> clearSingleFilter('fSearch') });
+
+  if(extraFilter){
+    chips.push({ label: extraFilterLabel, onRemove: clearExtraFilter, isAlert:true });
+  }
+
+  if(!chips.length){
+    wrap.classList.remove('has-filters');
+    wrap.innerHTML = '';
+    return;
+  }
+
+  wrap.classList.add('has-filters');
+  wrap.innerHTML = `
+    <span class="active-filters-label">الفلاتر النشطة:</span>
+    ${chips.map((c,i)=>`
+      <span class="active-filter-chip${c.isAlert?' is-alert':''}" data-idx="${i}">
+        <span>${c.label}</span>
+        <button type="button" aria-label="إزالة هذا الفلتر">✕</button>
+      </span>
+    `).join('')}
+    <button type="button" class="active-filters-clear-all" id="activeFiltersClearAll">مسح الكل</button>
+  `;
+  wrap.querySelectorAll('.active-filter-chip').forEach(chipEl=>{
+    chipEl.querySelector('button').addEventListener('click', ()=> chips[+chipEl.dataset.idx].onRemove());
+  });
+  const clearAllBtn = document.getElementById('activeFiltersClearAll');
+  if(clearAllBtn) clearAllBtn.addEventListener('click', ()=> document.getElementById('btnReset').click());
+}
+
 let sortKey = 'date_added', sortDir = -1;
 // ---------- Visual improvement: smooth count-up animation for KPI numbers ----------
 function animateNumber(el, toValue, opts={}){
@@ -2439,6 +2565,7 @@ function render(){
   renderHandlerPerformance(rows);
   renderKpiEnhancements(rows);
   updateLiveStats(rows);
+  renderActiveFilters();
 }
 
 function uniqueVals(rows, key){ return [...new Set(rows.map(r=>r[key]).filter(Boolean))]; }
@@ -2462,7 +2589,9 @@ function updateCharts(rows){
   const dateKeys = Object.keys(byDate).sort();
   chartTrend.data.labels = dateKeys.map(d=>d.slice(5));
   chartTrend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
-  chartTrend.update();
+  // Full (unstripped) date strings, index-aligned with the display labels
+  // above — needed so a chart click can filter to that exact date.
+  chartTrend.rawLabels = dateKeys;
 
   // status
   const statusCounts = {};
@@ -2486,6 +2615,10 @@ function updateCharts(rows){
   const typeTop = topN(rows, 'type', 8);
   chartType.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
   chartType.data.datasets[0].data = typeTop.map(x=>x[1]);
+  // Raw (unstripped) type values, index-aligned with the display labels above —
+  // needed so a chart click can set the fType filter to the exact value it
+  // actually stores (fType's options keep the full "شكوى تخص …" prefix).
+  chartType.rawLabels = typeTop.map(x=>x[0]);
   chartType.update();
 
   // classification
@@ -2578,6 +2711,7 @@ function fieldFull(label, value){
 }
 function openModal(d){
   const modal = document.getElementById('modal');
+  modal.classList.remove('modal-wide');
   modal.innerHTML = `
     <div class="modal-head">
       <div>
@@ -2609,6 +2743,82 @@ function openModal(d){
 function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
 document.getElementById('overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+// ---------- Smart Insights drill-down (Tab click -> real, related details) ----------
+// Renders a compact, clickable list of complaints inside a drill-down modal. Each row
+// reuses the exact same complaint modal (openModal) as the main table/rows do, so
+// drilling one level deeper always lands on the familiar single-complaint view.
+function renderDrilldownComplaintList(list, emptyMsg){
+  if(!list || !list.length){
+    return `<div class="exec-reco-empty">${emptyMsg || 'لا توجد شكاوى مطابقة ضمن عوامل التصفية الحالية.'}</div>`;
+  }
+  const MAX_ROWS = 25;
+  const shown = list.slice(0, MAX_ROWS);
+  const rowsHtml = shown.map(d=>`
+    <tr data-id="${d.id ?? ''}">
+      <td class="id-cell">${d.id ?? ''}</td>
+      <td>${d.complainant ?? ''}</td>
+      <td class="num">${d.date_added ?? '—'}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td class="amount-cell">${isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
+    </tr>
+  `).join('');
+  const moreNote = list.length > shown.length
+    ? `<div class="exec-reco-empty" style="margin-top:8px;">و ${list.length - shown.length} شكوى أخرى ضمن نفس النتيجة.</div>`
+    : '';
+  return `
+    <div class="table-scroll" style="max-height:320px;">
+      <table class="drilldown-table">
+        <thead><tr><th>رقم الشكوى</th><th>الشاكي</th><th>التاريخ</th><th>الحالة</th><th>التعويض</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    ${moreNote}
+  `;
+}
+// Wires each row rendered by renderDrilldownComplaintList() to open the full,
+// familiar complaint modal (same one used everywhere else in the dashboard).
+function bindDrilldownComplaintRows(container, list){
+  if(!container) return;
+  const byId = new Map((list||[]).map(d=> [String(d.id ?? ''), d]));
+  container.querySelectorAll('.drilldown-table tbody tr[data-id]').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      const d = byId.get(tr.dataset.id);
+      if(d) openModal(d);
+    });
+  });
+}
+// Generic drill-down modal shell: title, optional summary stat fields, and a body
+// (typically a related-complaints list). Reuses the exact same #modal/#overlay
+// component as the single-complaint modal, so opening/closing feels identical —
+// same close button, same click-outside-to-close, same Escape-to-close.
+function openInsightDrilldown({ icon, title, subtitle, summaryFields, bodyHtml, bindBody }){
+  const modal = document.getElementById('modal');
+  modal.classList.add('modal-wide');
+  const summaryHtml = (summaryFields && summaryFields.length)
+    ? `<div class="drilldown-summary">${summaryFields.map(f=> field(f.label, f.value)).join('')}</div>`
+    : '';
+  modal.innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div class="mid">${icon ? icon+' ' : ''}رؤية ذكية</div>
+        <h2>${title}</h2>
+      </div>
+      <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body" style="display:block;">
+      ${subtitle ? `<div class="exec-stat-sub" style="margin-bottom:10px;">${subtitle}</div>` : ''}
+      ${summaryHtml}
+      ${bodyHtml || ''}
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  if(typeof bindBody === 'function') bindBody(modal);
+}
+// openModal() itself is used for single-complaint drill-downs (including when
+// reached from inside a Smart Insight drill-down); resetting modal-wide here
+// guarantees it never leaks into the normal complaint view either way.
 
 // ---------- Filter events ----------
 ALL_FILTER_IDS.forEach(id=>{
@@ -3098,39 +3308,85 @@ function renderExecutiveSummary(rows){
     return;
   }
 
+  const handlerDrilldown = (h, label, icon)=> ()=>{
+    const handlerRows = rows.filter(d=> d.owner === h.owner);
+    openInsightDrilldown({
+      icon, title: `${label}: ${h.owner}`,
+      subtitle: `تفاصيل أداء ${h.owner} ضمن عوامل التصفية الحالية.`,
+      summaryFields: [
+        { label:'درجة الأداء', value:`${h.score}/100` },
+        { label:'إجمالي الشكاوى المسندة', value:h.count },
+        { label:'شكاوى مغلقة', value:h.closed },
+        { label:'شكاوى مفتوحة', value:h.open },
+        { label:'الالتزام بمهلة SLA', value: h.slaTotal>0 ? `${Math.round(h.slaCompliance*100)}%` : '—' },
+        { label:'متوسط زمن الحل (يوم)', value: h.slaTotal>0 ? h.avgSla.toFixed(1) : '—' },
+      ],
+      bodyHtml: `<div class="drilldown-section-title">شكاوى ${h.owner} (${handlerRows.length})</div>${renderDrilldownComplaintList(handlerRows)}`,
+      bindBody: modal=> bindDrilldownComplaintRows(modal, handlerRows)
+    });
+  };
+  const reasonDrilldown = (reason)=> ()=>{
+    const reasonRows = rows.filter(d=> d.classification === reason.name);
+    openInsightDrilldown({
+      icon:'🔎', title:`أكثر سبب شكوى تكرارًا: ${reason.name}`,
+      subtitle:'كل الشكاوى المصنّفة بهذا السبب ضمن عوامل التصفية الحالية.',
+      summaryFields: [
+        { label:'عدد الشكاوى', value:reason.count },
+        { label:'النسبة من الإجمالي', value:`${reason.pct}%` },
+      ],
+      bodyHtml: `<div class="drilldown-section-title">الشكاوى (${reasonRows.length})</div>${renderDrilldownComplaintList(reasonRows)}`,
+      bindBody: modal=> bindDrilldownComplaintRows(modal, reasonRows)
+    });
+  };
+
   const cards = [
     { tone:'tone-accept', icon:'🏆', label:'أفضل معالج شكاوى',
       value: s.bestHandler ? s.bestHandler.owner : '—',
-      sub: s.bestHandler ? `درجة الأداء ${s.bestHandler.score}/100 · ${s.bestHandler.count} شكوى مسندة` : 'لا توجد بيانات كافية' },
+      sub: s.bestHandler ? `درجة الأداء ${s.bestHandler.score}/100 · ${s.bestHandler.count} شكوى مسندة` : 'لا توجد بيانات كافية',
+      onClick: s.bestHandler ? handlerDrilldown(s.bestHandler, 'أفضل معالج شكاوى', '🏆') : null },
     { tone:'tone-reject', icon:'⚠️', label:'أضعف معالج شكاوى أداءً',
       value: s.lowestPerformingHandler ? s.lowestPerformingHandler.owner : '—',
-      sub: s.lowestPerformingHandler ? `درجة الأداء ${s.lowestPerformingHandler.score}/100 · ${s.lowestPerformingHandler.open} شكوى مفتوحة` : 'لا توجد بيانات كافية' },
+      sub: s.lowestPerformingHandler ? `درجة الأداء ${s.lowestPerformingHandler.score}/100 · ${s.lowestPerformingHandler.open} شكوى مفتوحة` : 'لا توجد بيانات كافية',
+      onClick: s.lowestPerformingHandler ? handlerDrilldown(s.lowestPerformingHandler, 'أضعف معالج شكاوى أداءً', '⚠️') : null },
     { tone:'', icon:'📊', label:'أعلى حجم شكاوى',
       value: s.highestVolumeHandler ? s.highestVolumeHandler.owner : '—',
-      sub: s.highestVolumeHandler ? `${s.highestVolumeHandler.count} شكوى (${Math.round((s.highestVolumeHandler.count/rows.length)*100)}% من الإجمالي)` : 'لا توجد بيانات كافية' },
+      sub: s.highestVolumeHandler ? `${s.highestVolumeHandler.count} شكوى (${Math.round((s.highestVolumeHandler.count/rows.length)*100)}% من الإجمالي)` : 'لا توجد بيانات كافية',
+      onClick: s.highestVolumeHandler ? handlerDrilldown(s.highestVolumeHandler, 'أعلى حجم شكاوى', '📊') : null },
     { tone:'tone-gold', icon:'💰', label:'أعلى قيمة تعويض',
       value: s.highestComp ? `${s.highestComp.compensation_amount.toLocaleString('en-US')} ج.م` : '—',
-      sub: s.highestComp ? `شكوى #${s.highestComp.id} · ${s.highestComp.owner || 'غير محدد'}` : 'لا توجد حالات تعويض' },
+      sub: s.highestComp ? `شكوى #${s.highestComp.id} · ${s.highestComp.owner || 'غير محدد'}` : 'لا توجد حالات تعويض',
+      onClick: s.highestComp ? (()=> openModal(s.highestComp)) : null },
     { tone:'', icon:'🔎', label:'أكثر سبب شكوى تكرارًا',
       value: s.topReasons && s.topReasons.length ? s.topReasons[0].name : '—',
-      sub: s.topReasons && s.topReasons.length ? `${s.topReasons[0].count} شكوى (${s.topReasons[0].pct}% من الإجمالي)` : 'لا توجد تصنيفات كافية' },
+      sub: s.topReasons && s.topReasons.length ? `${s.topReasons[0].count} شكوى (${s.topReasons[0].pct}% من الإجمالي)` : 'لا توجد تصنيفات كافية',
+      onClick: (s.topReasons && s.topReasons.length) ? reasonDrilldown(s.topReasons[0]) : null },
     { tone:'tone-pending', icon:'⏳', label:'أطول شكوى معلّقة',
       value: s.longestPending ? `#${s.longestPending.row.id ?? ''}` : '—',
-      sub: s.longestPending ? `معلّقة منذ ${s.longestPending.days} يوم · ${s.longestPending.row.owner || 'غير محدد'}` : 'لا توجد شكاوى مفتوحة حاليًا' },
+      sub: s.longestPending ? `معلّقة منذ ${s.longestPending.days} يوم · ${s.longestPending.row.owner || 'غير محدد'}` : 'لا توجد شكاوى مفتوحة حاليًا',
+      onClick: s.longestPending ? (()=> openModal(s.longestPending.row)) : null },
     { tone:'tone-accept', icon:'✅', label:'أعلى التزام بـ SLA',
       value: s.highestSlaHandler ? s.highestSlaHandler.owner : '—',
-      sub: s.highestSlaHandler ? `التزام ${Math.round(s.highestSlaHandler.slaCompliance*100)}% بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية' },
+      sub: s.highestSlaHandler ? `التزام ${Math.round(s.highestSlaHandler.slaCompliance*100)}% بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية',
+      onClick: s.highestSlaHandler ? handlerDrilldown(s.highestSlaHandler, 'أعلى التزام بـ SLA', '✅') : null },
     { tone:'tone-reject', icon:'📉', label:'أقل التزام بـ SLA',
       value: s.lowestSlaHandler ? s.lowestSlaHandler.owner : '—',
-      sub: s.lowestSlaHandler ? `التزام ${Math.round(s.lowestSlaHandler.slaCompliance*100)}% فقط بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية' },
+      sub: s.lowestSlaHandler ? `التزام ${Math.round(s.lowestSlaHandler.slaCompliance*100)}% فقط بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية',
+      onClick: s.lowestSlaHandler ? handlerDrilldown(s.lowestSlaHandler, 'أقل التزام بـ SLA', '📉') : null },
   ];
-  grid.innerHTML = cards.map(c=>`
-    <div class="exec-stat-card ${c.tone}">
+  grid.innerHTML = cards.map((c,i)=>`
+    <div class="exec-stat-card ${c.tone}" data-idx="${i}" ${c.onClick ? 'tabindex="0" role="button"' : ''}>
       <div class="exec-stat-label"><span class="exec-stat-icon">${c.icon}</span>${c.label}</div>
       <div class="exec-stat-value">${c.value}</div>
       <div class="exec-stat-sub">${c.sub}</div>
+      ${c.onClick ? `<div class="exec-stat-cta">اضغط لعرض التفاصيل ←</div>` : ''}
     </div>
   `).join('');
+  grid.querySelectorAll('.exec-stat-card').forEach(card=>{
+    const c = cards[+card.dataset.idx];
+    if(!c.onClick) return;
+    card.addEventListener('click', c.onClick);
+    card.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); c.onClick(); } });
+  });
 
   const compareCards = [];
   if(s.monthlyCompare){
@@ -3800,17 +4056,27 @@ chartBearer.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBearer', 
 chartReviewResult.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fReviewResult', chartReviewResult.data.labels[els[0].index]); } };
 chartType.options.onClick = (evt, els)=>{
   if(!els.length) return;
-  const label = chartType.data.labels[els[0].index];
-  document.getElementById('fSearch').value = label;
-  render();
+  // Use the raw (unstripped) type value so it matches an actual fType option.
+  const idx = els[0].index;
+  const rawValue = (chartType.rawLabels && chartType.rawLabels[idx]) || chartType.data.labels[idx];
+  drillSet('fType', rawValue);
 };
 chartClassification.options.onClick = (evt, els)=>{
   if(!els.length) return;
-  const label = chartClassification.data.labels[els[0].index];
-  document.getElementById('fSearch').value = label;
+  drillSet('fClassification', chartClassification.data.labels[els[0].index]);
+};
+chartTrend.options.onClick = (evt, els)=>{
+  if(!els.length) return;
+  const idx = els[0].index;
+  const rawDate = chartTrend.rawLabels && chartTrend.rawLabels[idx];
+  if(!rawDate) return;
+  // Filter to that single day (drill-down on the trend line, same spirit as
+  // the other chart click-to-filter handlers).
+  document.getElementById('fDateFrom').value = rawDate;
+  document.getElementById('fDateTo').value = rawDate;
   render();
 };
-[chartBranch, chartStatus, chartBearer, chartReviewResult, chartType, chartClassification].forEach(c=>{
+[chartBranch, chartStatus, chartBearer, chartReviewResult, chartType, chartClassification, chartTrend].forEach(c=>{
   c.canvas.style.cursor = 'pointer';
 });
 
