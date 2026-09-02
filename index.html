@@ -615,6 +615,7 @@
   .stub-enh-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
   .stub-target{ font-size:10px; color:var(--ink-faint); }
   .stub-target b{ color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
+  .stub-formula{ font-size:9.5px; color:var(--ink-faint); margin-top:6px; opacity:.85; }
   .stub-trend{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 7px; direction:ltr; unicode-bidi:isolate; }
   .stub-trend.up{ background:var(--accepted-bg); color:var(--accepted); }
   .stub-trend.down{ background:var(--rejected-bg); color:var(--rejected); }
@@ -1370,7 +1371,7 @@
     </div>
     <div class="stub accent-gold">
       <div class="barcode" id="bc6"></div>
-      <div class="stub-label">SLA التعويض (يوم)</div>
+      <div class="stub-label">متوسط زمن تنفيذ التعويض (يوم)</div>
       <div class="stub-value num" id="kpiCompSla">0</div>
       <div class="stub-sub" id="kpiCompSlaSub">—</div>
       <div class="stub-enh" id="kpiCompSlaEnh"></div>
@@ -1982,6 +1983,19 @@ function sumCompensation(rows){
   return (rows||[]).reduce((s,d)=> s + compensationAmountOf(d), 0);
 }
 
+// ---------- Unified "SLA تنفيذ التعويض" calculation (single source of truth) ----------
+// SLA تنفيذ التعويض = compensation_date − date_added, in days. This is the ONLY
+// place that computes the average of this figure — every other spot in the
+// dashboard (the top KPI band, "الملخص التنفيذي", drill-downs, the compare
+// panel, CSV export, etc.) calls this same function on whatever row set it
+// has, so the number can never drift or be computed two different ways.
+// Per-row sla_compensation_days itself is computed once in buildData() from
+// the exact same two fields; this helper only averages it over valid rows.
+function computeAvgCompensationSla(rows){
+  const vals = (rows||[]).map(d=>d.sla_compensation_days).filter(v=> typeof v==='number' && isFinite(v));
+  return { avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null, count: vals.length };
+}
+
 // ---------- Reusable Multi-Select filter component ----------
 // Wraps a native <select multiple> element (kept as the single source of truth so
 // everything downstream — getFiltered(), drillSet(), the 'change' listeners, the
@@ -2424,13 +2438,20 @@ const FILTER_FIELD_LABELS = {
 // Clears exactly one filter field (multi-select, date input, or the search
 // box) and re-renders — used by both the × on a chip and, indirectly, by
 // chart drill-downs that reuse the very same filter elements (drillSet()).
-function clearSingleFilter(id){
+// Clears one filter field's value in the DOM without triggering a render —
+// used when a single chip removal needs to clear more than one underlying
+// element (e.g. a merged single-day date chip clears both fDateFrom and
+// fDateTo) so only one render() happens at the end, not one per field.
+function clearSingleFilterValue(id){
   if(MULTI_SELECT_IDS.includes(id)){
     clearMultiSelect(id);
     syncMultiSelectUI(id);
   } else {
     document.getElementById(id).value = '';
   }
+}
+function clearSingleFilter(id){
+  clearSingleFilterValue(id);
   render();
 }
 // Builds and wires the "الفلاتر النشطة" bar. Reads its state from the exact
@@ -2451,7 +2472,20 @@ function renderActiveFilters(){
     chips.push({ label:`${FILTER_FIELD_LABELS[id] || id}: ${valuesLabel}`, onRemove: ()=> clearSingleFilter(id) });
   });
 
-  ['fDateFrom','fDateTo','fReviewFrom','fReviewTo'].forEach(id=>{
+  // Date ranges: when a chart drill-down sets "من" and "إلى" to the exact
+  // same single day (e.g. clicking one point on the daily trend chart),
+  // collapse it into one clear "تاريخ الشكوى: X" chip instead of two
+  // identical-looking ones; a real multi-day range still shows both ends
+  // as separate chips so each side stays independently removable.
+  const dateFrom = document.getElementById('fDateFrom').value;
+  const dateTo = document.getElementById('fDateTo').value;
+  if(dateFrom && dateTo && dateFrom === dateTo){
+    chips.push({ label:`تاريخ الشكوى: ${dateFrom}`, onRemove: ()=>{ clearSingleFilterValue('fDateFrom'); clearSingleFilterValue('fDateTo'); render(); } });
+  } else {
+    if(dateFrom) chips.push({ label:`${FILTER_FIELD_LABELS.fDateFrom}: ${dateFrom}`, onRemove: ()=> clearSingleFilter('fDateFrom') });
+    if(dateTo) chips.push({ label:`${FILTER_FIELD_LABELS.fDateTo}: ${dateTo}`, onRemove: ()=> clearSingleFilter('fDateTo') });
+  }
+  ['fReviewFrom','fReviewTo'].forEach(id=>{
     const val = document.getElementById(id).value;
     if(val) chips.push({ label:`${FILTER_FIELD_LABELS[id]}: ${val}`, onRemove: ()=> clearSingleFilter(id) });
   });
@@ -2532,10 +2566,10 @@ function render(){
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = sumCompensation(rows);
   // SLA تنفيذ التعويض: average of (تاريخ التعويض − تاريخ إضافة الشكوى) in
-  // days, over records where both dates are present and valid — computed once
-  // per record in buildData() (sla_compensation_days) and simply averaged here.
-  const compSlaVals = rows.map(d=>d.sla_compensation_days).filter(v=> typeof v === 'number' && isFinite(v));
-  const avgCompSla = compSlaVals.length ? (compSlaVals.reduce((a,b)=>a+b,0)/compSlaVals.length) : null;
+  // days, over records where both dates are present and valid. Uses the
+  // single unified helper computeAvgCompensationSla() — same source as
+  // "الملخص التنفيذي" and every other place this figure appears.
+  const { avg: avgCompSla, count: compSlaCount } = computeAvgCompensationSla(rows);
 
   document.getElementById('kpiTotalSub').textContent = `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`;
   animateNumber(document.getElementById('kpiTotal'), total);
@@ -2545,9 +2579,11 @@ function render(){
   animateNumber(document.getElementById('kpiRejected'), rejected);
   document.getElementById('kpiPendingSub').textContent = `من أصل ${total} شكوى`;
   animateNumber(document.getElementById('kpiPending'), pending);
-  document.getElementById('kpiSlaSub').textContent = `إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
+  document.getElementById('kpiSlaSub').textContent = `يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى · إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
   animateNumber(document.getElementById('kpiSla'), avgSla, { decimals:1 });
-  document.getElementById('kpiCompSlaSub').textContent = compSlaVals.length ? `${compSlaVals.length} حالة تحتوي على تاريخي التحقيق والتعويض` : 'لا تتوفر بيانات كافية';
+  document.getElementById('kpiCompSlaSub').textContent = compSlaCount
+    ? `يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى · ${compSlaCount} حالة لديها التاريخان`
+    : 'يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى · لا تتوفر حالات كافية';
   if(avgCompSla === null){ document.getElementById('kpiCompSla').textContent = '—'; }
   else { animateNumber(document.getElementById('kpiCompSla'), avgCompSla, { decimals:1 }); }
 
@@ -2733,7 +2769,7 @@ function openModal(d){
       ${field('مبلغ التعويض', isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
       ${field('يتحمل التعويض', d.compensation_bearer)}
       ${field('شهر التعويض', d.compensation_month)}
-      ${field('SLA التعويض (يوم)', typeof d.sla_compensation_days==='number' ? d.sla_compensation_days : '—')}
+      ${field('SLA تنفيذ التعويض (يوم)', typeof d.sla_compensation_days==='number' ? d.sla_compensation_days : '—')}
       ${fieldFull('ملاحظات', d.notes)}
     </div>
   `;
@@ -3022,13 +3058,16 @@ function computeCoreExecutiveMetrics(rows){
   const slaOk = slaVals.filter(v=> v<=4).length;
   const slaCompliance = slaVals.length ? Math.round((slaOk/slaVals.length)*100) : null;
   const avgResolution = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : null;
+  // Same unified helper used by the KPI band, drill-downs, and everywhere
+  // else "SLA تنفيذ التعويض" is shown — never a separately-computed value.
+  const { avg: avgCompensationSla, count: compensationSlaCount } = computeAvgCompensationSla(rows);
   const totalComp = sumCompensation(rows);
   const closureRate = total ? Math.round((closed/total)*100) : null;
   const compRows = rows.filter(isCompensationCountable);
   const avgComp = compRows.length ? totalComp/compRows.length : null;
   const handlerCount = new Set(rows.filter(d=> d.owner && d.owner!=='غير محدد').map(d=>d.owner)).size;
   const avgPerHandler = handlerCount ? total/handlerCount : null;
-  return { total, open, closed, slaCompliance, avgResolution, totalComp, closureRate, avgComp, avgPerHandler };
+  return { total, open, closed, slaCompliance, avgResolution, avgCompensationSla, compensationSlaCount, totalComp, closureRate, avgComp, avgPerHandler };
 }
 
 function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
@@ -3049,7 +3088,10 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
     { tone:'tone-accept', label:'الشكاوى المغلقة', value: m.closed, trend: trendFor('closed', false) },
     { tone: m.slaCompliance===null ? '' : (m.slaCompliance>=70?'tone-accept':'tone-reject'),
       label:'الالتزام بـ SLA', value: m.slaCompliance===null ? '—' : `${m.slaCompliance}<sup>%</sup>`, trend: trendFor('slaCompliance', false) },
-    { tone:'tone-gold', label:'متوسط زمن الحل', value: m.avgResolution===null ? '—' : `${m.avgResolution.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgResolution', true) },
+    { tone:'tone-gold', label:'متوسط زمن الحل', value: m.avgResolution===null ? '—' : `${m.avgResolution.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgResolution', true),
+      hint:'يُحسب من: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى (للحالات ذات التاريخين الصحيحين فقط). الهدف: أقل من 4 أيام.' },
+    { tone:'tone-gold', label:'متوسط زمن تنفيذ التعويض', value: m.avgCompensationSla===null ? '—' : `${m.avgCompensationSla.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgCompensationSla', true),
+      hint:'يُحسب من: تاريخ التعويض − تاريخ إضافة الشكوى (للحالات ذات التاريخين الصحيحين فقط)' + (m.compensationSlaCount ? ` · ${m.compensationSlaCount} حالة` : '') },
     { tone:'tone-gold', label:'إجمالي التعويضات', value: `${m.totalComp.toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('totalComp', true) },
     { tone: m.closureRate===null ? '' : (m.closureRate>=60?'tone-accept':'tone-reject'),
       label:'معدل إغلاق الشكاوى', value: m.closureRate===null ? '—' : `${m.closureRate}<sup>%</sup>`, trend: trendFor('closureRate', false) },
@@ -3057,7 +3099,7 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
     { tone:'', label:'متوسط الشكاوى لكل معالج', value: m.avgPerHandler===null ? '—' : `${m.avgPerHandler.toFixed(1)}`, trend: trendFor('avgPerHandler', true) },
   ];
   grid.innerHTML = cards.map(c=>`
-    <div class="exec-core-card ${c.tone}">
+    <div class="exec-core-card ${c.tone}"${c.hint ? ` title="${c.hint.replace(/"/g,'&quot;')}"` : ''}>
       <div class="exec-core-label">${c.label}</div>
       <div class="exec-core-value value-pop">${c.value}</div>
       <div class="exec-core-trend">${c.trend}</div>
@@ -3869,7 +3911,7 @@ function achieveBar(pct, good){
 }
 
 function renderKpiEnhancements(rows){
-  const containers = ['kpiTotalEnh','kpiAcceptRateEnh','kpiRejectedEnh','kpiPendingEnh','kpiSlaEnh'];
+  const containers = ['kpiTotalEnh','kpiAcceptRateEnh','kpiRejectedEnh','kpiPendingEnh','kpiSlaEnh','kpiCompSlaEnh'];
   if(!rows.length){
     containers.forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML=''; });
     return;
@@ -3886,6 +3928,8 @@ function renderKpiEnhancements(rows){
   const rejectedPctOf = arr => { const dec = decidedOf(arr); const rej = arr.filter(d=>d.status && d.status.includes('رفض')).length; return dec.length ? (rej/dec.length)*100 : null; };
   const pendingPctOf = arr => arr.length ? (arr.filter(isOpen).length/arr.length)*100 : null;
   const avgSlaOf = arr => { const v = arr.map(d=>d.sla_resolution_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  // Same unified helper as everywhere else "SLA تنفيذ التعويض" is shown.
+  const avgCompSlaOf = arr => computeAvgCompensationSla(arr).avg;
 
   // Total complaints
   const totalSeries = lastNDatesSeries(rows, 14, arr=>arr.length);
@@ -3941,6 +3985,20 @@ function renderKpiEnhancements(rows){
     <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${slaTarget}</b> يوم</span>${trendBadge(avgSlaOf(currHalf), avgSlaOf(prevHalf), true)}</div>
     ${achieveBar(slaAch, slaCurr!==null && slaCurr<=slaTarget)}
     ${sparklineSvg(slaSeries, 'var(--gold)')}
+    <div class="stub-formula">يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى</div>
+  `;
+
+  // Avg compensation execution time (SLA تنفيذ التعويض). No approved target
+  // exists for this figure in the dashboard yet, so — unlike the resolution
+  // SLA above — this only shows the trend and the calculation method,
+  // without fabricating an achievement bar against an unset target.
+  const compSlaCurr = avgCompSlaOf(rows);
+  const compSlaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=avgCompSlaOf(arr); return v===null?0:v; });
+  const compSlaEl = document.getElementById('kpiCompSlaEnh');
+  if(compSlaEl) compSlaEl.innerHTML = `
+    <div class="stub-enh-row"><span class="stub-target">يُحسب من تاريخ إضافة الشكوى حتى تاريخ تنفيذ التعويض</span>${trendBadge(avgCompSlaOf(currHalf), avgCompSlaOf(prevHalf), true)}</div>
+    ${sparklineSvg(compSlaSeries, 'var(--gold)')}
+    <div class="stub-formula">يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى</div>
   `;
 }
 
@@ -4018,7 +4076,8 @@ const tooltipContent = {
   kpiAcceptRate: ()=> ({ title:'نسبة قبول التعويض', note:'نسبة الحالات المقبولة من إجمالي الحالات المقررة (مقبول أو مرفوض). إجراء مقترح: قارن النسبة عبر الفروع لتحديد التفاوت في معايير القبول.' }),
   kpiRejected: ()=> ({ title:'تعويضات مرفوضة', note:'عدد الشكاوى التي تم رفض التعويض عنها. إجراء مقترح: راجع أسباب الرفض المتكررة ضمن قسم التصنيف.' }),
   kpiPending: ()=> ({ title:'قيد التحقيق', note:'شكاوى لم يُبتّ فيها بعد. إجراء مقترح: تابع الحالات المفتوحة منذ أكثر من 5 أيام عبر مركز التنبيهات.' }),
-  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'متوسط عدد الأيام من تاريخ الشكوى حتى الحل. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 4 أيام.' })
+  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'يُحسب من: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى، للحالات التي لديها التاريخان فقط. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 4 أيام.' }),
+  kpiCompSla: ()=> ({ title:'متوسط زمن تنفيذ التعويض', note:'يُحسب من: تاريخ التعويض − تاريخ إضافة الشكوى، للحالات التي لديها التاريخان الصحيحان فقط (لا يُحسب من تاريخ نتيجة التحقيق). نفس هذا الحساب الموحّد يُستخدم في الملخص التنفيذي وكل تفاصيل الشكوى.' })
 };
 const smartTip = document.getElementById('smartTooltip');
 function showTip(el, html){
