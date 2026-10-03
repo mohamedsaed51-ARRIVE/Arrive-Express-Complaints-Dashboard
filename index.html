@@ -1417,6 +1417,33 @@ main .exec-core-grid{grid-template-columns:repeat(5,1fr)}
 .stub-value,.top-meta .meta-item .v,.snap-stat .sv{text-align:right}
 .badge.progress{background:var(--status-in-progress-bg);color:var(--status-in-progress-fg)}.badge.progress i{color:var(--status-in-progress)}
 #headerCurrentDate,#headerLastUpdate,#lsRefresh,#lsClock,.lu-time,.ls-v{direction:ltr;unicode-bidi:isolate}
+/* دمج الملخص التنفيذي داخل المؤشرات الرئيسية: إخفاء الكروت المكررة (الإجمالي، زمن الحل، زمن تنفيذ التعويض) */
+.kpi-subhead{margin:var(--space-6) 0 var(--space-3);font-weight:var(--fw-bold);font-size:var(--fs-subtitle);color:var(--arrive-navy)}
+.kpi-subhead span{font-weight:var(--fw-regular);font-size:var(--fs-caption);color:var(--gray-500);margin-inline-start:var(--space-3)}
+main .exec-core-grid>.exec-core-card:nth-child(1),main .exec-core-grid>.exec-core-card:nth-child(5),main .exec-core-grid>.exec-core-card:nth-child(6){display:none}
+main .exec-core-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+/* ---------- بطاقات مؤشرات موحّدة وصغيرة تحت «المؤشرات الرئيسية» ---------- */
+.kpi-subhead{display:none}
+.kpi-all{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--space-3);margin-bottom:var(--space-6);align-items:stretch}
+.kpi-all .kpi-row,.kpi-all .exec-core-panel,.kpi-all .exec-core-grid{display:contents}
+.kpi-all .stub,.kpi-all .exec-core-card{padding:12px 12px 10px;min-width:0}
+.kpi-all .stub-top{gap:8px;align-items:center}
+.kpi-all .stub-ic{width:28px;height:28px;min-width:28px;font-size:13px;border-radius:8px}
+.kpi-all .stub-label,.kpi-all .exec-core-label{font-size:11.5px;line-height:1.4}
+.kpi-all .stub-value,.kpi-all .exec-core-value{font-size:24px;line-height:1.25}
+.kpi-all .stub-value sup,.kpi-all .exec-core-value sup{font-size:11px}
+.kpi-all .stub-sub{font-size:10.5px;margin-top:2px}
+.kpi-all .stub-spark,.kpi-all .stub-achieve-track,.kpi-all .stub-enh>:not(.stub-enh-row){display:none}
+.kpi-all .stub-enh{margin-top:6px;padding-top:6px}
+.kpi-all .stub-enh-row{flex-wrap:wrap;gap:4px;margin:0}
+.kpi-all .stub-target{font-size:10px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kpi-all .exec-core-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow-card)}
+@media (max-width:1279px){.kpi-all{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:900px){.kpi-all{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.kpi-all{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi-all .stub-sub{display:none}
+.kpi-all .stub-target{-webkit-line-clamp:1}
 
 </style>
 <style>
@@ -1667,6 +1694,7 @@ body.report-open{overflow:hidden}
     <h2><span class="tag">مؤشرات</span> المؤشرات الرئيسية</h2>
     <span class="section-sub" id="kpiPeriodSub">محسوبة ضمن عوامل التصفية الحالية</span>
   </div>
+  <div class="kpi-all">
   <section class="kpi-row" id="kpiRow">
     <div class="stub tone-brand">
       <div class="stub-top">
@@ -1736,13 +1764,10 @@ body.report-open{overflow:hidden}
     </div>
   </section>
 
-  <div class="section-heading">
-    <h2><span class="tag">ملخص</span> الملخص التنفيذي</h2>
-    <span class="section-sub">أهم مؤشرات الأداء المحسوبة آليًا من البيانات الحالية ضمن عوامل التصفية</span>
-  </div>
   <section class="exec-core-panel" id="execCorePanel">
     <div class="exec-core-grid" id="execCoreGrid"></div>
   </section>
+  </div>
 
   <div class="section-heading">
     <h2><span class="tag">اتجاهات</span> الاتجاهات والتوزيعات</h2>
@@ -2659,10 +2684,10 @@ function makeCharts(){
   const ctxTrend = document.getElementById('chartTrend');
   chartTrend = new Chart(ctxTrend, {
     type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, cubicInterpolationMode:'monotone', pointRadius:0, pointHoverRadius:5, pointHitRadius:14, pointBackgroundColor:palette.navy, borderWidth:2 }]},
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
+      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'Inter','Cairo',sans-serif"}, callbacks:{ title:(items)=>{ const c=items[0].chart; return (c.rawLabels && c.rawLabels[items[0].dataIndex]) || items[0].label; }, label:(it)=>' عدد الشكاوى: '+it.parsed.y } } },
       scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
@@ -2998,7 +3023,7 @@ function updateCharts(rows){
   // trend
   const byDate = {};
   rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
-  const dateKeys = Object.keys(byDate).sort();
+  const dateKeys = (function(){ const ks=Object.keys(byDate).sort(); if(ks.length<2) return ks; const out=[]; const t0=Date.parse(ks[0]+'T00:00:00Z'), t1=Date.parse(ks[ks.length-1]+'T00:00:00Z'); for(let t=t0;t<=t1;t+=86400000){ const k=new Date(t).toISOString().slice(0,10); if(byDate[k]===undefined) byDate[k]=0; out.push(k); } return out; })();
   chartTrend.data.labels = dateKeys.map(d=>d.slice(5));
   chartTrend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
   // Full (unstripped) date strings, index-aligned with the display labels
@@ -5017,10 +5042,10 @@ function buildCompareChartSet(suf){
 
   set.trend = new Chart(document.getElementById('chartTrend_'+suf), {
     type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, cubicInterpolationMode:'monotone', pointRadius:0, pointHoverRadius:5, pointHitRadius:14, pointBackgroundColor:palette.navy, borderWidth:2 }]},
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
+      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'Inter','Cairo',sans-serif"}, callbacks:{ title:(items)=>{ const c=items[0].chart; return (c.rawLabels && c.rawLabels[items[0].dataIndex]) || items[0].label; }, label:(it)=>' عدد الشكاوى: '+it.parsed.y } } },
       scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:8} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
@@ -5104,7 +5129,7 @@ function updateCompareChartSet(set, rows){
   // trend
   const byDate = {};
   rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
-  const dateKeys = Object.keys(byDate).sort();
+  const dateKeys = (function(){ const ks=Object.keys(byDate).sort(); if(ks.length<2) return ks; const out=[]; const t0=Date.parse(ks[0]+'T00:00:00Z'), t1=Date.parse(ks[ks.length-1]+'T00:00:00Z'); for(let t=t0;t<=t1;t+=86400000){ const k=new Date(t).toISOString().slice(0,10); if(byDate[k]===undefined) byDate[k]=0; out.push(k); } return out; })();
   set.trend.data.labels = dateKeys.map(d=>d.slice(5));
   set.trend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
   set.trend.update();
