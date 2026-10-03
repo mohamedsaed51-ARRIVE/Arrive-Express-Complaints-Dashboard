@@ -4,1202 +4,46 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ARRIVE | لوحة متابعة الشكاوى</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23182633'/%3E%3Cpath d='M14 40 L32 16 L50 40' stroke='%23A9832E' stroke-width='6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M22 40 L32 27 L42 40' stroke='%23F3F1E9' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="assets/arrive-pin.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root{
-    --bg:#F5F4EF;
-    --surface:#FFFFFF;
-    --surface-alt:#FBFAF6;
-    --ink:#1E2536;
-    --ink-soft:#5B6478;
-    --ink-faint:#8E96A6;
-    --line:#E3E0D5;
-    --line-strong:#CFCBBC;
-    --navy:#2C4257;
-    --navy-deep:#182633;
-    --gold:#A9832E;
-    --accepted:#3F7D58;
-    --accepted-bg:#E9F2EB;
-    --rejected:#B5473F;
-    --rejected-bg:#F7EAE8;
-    --pending:#C08A2E;
-    --pending-bg:#FAF1DF;
-    --neutral:#6C7488;
-    --neutral-bg:#EEEDE6;
-    --shadow: 0 1px 2px rgba(24,38,51,0.04), 0 4px 14px rgba(24,38,51,0.05);
-    --health-green:#3F7D58; --health-yellow:#C08A2E; --health-orange:#C4622A; --health-red:#B5473F;
-  }
-  :root[data-theme="dark"]{
-    --bg:#12161F;
-    --surface:#1B212C;
-    --surface-alt:#20273348;
-    --surface-alt:#212836;
-    --ink:#E7E7E2;
-    --ink-soft:#AEB4C2;
-    --ink-faint:#7C8494;
-    --line:#2B3241;
-    --line-strong:#3A4356;
-    --navy:#7C97AE;
-    --navy-deep:#EDEBE0;
-    --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 4px 18px rgba(0,0,0,0.35);
-  }
-  html{ transition: background-color .25s ease; }
-  body{ transition: background-color .25s ease, color .25s ease; }
-  .panel, .stub, .table-panel, .filter-bar, .modal, .alert-card, .health-panel, .insights-panel, .exec-summary-panel, .exec-stat-card, .exec-compare-card, .exec-reco-item, .control-bar{
-    transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
-  }
-  /* chart canvases stay legible regardless of theme, per requirement */
-  .chart-wrap{ background:#fff; border-radius:8px; }
-
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:'IBM Plex Sans Arabic', 'Tajawal', sans-serif;
-    font-size:14px;
-    line-height:1.5;
-    min-height:100vh;
-    overflow-x:hidden;
-    background-image:
-      radial-gradient(circle at 100% 0%, rgba(44,66,87,0.04), transparent 45%),
-      radial-gradient(circle at 0% 100%, rgba(169,131,46,0.05), transparent 40%);
-  }
-  .num{ font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate; }
-
-  ::selection{ background:var(--navy); color:#fff; }
-
-  /* ---------- Header ---------- */
-  header.top{
-    background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 100%);
-    color:#F3F1E9;
-    padding:26px 40px 22px;
-    position:relative;
-    overflow:hidden;
-  }
-  header.top::before{
-    content:"";
-    position:absolute; inset:0;
-    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px);
-    pointer-events:none;
-  }
-  .top-row{ display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; position:relative; z-index:1;}
-  .brand-eyebrow{
-    font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate;
-    font-size:11px; letter-spacing:.14em; color:#C9BE9E; text-transform:uppercase; margin-bottom:6px; display:block;
-  }
-  h1.title{
-    font-family:'Tajawal', sans-serif; font-weight:800; font-size:30px; letter-spacing:.2px; color:#fff;
-  }
-  .subtitle{ color:#B9C3CE; font-size:13.5px; margin-top:6px; }
-  .top-meta{ display:flex; gap:26px; flex-wrap:wrap; }
-  .top-meta .meta-item{ text-align:left; }
-  .top-meta .meta-item .v{ font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:#fff; direction:ltr; }
-  .top-meta .meta-item .l{ font-size:11px; color:#AEB9C6; margin-top:2px; }
-
-  /* ---------- Filter bar ---------- */
-  .filter-bar{
-    background:var(--surface);
-    border-bottom:1px solid var(--line);
-    box-shadow: var(--shadow);
-    padding:14px 40px;
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  }
-  .filter-bar .fgroup{ display:flex; flex-direction:column; gap:4px; }
-  .filter-bar label{ font-size:10.5px; color:var(--ink-faint); letter-spacing:.03em; }
-  .filter-bar select, .filter-bar input[type=text]{
-    appearance:none;
-    background:var(--surface-alt);
-    border:1px solid var(--line-strong);
-    border-radius:7px;
-    padding:8px 12px;
-    font-family:inherit;
-    font-size:13px;
-    color:var(--ink);
-    width:160px;
-    max-width:160px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    cursor:pointer;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .filter-bar input[type=text]{ cursor:text; width:220px; max-width:220px; }
-  .filter-bar select:hover, .filter-bar input[type=text]:hover{ border-color:var(--navy); }
-  .filter-bar select:focus, .filter-bar input[type=text]:focus{
-    outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12);
-  }
-  .filter-spacer{ flex:1; }
-  .filter-divider{ flex-basis:100%; height:1px; background:var(--line); margin:2px 0 4px; }
-  .filter-bar input[type=date]{
-    appearance:none;
-    background:var(--surface-alt);
-    border:1px solid var(--line-strong);
-    border-radius:7px;
-    padding:7px 10px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12.5px;
-    color:var(--ink);
-    min-width:140px;
-    cursor:pointer;
-    direction:ltr;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .filter-bar input[type=date]:hover{ border-color:var(--navy); }
-  .filter-bar input[type=date]:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
-
-  /* ---------- Multi-select filter (Autocomplete-style: search, chips, select-all/clear-all) ---------- */
-  .ms{ position:relative; width:210px; }
-  .ms-control{
-    appearance:none;
-    background:var(--surface-alt);
-    border:1px solid var(--line-strong);
-    border-radius:7px;
-    padding:6px 10px;
-    font-family:inherit;
-    font-size:12.5px;
-    color:var(--ink);
-    width:100%;
-    min-height:34px;
-    display:flex;
-    align-items:center;
-    gap:6px;
-    cursor:pointer;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .ms-control:hover{ border-color:var(--navy); }
-  .ms.open .ms-control, .ms-control:focus-visible{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
-  .ms-chips{ flex:1; display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap; min-width:0; }
-  .ms-chips .ms-placeholder{ color:var(--ink-faint); }
-  .ms-chip{
-    background:var(--navy); color:#fff; border-radius:10px; padding:2px 7px 2px 4px;
-    font-size:11px; display:inline-flex; align-items:center; gap:3px; flex:none; max-width:110px;
-  }
-  .ms-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ms-chip button{
-    background:rgba(255,255,255,0.25); border:none; border-radius:50%; color:#fff; cursor:pointer;
-    width:14px; height:14px; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:center; padding:0; flex:none;
-  }
-  .ms-chip button:hover{ background:rgba(255,255,255,0.45); }
-  .ms-chip-more{ font-size:11px; color:var(--ink-faint); flex:none; }
-  .ms-caret{ flex:none; color:var(--ink-faint); font-size:10px; transition:transform .15s ease; }
-  .ms.open .ms-caret{ transform:rotate(180deg); }
-  .ms-panel{
-    position:absolute; top:calc(100% + 4px); right:0; left:0; z-index:60;
-    background:var(--surface); border:1px solid var(--line-strong); border-radius:9px;
-    box-shadow:0 10px 30px rgba(24,38,51,0.18); padding:8px; display:none; min-width:230px;
-  }
-  .ms.open .ms-panel{ display:block; }
-  .ms-search{
-    width:100%; box-sizing:border-box; padding:7px 10px; border:1px solid var(--line);
-    border-radius:6px; background:var(--surface-alt); color:var(--ink); font-family:inherit; font-size:12.5px;
-    margin-bottom:6px;
-  }
-  .ms-search:focus{ outline:none; border-color:var(--navy); }
-  .ms-actions{ display:flex; gap:6px; margin-bottom:6px; }
-  .ms-actions button{
-    flex:1; background:var(--surface-alt); border:1px solid var(--line); border-radius:6px;
-    padding:5px 6px; font-size:11px; color:var(--navy); cursor:pointer; font-family:inherit;
-  }
-  .ms-actions button:hover{ background:var(--neutral-bg); border-color:var(--navy); }
-  .ms-options{ max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:1px; }
-  .ms-option{
-    display:flex; align-items:center; gap:7px; padding:6px 7px; border-radius:5px; cursor:pointer; font-size:12.5px; color:var(--ink);
-  }
-  .ms-option:hover{ background:var(--neutral-bg); }
-  .ms-option input[type=checkbox]{ accent-color:var(--navy); cursor:pointer; flex:none; }
-  .ms-option span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ms-empty{ padding:10px; text-align:center; color:var(--ink-faint); font-size:12px; }
-  @media (max-width:900px){
-    .ms{ width:100%; }
-    .ms-panel{ left:0; right:0; }
-  }
-
-  .btn-reset{
-    background:transparent; border:1px solid var(--line-strong); border-radius:7px;
-    padding:8px 16px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; font-family:inherit;
-    transition:.15s ease;
-    align-self:flex-end;
-  }
-  .btn-reset:hover{ border-color:var(--rejected); color:var(--rejected); }
-  .result-count{ font-size:12px; color:var(--ink-faint); align-self:flex-end; padding-bottom:9px; white-space:nowrap; }
-  .result-count b{ color:var(--navy); font-family:'IBM Plex Mono',monospace; }
-
-  main{ padding:30px 40px 60px; max-width:1440px; margin:0 auto; }
-
-  /* ---------- KPI waybill stubs (signature element) ---------- */
-  .kpi-row{
-    display:grid;
-    grid-template-columns:repeat(6, 1fr);
-    gap:16px;
-    margin-bottom:30px;
-  }
-  .stub{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:10px;
-    position:relative;
-    padding:16px 16px 14px;
-    box-shadow:var(--shadow);
-    overflow:hidden;
-  }
-  .stub::after{ /* perforation notch on the right (leading) edge, RTL so it's the start edge */
-    content:"";
-    position:absolute; top:0; right:-1px; bottom:0; width:0;
-    border-right:2px dashed var(--line-strong);
-  }
-  .stub .barcode{
-    position:absolute; top:14px; left:14px; display:flex; gap:1.5px; align-items:flex-end; height:20px; opacity:.5;
-  }
-  .stub .barcode i{ display:block; width:2px; background:var(--ink-faint); }
-  .stub .stub-label{
-    font-size:10.5px; color:var(--ink-faint); letter-spacing:.05em; margin-bottom:8px; padding-left:60px;
-  }
-  .stub .stub-value{
-    font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:isolate;
-    font-size:28px; font-weight:600; color:var(--navy-deep); line-height:1;
-  }
-  .stub .stub-value sup{ font-size:14px; font-weight:500; color:var(--ink-faint); margin-right:3px;}
-  .stub .stub-sub{ font-size:11px; color:var(--ink-soft); margin-top:7px; }
-  .stub.accent-gold .stub-value{ color:var(--gold); }
-  .stub.accent-accepted .stub-value{ color:var(--accepted); }
-  .stub.accent-rejected .stub-value{ color:var(--rejected); }
-  .stub.accent-pending .stub-value{ color:var(--pending); }
-
-  /* ---------- Panels / charts ---------- */
-  .panel-grid{
-    display:grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap:16px;
-    margin-bottom:16px;
-  }
-  .panel-grid.thirds{ grid-template-columns: 1fr 1fr 1fr; }
-  .panel{
-    background:var(--surface);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:18px 20px 14px;
-    box-shadow:var(--shadow);
-  }
-  .panel h3{
-    font-family:'Tajawal',sans-serif; font-weight:700; font-size:15px; color:var(--navy-deep);
-    margin-bottom:2px;
-  }
-  .panel .panel-sub{ font-size:11.5px; color:var(--ink-faint); margin-bottom:12px; }
-  .chart-wrap{ position:relative; height:250px; }
-  .chart-wrap.tall{ height:300px; }
-
-  /* ---------- Table ---------- */
-  .table-panel{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden;
-  }
-  .table-head-bar{
-    display:flex; justify-content:space-between; align-items:center; padding:16px 20px 12px; border-bottom:1px solid var(--line);
-  }
-  .table-scroll{ overflow-x:auto; max-height:640px; overflow-y:auto; }
-  table{ width:100%; border-collapse:collapse; font-size:12.8px; }
-  thead th{
-    position:sticky; top:0; z-index:5;
-    background:var(--surface-alt);
-    text-align:right;
-    padding:10px 14px;
-    font-size:11px; letter-spacing:.03em; color:var(--ink-soft); font-weight:600;
-    border-bottom:1px solid var(--line-strong);
-    cursor:pointer;
-    white-space:nowrap;
-    user-select:none;
-  }
-  thead th:hover{ color:var(--navy); }
-  thead th .arrow{ opacity:.4; font-size:9px; margin-left:3px; }
-  tbody tr{ border-bottom:1px solid var(--line); transition:background .1s ease; cursor:pointer; }
-  tbody tr:hover{ background:var(--surface-alt); }
-  tbody td{ padding:10px 14px; color:var(--ink); vertical-align:top; }
-  td.id-cell{ font-family:'IBM Plex Mono',monospace; color:var(--ink-faint); direction:ltr; text-align:right; }
-  td.content-cell{ max-width:320px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  td.amount-cell{ font-family:'IBM Plex Mono',monospace; direction:ltr; text-align:right; color:var(--navy-deep); font-weight:600;}
-
-  .badge{
-    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap;
-  }
-  .badge.accepted{ background:var(--accepted-bg); color:var(--accepted); }
-  .badge.rejected{ background:var(--rejected-bg); color:var(--rejected); }
-  .badge.pending{ background:var(--pending-bg); color:var(--pending); }
-  .badge.neutral{ background:var(--neutral-bg); color:var(--neutral); }
-
-  .empty-row td{ text-align:center; padding:48px 20px; color:var(--ink-faint); font-size:13px; }
-
-  /* ---------- Detail modal ---------- */
-  .overlay{
-    position:fixed; inset:0; background:rgba(24,38,51,0.45); backdrop-filter:blur(2px);
-    display:none; align-items:center; justify-content:center; z-index:100; padding:24px;
-  }
-  .overlay.open{ display:flex; }
-  /* Settings modal must always render above the loading skeleton (z-index:500) so it's
-     never accidentally obscured while the initial data load is in progress. */
-  #settingsOverlay{ z-index:600; }
-  .modal{
-    background:var(--surface); border-radius:12px; max-width:620px; width:100%; max-height:82vh; overflow-y:auto;
-    box-shadow:0 20px 60px rgba(24,38,51,0.3);
-    position:relative;
-  }
-  .modal-head{
-    padding:20px 24px 14px; border-bottom:1px solid var(--line);
-    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
-  }
-  .modal-head .mid{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint); direction:ltr; }
-  .modal-head h2{ font-family:'Tajawal',sans-serif; font-size:18px; margin-top:4px; color:var(--navy-deep); }
-  .modal-close{ background:none; border:none; font-size:20px; color:var(--ink-faint); cursor:pointer; line-height:1; padding:4px; }
-  .modal-close:hover{ color:var(--rejected); }
-  .modal-body{ padding:18px 24px 24px; display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
-  .modal-body .field{ grid-column: span 1; }
-  .modal-body .field.full{ grid-column:1 / -1; }
-  .modal-body .field .l{ font-size:10.5px; color:var(--ink-faint); margin-bottom:3px; letter-spacing:.03em; }
-  .modal-body .field .v{ font-size:13px; color:var(--ink); }
-  /* Wider modal variant used for the Smart Insights drill-down (needs room for a
-     small results table); the standard complaint modal keeps its normal width. */
-  .modal.modal-wide{ max-width:860px; }
-  .drilldown-summary{
-    display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px 16px;
-    padding:2px 0 4px;
-  }
-  .drilldown-summary .field .l{ font-size:10.5px; color:var(--ink-faint); margin-bottom:3px; letter-spacing:.03em; }
-  .drilldown-summary .field .v{ font-size:14px; color:var(--ink); font-weight:600; }
-  .drilldown-section-title{ font-size:12px; font-weight:700; color:var(--ink-faint); letter-spacing:.02em; margin:14px 0 8px; }
-  .drilldown-table thead th{ text-align:right; padding:8px 10px; font-size:11px; color:var(--ink-faint); font-weight:600; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
-  .drilldown-table tbody tr{ border-bottom:1px solid var(--line); cursor:pointer; }
-  .drilldown-table tbody tr:hover{ background:var(--surface-alt); }
-  .drilldown-table td{ padding:8px 10px; vertical-align:middle; color:var(--ink); font-size:12px; }
-
-  footer{ text-align:center; padding:24px; font-size:11px; color:var(--ink-faint); }
-
-  @media (max-width: 1100px){
-    .kpi-row{ grid-template-columns:repeat(2,1fr); }
-    .panel-grid, .panel-grid.thirds{ grid-template-columns:1fr; }
-    header.top, .filter-bar, main{ padding-left:18px; padding-right:18px; }
-    .modal-body{ grid-template-columns:1fr; }
-  }
-
-  :focus-visible{ outline:2px solid var(--navy); outline-offset:2px; }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ transition:none !important; scroll-behavior:auto !important; }
-  }
-
-  /* ======================================================
-     ENTERPRISE ADD-ONS
-     ====================================================== */
-
-  /* ---- Header dark-mode toggle ---- */
-  .theme-toggle{
-    position:relative; z-index:1;
-    display:inline-flex; align-items:center; gap:8px;
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
-    color:#F3F1E9; border-radius:20px; padding:6px 12px; font-size:11.5px; cursor:pointer;
-    font-family:inherit; margin-top:10px; transition:.15s ease;
-  }
-  .theme-toggle:hover{ background:rgba(255,255,255,0.16); }
-
-  /* ---- Control bar (live stats + quick actions) ---- */
-  .control-bar{
-    background:var(--surface); border-bottom:1px solid var(--line);
-    padding:9px 40px; display:flex; align-items:center; gap:22px; flex-wrap:wrap;
-    font-size:11.5px; color:var(--ink-soft); position:sticky; top:0; z-index:39; box-shadow:var(--shadow);
-  }
-  .live-stats{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-  .live-stats .ls-item{ display:flex; align-items:center; gap:5px; white-space:nowrap; }
-  .live-stats .ls-item .ls-l{ color:var(--ink-faint); }
-  .live-stats .ls-item .ls-v{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:var(--navy-deep); font-weight:600; }
-  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--accepted); display:inline-block; box-shadow:0 0 0 3px var(--accepted-bg); animation:pulseDot 2s infinite; }
-  @keyframes pulseDot{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
-  .qa-spacer{ flex:1; }
-  .quick-actions{ display:flex; gap:8px; flex-wrap:wrap; }
-  .qa-btn{
-    display:inline-flex; align-items:center; gap:6px;
-    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:7px;
-    padding:6px 12px; font-size:11.5px; color:var(--ink); cursor:pointer; font-family:inherit; transition:.15s ease;
-  }
-  .qa-btn:hover{ border-color:var(--navy); color:var(--navy); background:var(--surface); }
-  .qa-btn .qa-icon{ font-size:13px; line-height:1; }
-  .active-alert-chip{
-    display:inline-flex; align-items:center; gap:8px; background:var(--pending-bg); color:var(--pending);
-    border-radius:20px; padding:5px 12px; font-size:11.5px; font-weight:600;
-  }
-  .active-alert-chip button{ background:none; border:none; color:inherit; cursor:pointer; font-size:13px; line-height:1; padding:0; }
-
-  /* ---- Unified "Active Filters" bar (task 4) ----
-     Shows every currently-active filter — manual selections, date ranges,
-     search text, and chart-driven drill-downs — as one removable chip each.
-     Reads directly from the same DOM filter elements getFiltered() reads
-     from, so it can never drift out of sync with the actual applied filters. */
-  .active-filters-bar{
-    display:none; align-items:center; gap:8px; flex-wrap:wrap;
-    background:var(--surface); border-bottom:1px solid var(--line);
-    padding:10px 40px;
-  }
-  .active-filters-bar.has-filters{ display:flex; }
-  .active-filters-label{ font-size:11.5px; font-weight:700; color:var(--ink-faint); white-space:nowrap; }
-  .active-filter-chip{
-    display:inline-flex; align-items:center; gap:8px; background:var(--surface-alt); color:var(--navy-deep);
-    border:1px solid var(--line-strong); border-radius:20px; padding:5px 10px 5px 12px; font-size:11.5px; font-weight:600;
-  }
-  .active-filter-chip.is-alert{ background:var(--pending-bg); color:var(--pending); border-color:transparent; }
-  .active-filter-chip button{
-    background:rgba(0,0,0,0.06); border:none; color:inherit; cursor:pointer; font-size:11px; line-height:1;
-    width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; padding:0;
-  }
-  .active-filter-chip button:hover{ background:var(--rejected); color:#fff; }
-  .active-filters-clear-all{
-    background:none; border:none; color:var(--navy); font-size:11.5px; font-weight:700; cursor:pointer;
-    font-family:inherit; text-decoration:underline; padding:4px 2px; margin-inline-start:4px;
-  }
-  .active-filters-clear-all:hover{ color:var(--rejected); }
-  @media (max-width: 1100px){
-    .active-filters-bar{ padding:9px 18px; }
-  }
-
-  /* ---- Section heading shared style ---- */
-  .section-heading{ display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 14px; gap:12px; flex-wrap:wrap; }
-  .section-heading h2{ font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; color:var(--navy-deep); display:flex; align-items:center; gap:9px; }
-  .section-heading h2 .tag{
-    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.08em; color:#fff; background:var(--navy);
-    border-radius:5px; padding:2px 7px; text-transform:uppercase;
-  }
-  .section-heading .section-sub{ font-size:11.5px; color:var(--ink-faint); }
-
-  /* ---- Alert Center ---- */
-  .alert-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px; margin-bottom:8px; }
-  .alert-card{
-    background:var(--surface); border:1px solid var(--line); border-right:4px solid var(--neutral);
-    border-radius:10px; padding:13px 16px; box-shadow:var(--shadow); cursor:pointer; text-align:right;
-    display:flex; flex-direction:column; gap:6px; transition:.15s ease;
-  }
-  .alert-card:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(24,38,51,0.1); }
-  .alert-card.crit{ border-right-color:var(--rejected); }
-  .alert-card.high{ border-right-color:var(--pending); }
-  .alert-card.med{ border-right-color:var(--gold); }
-  .alert-card.low{ border-right-color:var(--accepted); }
-  .alert-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .alert-emoji{ font-size:15px; line-height:1; }
-  .alert-priority{
-    font-size:9.5px; letter-spacing:.06em; font-weight:700; text-transform:uppercase; border-radius:5px; padding:2px 7px;
-  }
-  .alert-priority.crit{ background:var(--rejected-bg); color:var(--rejected); }
-  .alert-priority.high{ background:var(--pending-bg); color:var(--pending); }
-  .alert-priority.med{ background:var(--pending-bg); color:var(--gold); }
-  .alert-priority.low{ background:var(--accepted-bg); color:var(--accepted); }
-  .alert-desc{ font-size:12.5px; color:var(--ink); line-height:1.45; }
-  .alert-bottom{ display:flex; align-items:baseline; justify-content:space-between; margin-top:2px; }
-  .alert-count{ font-family:'IBM Plex Mono',monospace; direction:ltr; font-size:20px; font-weight:700; color:var(--navy-deep); }
-  .alert-cta{ font-size:10.5px; color:var(--navy); }
-  .alert-empty{ padding:20px; text-align:center; color:var(--ink-faint); font-size:12.5px; background:var(--surface); border:1px dashed var(--line-strong); border-radius:10px; }
-
-  /* ---- Executive Insights ---- */
-  .insights-panel{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
-    padding:18px 20px; display:flex; flex-direction:column; gap:10px;
-  }
-  .insight-row{ display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--ink); line-height:1.6; }
-  .insight-row .bullet{ color:var(--gold); font-size:16px; line-height:1.3; flex-shrink:0; }
-  .insight-row b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
-
-  /* ---- Executive Summary panel ---- */
-  .exec-summary-panel{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
-    padding:20px; display:flex; flex-direction:column; gap:20px;
-  }
-  .exec-summary-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:12px; }
-  .exec-stat-card{
-    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--navy);
-    border-radius:9px; padding:12px 14px; display:flex; flex-direction:column; gap:5px;
-    transition:transform .15s ease, box-shadow .15s ease; cursor:pointer;
-  }
-  .exec-stat-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
-  .exec-stat-card:focus-visible{ outline:2px solid var(--navy); outline-offset:2px; }
-  .exec-stat-cta{ font-size:10.5px; color:var(--navy); margin-top:2px; }
-  .exec-stat-card.tone-gold{ border-right-color:var(--gold); }
-  .exec-stat-card.tone-accept{ border-right-color:var(--accepted); }
-  .exec-stat-card.tone-reject{ border-right-color:var(--rejected); }
-  .exec-stat-card.tone-pending{ border-right-color:var(--pending); }
-  .exec-stat-label{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); font-weight:600; letter-spacing:.02em; }
-  .exec-stat-icon{ font-size:12px; }
-  .exec-stat-value{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); line-height:1.2; }
-  .exec-stat-sub{ font-size:11px; color:var(--ink-soft); line-height:1.4; }
-
-  .exec-summary-subgrid{ display:grid; grid-template-columns:1.3fr 1fr; gap:20px; }
-  @media (max-width: 900px){ .exec-summary-subgrid{ grid-template-columns:1fr; } }
-  .exec-subheading{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:12.5px; color:var(--navy-deep); margin-bottom:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .exec-rule-tag{ font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:500; font-size:10px; color:var(--ink-faint); background:var(--neutral-bg); border-radius:12px; padding:2px 9px; }
-
-  .exec-compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  @media (max-width: 480px){ .exec-compare-grid{ grid-template-columns:1fr; } }
-  .exec-compare-card{ background:var(--surface-alt); border:1px solid var(--line); border-radius:9px; padding:11px 13px; }
-  .exec-compare-title{ font-size:11px; color:var(--ink-faint); font-weight:600; margin-bottom:6px; }
-  .exec-compare-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
-  .exec-compare-num{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:16px; font-weight:700; color:var(--navy-deep); }
-  .exec-compare-delta{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11px; font-weight:700; border-radius:11px; padding:2px 8px; }
-  .exec-compare-delta.up-bad{ background:var(--rejected-bg); color:var(--rejected); }
-  .exec-compare-delta.up-good{ background:var(--accepted-bg); color:var(--accepted); }
-  .exec-compare-delta.down-bad{ background:var(--rejected-bg); color:var(--rejected); }
-  .exec-compare-delta.down-good{ background:var(--accepted-bg); color:var(--accepted); }
-  .exec-compare-delta.flat{ background:var(--neutral-bg); color:var(--neutral); }
-  .exec-compare-caption{ font-size:10.5px; color:var(--ink-faint); margin-top:5px; }
-
-  .exec-reasons-list{ display:flex; flex-direction:column; gap:7px; }
-  .exec-reason-row{ display:flex; align-items:center; gap:9px; }
-  .exec-reason-name{ font-size:12px; color:var(--ink); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .exec-reason-bar-track{ flex:1.4; height:6px; border-radius:4px; background:var(--neutral-bg); overflow:hidden; }
-  .exec-reason-bar-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg, var(--gold), var(--navy)); }
-  .exec-reason-pct{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11px; color:var(--ink-soft); width:34px; text-align:left; flex-shrink:0; }
-
-  .exec-reco-block{ border-top:1px dashed var(--line-strong); padding-top:16px; }
-  .exec-reco-list{ display:flex; flex-direction:column; gap:8px; }
-  .exec-reco-item{
-    display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--ink); line-height:1.55;
-    background:var(--surface-alt); border:1px solid var(--line); border-radius:8px; padding:9px 12px;
-  }
-  .exec-reco-item .reco-icon{ flex-shrink:0; font-size:13px; }
-  .exec-reco-item b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
-  .exec-reco-empty{ font-size:12.5px; color:var(--ink-faint); padding:6px 2px; }
-
-  /* ---- Core Executive Summary strip (top of dashboard) ---- */
-  .exec-core-panel{
-    background:var(--surface); border:1px solid var(--line); border-radius:12px;
-    padding:18px 20px; box-shadow:var(--shadow); margin-bottom:22px;
-  }
-  .exec-core-grid{ display:grid; grid-template-columns:repeat(9, 1fr); gap:12px; }
-  @media (max-width:1400px){ .exec-core-grid{ grid-template-columns:repeat(5,1fr); } }
-  @media (max-width:1200px){ .exec-core-grid{ grid-template-columns:repeat(4,1fr); } }
-  @media (max-width:640px){ .exec-core-grid{ grid-template-columns:repeat(2,1fr); } }
-  .exec-core-card{
-    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--navy);
-    border-radius:9px; padding:11px 12px;
-  }
-  .exec-core-card.tone-accept{ border-right-color:var(--accepted); }
-  .exec-core-card.tone-reject{ border-right-color:var(--rejected); }
-  .exec-core-card.tone-pending{ border-right-color:var(--pending); }
-  .exec-core-card.tone-gold{ border-right-color:var(--gold); }
-  .exec-core-label{ font-size:10px; color:var(--ink-faint); font-weight:600; letter-spacing:.02em; margin-bottom:6px; }
-  .exec-core-value{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:20px; font-weight:700; color:var(--navy-deep); line-height:1.15; }
-  .exec-core-value sup{ font-size:11px; font-weight:600; color:var(--ink-faint); margin-right:2px; }
-
-  /* ---- Smart Insight cards ---- */
-  .insight-cards-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-bottom:14px; }
-  .insight-card{
-    background:var(--surface-alt); border:1px solid var(--line); border-right:3px solid var(--gold);
-    border-radius:9px; padding:12px 13px;
-  }
-  .insight-card-label{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--ink-faint); font-weight:600; margin-bottom:6px; }
-  .insight-card-value{ font-size:13.5px; font-weight:700; color:var(--navy-deep); margin-bottom:3px; word-break:break-word; }
-  .insight-card-sub{ font-size:11px; color:var(--ink-soft); line-height:1.4; }
-  .insight-bullets{ display:flex; flex-direction:column; gap:9px; padding-top:4px; border-top:1px dashed var(--line-strong); }
-
-  /* ---- Top Performers ---- */
-  .top-performers-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-  @media (max-width:1100px){ .top-performers-grid{ grid-template-columns:repeat(2,1fr); } }
-  @media (max-width:600px){ .top-performers-grid{ grid-template-columns:1fr; } }
-  .tp-card{ background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:14px 15px; }
-  .tp-card h5{ font-size:12px; font-weight:700; color:var(--navy-deep); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
-  .tp-row{ display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--line); font-size:12px; }
-  .tp-row:last-child{ border-bottom:none; }
-  .tp-rank{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-faint); width:16px; flex-shrink:0; }
-  .tp-name{ flex:1; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .tp-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:11.5px; font-weight:700; color:var(--navy-deep); flex-shrink:0; }
-  .tp-empty{ font-size:12px; color:var(--ink-faint); padding:6px 0; }
-
-  /* ---- KPI enhancement: target / achievement / trend / sparkline ---- */
-  .stub-enh{ margin-top:10px; padding-top:9px; border-top:1px dashed var(--line-strong); }
-  .stub-enh-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
-  .stub-target{ font-size:10px; color:var(--ink-faint); }
-  .stub-target b{ color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
-  .stub-formula{ font-size:9.5px; color:var(--ink-faint); margin-top:6px; opacity:.85; }
-  .stub-trend{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; border-radius:10px; padding:1px 7px; direction:ltr; unicode-bidi:isolate; }
-  .stub-trend.up{ background:var(--accepted-bg); color:var(--accepted); }
-  .stub-trend.down{ background:var(--rejected-bg); color:var(--rejected); }
-  .stub-trend.flat{ background:var(--neutral-bg); color:var(--neutral); }
-  .stub-achieve-track{ height:5px; border-radius:3px; background:var(--neutral-bg); overflow:hidden; margin-bottom:6px; }
-  .stub-achieve-fill{ height:100%; border-radius:3px; background:var(--navy); }
-  .stub-achieve-fill.good{ background:var(--accepted); }
-  .stub-achieve-fill.bad{ background:var(--rejected); }
-  .stub-spark{ display:block; width:100%; height:24px; }
-
-  /* ---- Complaint Handler Performance Index ---- */
-  .health-panel{ background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
-  .health-table-wrap{ overflow-x:auto; max-height:420px; overflow-y:auto; }
-  table.health-table{ width:100%; border-collapse:collapse; font-size:12.6px; }
-  table.health-table thead th{
-    position:sticky; top:0; background:var(--surface-alt); text-align:right; padding:10px 14px; font-size:11px;
-    color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--line-strong); cursor:pointer; white-space:nowrap;
-  }
-  table.health-table thead th:hover{ color:var(--navy); }
-  table.health-table tbody tr{ border-bottom:1px solid var(--line); cursor:pointer; }
-  table.health-table tbody tr:hover{ background:var(--surface-alt); }
-  table.health-table td{ padding:9px 14px; vertical-align:middle; color:var(--ink); }
-  .health-score-cell{ display:flex; align-items:center; gap:9px; }
-  .health-dot{ width:11px; height:11px; border-radius:50%; flex-shrink:0; }
-  .health-score-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; direction:ltr; }
-  .health-bar-track{ background:var(--neutral-bg); border-radius:20px; height:6px; width:90px; overflow:hidden; }
-  .health-bar-fill{ height:100%; border-radius:20px; }
-  .health-badge{ font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; }
-  .health-trend{ font-family:'IBM Plex Mono',monospace; font-weight:700; direction:ltr; }
-  .health-trend.up{ color:var(--health-green); }
-  .health-trend.down{ color:var(--health-red); }
-  .health-trend.flat{ color:var(--ink-faint); }
-
-  /* ---- Smart tooltip ---- */
-  #smartTooltip{
-    position:fixed; z-index:200; max-width:270px; background:var(--navy-deep); color:#F5F4EF;
-    border-radius:9px; padding:11px 13px; font-size:11.5px; line-height:1.6; box-shadow:0 10px 30px rgba(0,0,0,0.25);
-    pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
-  }
-  #smartTooltip.show{ opacity:1; transform:translateY(0); }
-  #smartTooltip .tt-row{ display:flex; justify-content:space-between; gap:10px; margin-bottom:3px; }
-  #smartTooltip .tt-label{ color:#C9BE9E; }
-  #smartTooltip .tt-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; }
-  #smartTooltip .tt-note{ margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.15); color:#D7DBE3; }
-  .stub, .panel h3{ cursor:help; }
-
-  /* ---- Skeleton loading ---- */
-  #pageSkeleton{
-    position:fixed; inset:0; z-index:500; background:var(--bg); padding:30px 40px; overflow:hidden;
-    display:flex; flex-direction:column; gap:16px; transition:opacity .35s ease, visibility .35s ease;
-  }
-  #pageSkeleton.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
-  .sk-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
-  .sk-block{
-    background:linear-gradient(90deg, var(--surface-alt) 25%, var(--line) 37%, var(--surface-alt) 63%);
-    background-size:400% 100%; animation:skShimmer 1.4s ease infinite; border-radius:10px;
-  }
-  @keyframes skShimmer{ 0%{background-position:100% 50%;} 100%{background-position:0 50%;} }
-  .sk-kpi{ height:96px; }
-  .sk-chart{ height:250px; }
-  .sk-charts-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .sk-table{ height:260px; }
-
-  /* ---- Non-blocking demo-mode banner (shown when no API URL is configured) ---- */
-  .demo-mode-banner{
-    display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
-    background:#FCEFC7; color:#7a5b06; border-bottom:1px solid #E9C46A;
-    padding:8px 16px; font-size:12.5px; text-align:center;
-  }
-  .demo-mode-banner.hidden{ display:none; }
-  .demo-mode-banner .dmb-settings-btn{
-    background:#7a5b06; color:#fff; border:none; border-radius:6px; padding:4px 10px;
-    font-size:11.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
-  }
-  .demo-mode-banner .dmb-settings-btn:hover{ opacity:.85; }
-
-  /* ---- Slim background-refresh problem banner ---- */
-  .refresh-banner{
-    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
-    z-index:150; background:var(--navy-deep); color:#F3F1E9; border-radius:10px;
-    padding:10px 16px; display:flex; align-items:center; gap:10px; font-size:12.5px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.25); max-width:90vw; transition:opacity .2s ease, visibility .2s ease;
-  }
-  .refresh-banner.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
-  .refresh-banner-msg{ color:#D7DBE3; }
-  .refresh-banner-btn{
-    background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); color:#fff;
-    border-radius:7px; padding:5px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; white-space:nowrap;
-  }
-  .refresh-banner-btn:hover{ background:rgba(255,255,255,0.2); }
-
-  /* ---- Settings modal ---- */
-  .settings-modal{ max-width:480px; }
-  .settings-body{ padding:20px 24px 26px; display:flex; flex-direction:column; gap:8px; }
-  .settings-label{ font-size:11.5px; color:var(--ink-faint); letter-spacing:.03em; }
-  .settings-input{
-    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:8px;
-    padding:10px 12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink);
-  }
-  .settings-input:focus{ outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12); }
-  .settings-hint{ font-size:11.5px; color:var(--ink-faint); line-height:1.6; margin:2px 0 10px; }
-  .settings-warning{
-    display:none; align-items:flex-start; gap:8px; font-size:12px; line-height:1.6;
-    background:rgba(196,142,42,0.12); border:1px solid rgba(196,142,42,0.35); color:#8a5a12;
-    border-radius:8px; padding:10px 12px; margin-bottom:12px;
-  }
-  .settings-warning.show{ display:flex; }
-  .settings-save-btn{ background:var(--navy); color:#fff; border-color:var(--navy); align-self:flex-start; }
-  .settings-save-btn:hover{ background:var(--navy-deep); }
-  .settings-divider{ height:1px; background:var(--line-strong); margin:6px 0 10px; opacity:.6; }
-  .settings-row-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:2px; }
-  .settings-refresh-btn{ background:var(--surface-alt); }
-  .settings-cache-note{ font-size:11px; color:var(--ink-faint); margin-top:2px; }
-
-  @media print{
-    .refresh-banner{ display:none !important; }
-  }
-
-  /* ---- Enterprise footer ---- */
-  footer.enterprise-footer{
-    background:var(--navy-deep); color:#B9C3CE; text-align:center; padding:0; margin-top:10px;
-  }
-  .footer-inner{
-    max-width:1440px; margin:0 auto; padding:22px 40px; display:flex; flex-wrap:wrap; gap:10px 28px;
-    align-items:center; justify-content:center; font-size:11px;
-  }
-  .footer-inner .f-item b{ color:#F3F1E9; font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
-  .footer-divider{ width:1px; height:12px; background:rgba(255,255,255,0.2); }
-
-  /* ---- Print ---- */
-  @media print{
-    .control-bar, .filter-bar, .active-filters-bar, .quick-actions, .theme-toggle, .header-actions, #smartTooltip, #pageSkeleton{ display:none !important; }
-    body{ background:#fff; }
-  }
-
-  @media (max-width: 1100px){
-    .alert-grid{ grid-template-columns:1fr; }
-    .sk-row{ grid-template-columns:repeat(2,1fr); }
-    .sk-charts-row{ grid-template-columns:1fr; }
-    .control-bar{ padding:9px 18px; }
-  }
-
-  /* ======================================================
-     BRANDING + HEADER/FOOTER/GENERAL UI REFRESH
-     ====================================================== */
-
-  /* ---- Brand lockup (logo + name) ---- */
-  .brand-lockup{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-  .brand-mark{
-    width:40px; height:40px; border-radius:11px; flex-shrink:0;
-    background:linear-gradient(155deg, var(--gold) 0%, #8a6a22 100%);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 3px 10px rgba(169,131,46,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-  }
-  .brand-mark svg{ width:22px; height:22px; display:block; }
-  .brand-mark-img{ width:100%; height:100%; object-fit:contain; border-radius:11px; display:block; }
-  .brand-mark-fallback{ display:none; width:22px; height:22px; }
-  .brand-name-block{ display:flex; flex-direction:column; line-height:1.15; }
-  .brand-name-block .brand-name{
-    font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; color:#fff; letter-spacing:.4px;
-  }
-  .brand-name-block .brand-tagline{
-    font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
-    font-size:9.5px; color:#C9BE9E; letter-spacing:.16em; text-transform:uppercase; margin-top:2px;
-  }
-
-  /* ---- Header action cluster (dark mode / settings / export) ---- */
-  .header-actions{ position:relative; z-index:1; display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
-  .header-actions .theme-toggle{ margin-top:0; }
-  .icon-btn{
-    display:inline-flex; align-items:center; justify-content:center; gap:6px;
-    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
-    color:#F3F1E9; border-radius:20px; height:31px; padding:0 13px; font-size:11.5px; cursor:pointer;
-    font-family:inherit; transition:.15s ease; white-space:nowrap;
-  }
-  .icon-btn:hover{ background:rgba(255,255,255,0.16); transform:translateY(-1px); }
-  .icon-btn:active{ transform:translateY(0); }
-  .header-meta-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:8px; }
-  .last-updated-chip{
-    display:inline-flex; align-items:center; gap:7px;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
-    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8;
-  }
-  .last-updated-chip .lu-dot{ width:6px; height:6px; border-radius:50%; background:var(--accepted); box-shadow:0 0 0 3px rgba(63,125,88,0.35); animation:pulseDot 2s infinite; }
-  .last-updated-chip .lu-time{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:#fff; font-weight:600; }
-
-  .current-date-chip{
-    display:inline-flex; align-items:center; gap:7px;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
-    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8;
-  }
-  .current-date-chip .lu-time{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; color:#fff; font-weight:600; }
-
-  .conn-status-chip{
-    display:inline-flex; align-items:center; gap:7px;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
-    border-radius:20px; padding:5px 12px; font-size:11px; color:#DCE2E8; font-weight:600;
-  }
-  .conn-status-chip .conn-dot{ width:7px; height:7px; border-radius:50%; background:var(--accepted); box-shadow:0 0 0 3px rgba(63,125,88,0.35); }
-  .conn-status-chip[data-state="demo"]{ color:#F3E3B8; }
-  .conn-status-chip[data-state="demo"] .conn-dot{ background:var(--pending, #C08A2E); box-shadow:0 0 0 3px rgba(192,138,46,0.35); }
-  .conn-status-chip[data-state="error"]{ color:#F3C7C2; }
-  .conn-status-chip[data-state="error"] .conn-dot{ background:var(--rejected, #B5473F); box-shadow:0 0 0 3px rgba(181,71,63,0.35); animation:pulseDot 1.4s infinite; }
-  .conn-status-chip[data-state="live"] .conn-dot{ animation:pulseDot 2s infinite; }
-
-  /* ---- Header layout polish ---- */
-  header.top{ padding:24px 40px 20px; }
-  .top-row{ align-items:flex-start; }
-  .top-meta{ margin-top:2px; }
-
-  /* ---- Enterprise footer branding ---- */
-  .footer-brand-row{
-    display:flex; align-items:center; justify-content:center; gap:10px;
-    padding:16px 40px 4px; max-width:1440px; margin:0 auto;
-  }
-  .footer-brand-row .footer-mark{
-    width:24px; height:24px; border-radius:7px; flex-shrink:0;
-    background:linear-gradient(155deg, var(--gold) 0%, #8a6a22 100%);
-    display:flex; align-items:center; justify-content:center;
-  }
-  .footer-brand-row .footer-mark svg{ width:13px; height:13px; }
-  .footer-brand-row .footer-brand-text{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:13px; color:#F3F1E9; }
-  .footer-brand-row .footer-version-pill{
-    font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
-    font-size:10px; color:#C9BE9E; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);
-    border-radius:20px; padding:2px 9px;
-  }
-
-  /* ---- General UI: spacing / alignment / equal-height cards / shadows / hover ---- */
-  main{ padding:32px 40px 64px; }
-  .kpi-row{ gap:18px; margin-bottom:32px; align-items:stretch; }
-  .stub{
-    display:flex; flex-direction:column; justify-content:space-between;
-    box-shadow:0 1px 3px rgba(24,38,51,0.05), 0 6px 16px rgba(24,38,51,0.06);
-    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  .stub:hover{
-    transform:translateY(-2px);
-    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 12px 28px rgba(24,38,51,0.10);
-    border-color:var(--line-strong);
-  }
-  .panel-grid{ gap:18px; margin-bottom:18px; align-items:stretch; }
-  .panel{
-    display:flex; flex-direction:column;
-    box-shadow:0 1px 3px rgba(24,38,51,0.05), 0 6px 16px rgba(24,38,51,0.06);
-    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  .panel:hover{
-    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 14px 30px rgba(24,38,51,0.09);
-    border-color:var(--line-strong);
-  }
-  .panel .chart-wrap{ flex:1; }
-  .health-panel, .insights-panel, .alert-card, .exec-summary-panel{
-    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  .health-panel:hover, .insights-panel:hover, .exec-summary-panel:hover{
-    box-shadow:0 3px 8px rgba(24,38,51,0.07), 0 14px 30px rgba(24,38,51,0.09);
-    border-color:var(--line-strong);
-  }
-  .section-heading{ margin-top:4px; }
-
-  /* ---- Mobile responsiveness refinements ---- */
-  @media (max-width: 760px){
-    header.top{ padding:20px 20px 18px; }
-    .brand-mark{ width:34px; height:34px; border-radius:9px; }
-    .brand-mark svg{ width:18px; height:18px; }
-    .brand-name-block .brand-name{ font-size:15px; }
-    h1.title{ font-size:23px; }
-    .top-meta{ gap:16px; }
-    .top-meta .meta-item .v{ font-size:16px; }
-    .header-actions{ width:100%; }
-    .icon-btn, .theme-toggle{ flex:1; justify-content:center; }
-    main{ padding:20px 16px 40px; }
-    .kpi-row{ grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:22px; }
-    .panel-grid, .panel-grid.thirds{ gap:12px; }
-    .control-bar{ padding:10px 16px; gap:14px; }
-    .filter-bar{ padding:12px 16px; }
-    .footer-inner{ padding:16px 20px; }
-    .footer-brand-row{ padding:14px 20px 2px; flex-wrap:wrap; }
-    .exec-summary-panel{ padding:16px; gap:16px; }
-    .exec-summary-grid{ grid-template-columns:repeat(2,1fr); }
-  }
-  @media (max-width: 480px){
-    .kpi-row{ grid-template-columns:1fr; }
-    .brand-name-block .brand-tagline{ display:none; }
-  }
-
-  /* ======================================================
-     EXECUTIVE ANALYTICS — POLISH PASS
-     ====================================================== */
-
-  /* ---- number pop-in animation (applied to KPI/exec values on refresh) ---- */
-  @keyframes valuePop{ 0%{ opacity:.35; transform:translateY(2px) scale(.97); } 100%{ opacity:1; transform:translateY(0) scale(1); } }
-  .value-pop{ animation:valuePop .35s ease; }
-
-  /* ---- Executive Snapshot (compact at-a-glance card) ---- */
-  .exec-snapshot-panel{
-    background:linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
-    border-radius:12px; box-shadow:var(--shadow); padding:18px 22px; margin-bottom:22px;
-    display:flex; align-items:center; gap:22px; flex-wrap:wrap; color:#F3F1E9; position:relative; overflow:hidden;
-  }
-  .exec-snapshot-panel::before{
-    content:""; position:absolute; inset:0;
-    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 34px);
-    pointer-events:none;
-  }
-  .snap-score-ring{ position:relative; width:78px; height:78px; flex-shrink:0; z-index:1; }
-  .snap-score-ring svg{ width:78px; height:78px; transform:rotate(-90deg); }
-  .snap-score-ring .track{ fill:none; stroke:rgba(255,255,255,0.15); stroke-width:8; }
-  .snap-score-ring .fill{ fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
-  .snap-score-num{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; }
-  .snap-score-num b{ font-family:'IBM Plex Mono',monospace; font-size:19px; line-height:1; direction:ltr; }
-  .snap-score-num span{ font-size:8.5px; color:#C9BE9E; margin-top:2px; }
-  .snap-status-block{ z-index:1; }
-  .snap-status-label{ font-size:11px; color:#C9BE9E; letter-spacing:.03em; margin-bottom:3px; }
-  .snap-status-value{ font-family:'Tajawal',sans-serif; font-weight:800; font-size:17px; }
-  .snap-divider{ width:1px; align-self:stretch; background:rgba(255,255,255,0.15); z-index:1; }
-  .snap-stats{ display:flex; gap:26px; flex-wrap:wrap; z-index:1; flex:1; }
-  .snap-stat{ min-width:100px; }
-  .snap-stat .sl{ font-size:10.5px; color:#AEB9C6; margin-bottom:3px; }
-  .snap-stat .sv{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:16.5px; font-weight:700; color:#fff; }
-  .snap-stat .sv.crit{ color:#F0A99C; }
-  @media (max-width: 900px){ .exec-snapshot-panel{ flex-direction:column; align-items:flex-start; } .snap-divider{ display:none; } }
-
-  /* ---- Executive Health Score panel ---- */
-  .health-score-panel{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);
-    padding:20px; display:flex; gap:26px; flex-wrap:wrap; align-items:center; margin-bottom:22px;
-  }
-  .hs-gauge{ position:relative; width:132px; height:132px; flex-shrink:0; }
-  .hs-gauge svg{ width:132px; height:132px; transform:rotate(-90deg); }
-  .hs-gauge .track{ fill:none; stroke:var(--neutral-bg); stroke-width:12; }
-  .hs-gauge .fill{ fill:none; stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1); }
-  .hs-gauge-num{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .hs-gauge-num b{ font-family:'IBM Plex Mono',monospace; font-size:30px; color:var(--navy-deep); line-height:1; }
-  .hs-gauge-num span{ font-size:10.5px; color:var(--ink-faint); margin-top:3px; }
-  .hs-band-badge{ font-size:11px; font-weight:700; padding:3px 12px; border-radius:20px; display:inline-block; margin-top:8px; }
-  .hs-breakdown{ flex:1; min-width:260px; display:flex; flex-direction:column; gap:9px; }
-  .hs-breakdown-title{ font-family:'Tajawal',sans-serif; font-weight:700; font-size:12.5px; color:var(--navy-deep); margin-bottom:2px; }
-  .hs-factor-row{ display:grid; grid-template-columns:150px 1fr 44px; align-items:center; gap:10px; font-size:11.5px; }
-  .hs-factor-label{ color:var(--ink-soft); }
-  .hs-factor-track{ height:6px; border-radius:4px; background:var(--neutral-bg); overflow:hidden; }
-  .hs-factor-fill{ height:100%; border-radius:4px; transition:width .6s ease; }
-  .hs-factor-val{ font-family:'IBM Plex Mono',monospace; direction:ltr; text-align:left; color:var(--ink-soft); font-weight:600; }
-
-  /* ---- Alert tier badges (Critical / Warning / Information) ---- */
-  .alert-tier{ font-size:9px; letter-spacing:.06em; font-weight:700; text-transform:uppercase; color:var(--ink-faint); }
-
-  /* ---- Smart Insight cards v2: Problem / Impact / Action / Priority ---- */
-  .insight-cards-v2{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:14px; }
-  .insight-card-v2{
-    background:var(--surface-alt); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
-    display:flex; flex-direction:column; gap:8px; transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .insight-card-v2:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
-  .insight-card-v2-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .insight-priority{ font-size:9.5px; letter-spacing:.05em; font-weight:700; text-transform:uppercase; border-radius:5px; padding:2px 8px; }
-  .insight-priority.critical{ background:var(--rejected-bg); color:var(--rejected); }
-  .insight-priority.high{ background:var(--pending-bg); color:var(--pending); }
-  .insight-priority.medium{ background:var(--pending-bg); color:var(--gold); }
-  .insight-priority.low{ background:var(--accepted-bg); color:var(--accepted); }
-  .insight-card-v2-row{ font-size:12px; line-height:1.55; }
-  .insight-card-v2-row .k{ font-size:10px; font-weight:700; color:var(--ink-faint); letter-spacing:.03em; display:block; margin-bottom:2px; }
-  .insight-card-v2-row .v{ color:var(--ink); }
-  .insight-card-v2-row .v b{ color:var(--navy-deep); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; }
-
-  /* ---- Executive Action Center ---- */
-  .action-center-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(270px,1fr)); gap:14px; }
-  .action-card{
-    background:var(--surface); border:1px solid var(--line); border-right:4px solid var(--navy);
-    border-radius:10px; box-shadow:var(--shadow); padding:14px 16px; display:flex; flex-direction:column; gap:9px;
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .action-card:hover{ transform:translateY(-1px); box-shadow:0 6px 20px rgba(24,38,51,0.1); }
-  .action-card.critical{ border-right-color:var(--rejected); }
-  .action-card.high{ border-right-color:var(--pending); }
-  .action-card.medium{ border-right-color:var(--gold); }
-  .action-card.low{ border-right-color:var(--accepted); }
-  .action-title{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--navy-deep); }
-  .action-desc{ font-size:12px; color:var(--ink-soft); line-height:1.5; }
-  .action-meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
-  .action-meta-item{ background:var(--surface-alt); border:1px solid var(--line); border-radius:7px; padding:5px 9px; font-size:10.5px; color:var(--ink-soft); flex:1; min-width:110px; }
-  .action-meta-item .k{ display:block; color:var(--ink-faint); font-size:9.5px; margin-bottom:2px; }
-  .action-meta-item .v{ color:var(--ink); font-weight:600; }
-  .action-empty{ padding:20px; text-align:center; color:var(--ink-faint); font-size:12.5px; background:var(--surface); border:1px dashed var(--line-strong); border-radius:10px; grid-column:1 / -1; }
-
-  /* ---- Visual improvements: refined trend badges + progress bars across the Executive Analytics section ---- */
-  .stub-trend, .exec-compare-delta{ transition:background-color .2s ease, color .2s ease; }
-  .stub-achieve-fill, .exec-reason-bar-fill, .health-bar-fill{ transition:width .6s cubic-bezier(.4,0,.2,1); background-size:200% 100%; }
-  .exec-core-card, .exec-stat-card, .tp-card, .alert-card, .action-card{
-    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  }
-  .exec-core-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(24,38,51,0.08); }
-  .exec-core-trend{ margin-top:5px; }
-  .kpi-trend-badge{
-    font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; border-radius:10px; padding:1px 7px;
-    direction:ltr; unicode-bidi:isolate; display:inline-flex; align-items:center; gap:3px;
-  }
-  .kpi-trend-badge.up{ background:var(--accepted-bg); color:var(--accepted); }
-  .kpi-trend-badge.down{ background:var(--rejected-bg); color:var(--rejected); }
-  .kpi-trend-badge.flat{ background:var(--neutral-bg); color:var(--neutral); }
-
-  @media (max-width: 760px){
-    .health-score-panel{ flex-direction:column; align-items:flex-start; }
-    .exec-snapshot-panel{ padding:16px; }
-    .snap-stats{ gap:16px; }
-  }
-
-  /* ---- Filter bar: full-width stacked fields on phones ---- */
-  @media (max-width: 700px){
-    .filter-bar{ flex-direction:column; align-items:stretch; gap:12px; }
-    .filter-bar .fgroup{ width:100%; }
-    .filter-bar select,
-    .filter-bar input[type=text],
-    .filter-bar input[type=date]{
-      width:100%; max-width:100%; min-width:0; box-sizing:border-box;
-    }
-    .filter-bar .ms{ width:100%; }
-    .filter-spacer{ display:none; }
-    .filter-divider{ margin:0; }
-    .filter-bar .result-count{ width:100%; text-align:center; }
-    .filter-bar .btn-reset{ width:100%; align-self:stretch; }
-  }
-
-  /* ---- General small-screen overflow safety ---- */
-  @media (max-width: 480px){
-    .hs-factor-row{ grid-template-columns:100px 1fr 40px; gap:6px; font-size:10.5px; }
-    .top-meta{ gap:12px; }
-    .snap-stats{ gap:12px; }
-  }
-
-  /* ---------- Compare Mode ---------- */
-  main.hidden{ display:none; }
-  .compare-mode-section.hidden{ display:none; }
-  .compare-mode-section{ padding:30px 40px 60px; max-width:1600px; margin:0 auto; }
-  .compare-heading{ margin-bottom:16px; }
-
-  .compare-by-bar{
-    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    background:var(--surface); border:1px solid var(--line-strong); border-radius:10px;
-    padding:14px 18px; margin-bottom:16px; box-shadow:var(--shadow);
-  }
-  .compare-by-fgroup{ display:flex; flex-direction:column; gap:4px; }
-  .compare-by-fgroup label{ font-size:11px; color:var(--ink-faint); letter-spacing:.03em; font-weight:600; }
-  .compare-by-checks{ display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:2px; }
-  .compare-by-check{
-    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink);
-    background:var(--surface-alt); border:1px solid var(--line-strong); border-radius:20px;
-    padding:6px 12px; cursor:pointer; font-weight:600; transition:.15s ease; user-select:none;
-  }
-  .compare-by-check:hover{ border-color:var(--navy); }
-  .compare-by-check input[type=checkbox]{ accent-color:var(--navy); cursor:pointer; }
-  .compare-by-check:has(input:checked){ background:var(--navy); border-color:var(--navy); color:#fff; }
-  .compare-by-hint{ font-size:11.5px; color:var(--ink-faint); max-width:520px; line-height:1.5; }
-  @media (max-width:760px){ .compare-by-bar{ flex-direction:column; align-items:flex-start; } }
-
-  .compare-toolbar{
-    display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px;
-    margin-bottom:16px;
-  }
-  .compare-toolbar-actions{ display:flex; gap:10px; flex-wrap:wrap; }
-  .compare-toolbar-actions .qa-btn{
-    background:var(--surface); border:1px solid var(--line-strong); border-radius:8px;
-    padding:9px 14px; font-size:12.5px; color:var(--ink); cursor:pointer; font-family:inherit;
-    display:inline-flex; align-items:center; gap:6px; box-shadow:var(--shadow); transition:.15s ease;
-  }
-  .compare-toolbar-actions .qa-btn:hover{ border-color:var(--navy); color:var(--navy); transform:translateY(-1px); }
-  .compare-toolbar-actions #btnCloseCompare:hover{ border-color:var(--rejected); color:var(--rejected); }
-
-  .icon-btn#headerCompareToggle.active{ background:var(--gold); border-color:var(--gold); color:#1E2536; }
-
-  .compare-summary-bar{
-    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px; margin-bottom:24px;
-  }
-  @media (max-width:1100px){ .compare-summary-bar{ grid-template-columns:repeat(2, 1fr); } }
-  @media (max-width:560px){ .compare-summary-bar{ grid-template-columns:1fr; } }
-  .compare-metric-card{
-    background:var(--surface); border:1px solid var(--line); border-radius:10px;
-    padding:14px 16px; box-shadow:var(--shadow);
-  }
-  .compare-metric-label{ font-size:11px; color:var(--ink-faint); font-weight:600; margin-bottom:10px; }
-  .compare-metric-values{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-  .cmv{ display:flex; flex-direction:column; gap:2px; }
-  .cmv.right{ align-items:flex-end; text-align:left; }
-  .cmv-tag{ font-size:9.5px; color:var(--ink-faint); letter-spacing:.04em; }
-  .cmv.left .cmv-tag::before{ content:"● "; color:var(--navy); }
-  .cmv.right .cmv-tag::before{ content:"● "; color:var(--gold); }
-  .cmv-num{ font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); }
-  .compare-metric-diff{
-    display:flex; align-items:center; justify-content:space-between; font-size:11.5px;
-    padding-top:8px; border-top:1px dashed var(--line-strong); font-family:'IBM Plex Mono',monospace; direction:ltr; unicode-bidi:isolate;
-  }
-  .compare-metric-diff.good{ color:var(--accepted); }
-  .compare-metric-diff.bad{ color:var(--rejected); }
-  .compare-metric-diff.flat{ color:var(--ink-faint); }
-
-  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
-  @media (max-width:1150px){ .compare-grid{ grid-template-columns:1fr; } }
-
-  .compare-panel{
-    background:var(--surface-alt); border:1px solid var(--line); border-radius:12px; padding:16px;
-  }
-  .compare-panel-head{ margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-  .compare-panel-badge{
-    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
-    padding:6px 14px; border-radius:20px; color:#fff;
-  }
-  .compare-panel-badge.left{ background:var(--navy); }
-  .compare-panel-badge.right{ background:var(--gold); }
-  .compare-badge-value{ font-style:normal; font-weight:600; opacity:.9; }
-  .compare-badge-value:not(:empty)::before{ content:"— "; opacity:.7; }
-  .compare-panel-export{ padding:6px 12px; font-size:11.5px; }
-
-  .compare-filter-bar{
-    background:var(--surface); border:1px solid var(--line); border-radius:9px;
-    padding:12px 14px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:14px;
-  }
-  .compare-filter-bar .fgroup{ display:flex; flex-direction:column; gap:4px; }
-  .compare-filter-fields{ display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
-  .compare-filter-bar label{ font-size:10px; color:var(--ink-faint); letter-spacing:.03em; }
-  .compare-filter-bar select, .compare-filter-bar input[type=date]{
-    appearance:none; background:var(--surface-alt); border:1px solid var(--line-strong);
-    border-radius:7px; padding:7px 10px; font-family:inherit; font-size:12.5px; color:var(--ink);
-    min-width:120px; cursor:pointer;
-  }
-  .compare-filter-bar input[type=date]{ font-family:'IBM Plex Mono',monospace; direction:ltr; min-width:130px; }
-  .compare-filter-bar select:focus, .compare-filter-bar input[type=date]:focus{
-    outline:none; border-color:var(--navy); box-shadow:0 0 0 3px rgba(44,66,87,0.12);
-  }
-  .compare-result-count{ font-size:11.5px; color:var(--ink-faint); padding-bottom:8px; white-space:nowrap; }
-  .compare-result-count b{ color:var(--navy); font-family:'IBM Plex Mono',monospace; }
-
-  .compare-exec-grid{ grid-template-columns:repeat(3, 1fr); margin-bottom:14px; }
-  @media (max-width:640px){ .compare-exec-grid{ grid-template-columns:repeat(2, 1fr); } }
-
-  .compare-kpi-row{ grid-template-columns:repeat(5, 1fr); margin-bottom:14px; }
-  @media (max-width:900px){ .compare-kpi-row{ grid-template-columns:repeat(2, 1fr); } }
-
-  .compare-panel .panel-grid,
-  .compare-panel .panel-grid.thirds{ grid-template-columns:1fr; margin-bottom:14px; }
-  .compare-panel .chart-wrap{ height:220px; }
-</style>
-</head>
-<body>
+<!-- ARRIVE Design System: tokens (single colour source) -> UI components -> report pages -->
+<link rel="stylesheet" href="design-system/arrive-tokens.css">
+<link rel="stylesheet" href="design-system/arrive-ui.css">
+<link rel="stylesheet" href="design-system/arrive-report.css">
+</head><body>
 
 <div id="demoModeBanner" class="demo-mode-banner hidden" role="status">
-  <span>⚠️ Demo Mode - Google Sheets is not connected.</span>
+  <span><i class="fa-solid fa-triangle-exclamation"></i> وضع تجريبي — لم يتم ربط Google Sheets بعد.</span>
   <button class="dmb-settings-btn" id="demoModeSettingsBtn" type="button">إعدادات الاتصال</button>
 </div>
 
 <header class="top">
-  <div class="top-row">
+  <div class="top-inner top-first">
+    <div class="top-brand">
+      <img class="brand-logo" src="assets/arrive-logo.png" alt="ARRIVE">
+      <span class="brand-divider" aria-hidden="true"></span>
+      <div class="brand-sys"><b>المراجعة التشغيلية</b><span>نظام متابعة الشكاوى والتعويضات</span></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn primary-on-blue" id="headerReport" type="button" title="إصدار تقرير إداري"><i class="fa-solid fa-file-lines"></i> إصدار تقرير</button>
+      <button class="icon-btn" id="headerCompareToggle" type="button" title="وضع المقارنة"><i class="fa-solid fa-right-left"></i> <span id="headerCompareLabel">وضع المقارنة</span></button>
+      <button class="icon-btn" id="headerExport" type="button" title="تصدير البيانات"><i class="fa-solid fa-download"></i> تصدير</button>
+      <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات"><i class="fa-solid fa-gear"></i> إعدادات</button>
+      <button class="icon-btn" id="themeToggle" type="button"><i class="fa-solid fa-moon" id="themeToggleIcon"></i> <span id="themeToggleLabel">الوضع الداكن</span></button>
+    </div>
+  </div>
+  <div class="top-inner top-second">
     <div>
-      <div class="brand-lockup">
-        <div class="brand-mark" aria-hidden="true">
-          <img src="logo.png" alt="" class="brand-mark-img"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" class="brand-mark-fallback">
-            <path d="M6 40 L32 12 L58 40" stroke="#182633" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 40 L32 24 L48 40" stroke="#F3F1E9" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="brand-name-block">
-          <span class="brand-name">ARRIVE</span>
-          <span class="brand-tagline">Complaints Management</span>
-        </div>
-      </div>
-      <span class="brand-eyebrow">COMPLAINT MANIFEST · شركة الشحن والتوصيل</span>
       <h1 class="title">لوحة متابعة الشكاوى</h1>
       <div class="subtitle" id="dateRangeLabel">تتبّع حالة الشكاوى، التعويضات، وأداء الفروع</div>
       <div class="header-meta-row">
-        <span class="last-updated-chip">
-          <span class="lu-dot"></span>
-          <span>آخر تحديث</span>
-          <span class="lu-time" id="headerLastUpdate">—</span>
-        </span>
-        <span class="current-date-chip">
-          <span>📅</span>
-          <span class="lu-time" id="headerCurrentDate">—</span>
-        </span>
-        <span class="conn-status-chip" id="connStatusChip" data-state="live">
-          <span class="conn-dot" id="connStatusDot"></span>
-          <span id="connStatusLabel">متصل</span>
-        </span>
+        <span class="last-updated-chip"><span class="lu-dot"></span><span>آخر تحديث للبيانات</span><span class="lu-time" id="headerLastUpdate">—</span></span>
+        <span class="current-date-chip"><i class="fa-regular fa-calendar"></i><span class="lu-time" id="headerCurrentDate">—</span></span>
+        <span class="conn-status-chip" id="connStatusChip" data-state="live"><span class="conn-dot" id="connStatusDot"></span><span id="connStatusLabel">متصل</span></span>
       </div>
     </div>
     <div class="top-meta">
@@ -1207,20 +51,6 @@
       <div class="meta-item"><div class="v num" id="metaBranches">0</div><div class="l">فرعًا مشمولًا</div></div>
       <div class="meta-item"><div class="v num" id="metaComp">0</div><div class="l">إجمالي التعويض (ج.م)</div></div>
     </div>
-  </div>
-  <div class="header-actions">
-    <button class="theme-toggle" id="themeToggle" type="button">
-      <span id="themeToggleIcon">🌙</span> <span id="themeToggleLabel">الوضع الداكن</span>
-    </button>
-    <button class="icon-btn" id="headerCompareToggle" type="button" title="وضع المقارنة">
-      <span>⇄</span> <span id="headerCompareLabel">وضع المقارنة</span>
-    </button>
-    <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات">
-      <span>⚙️</span> إعدادات
-    </button>
-    <button class="icon-btn" id="headerExport" type="button" title="تصدير البيانات">
-      <span>⬇</span> تصدير
-    </button>
   </div>
 </header>
 
@@ -1235,88 +65,97 @@
   </div>
   <div class="qa-spacer"></div>
   <div class="quick-actions">
-    <button class="qa-btn" id="qaRefresh" type="button"><span class="qa-icon">↻</span> تحديث اللوحة</button>
-    <button class="qa-btn" id="qaResetAll" type="button"><span class="qa-icon">⟲</span> إعادة التصفية</button>
-    <button class="qa-btn" id="qaExport" type="button"><span class="qa-icon">⬇</span> تصدير CSV</button>
-    <button class="qa-btn" id="qaPrint" type="button"><span class="qa-icon">🖶</span> طباعة</button>
-    <button class="qa-btn" id="qaFullscreen" type="button"><span class="qa-icon">⛶</span> ملء الشاشة</button>
+    <button class="qa-btn" id="qaRefresh" type="button"><i class="fa-solid fa-rotate qa-icon"></i> تحديث اللوحة</button>
+    <button class="qa-btn" id="qaResetAll" type="button"><i class="fa-solid fa-rotate-left qa-icon"></i> إعادة التصفية</button>
+    <button class="qa-btn" id="qaExport" type="button"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
+    <button class="qa-btn" id="qaPrint" type="button"><i class="fa-solid fa-print qa-icon"></i> طباعة</button>
+    <button class="qa-btn" id="qaFullscreen" type="button"><i class="fa-solid fa-expand qa-icon"></i> ملء الشاشة</button>
   </div>
 </div>
 
 <div class="filter-bar" id="filterBar">
-  <div class="fgroup">
+<div class="filter-wrap">
+  <div class="filter-head">
+    <div class="filter-title"><i class="fa-solid fa-sliders"></i> عوامل التصفية</div>
+    <div class="filter-head-actions">
+      <span class="result-count"><b id="resultCount">0</b> نتيجة</span>
+      <button class="qa-btn" id="btnMoreFilters" type="button" aria-expanded="true" aria-controls="filterMore"><i class="fa-solid fa-chevron-up" id="moreFiltersCaret"></i> كل الفلاتر / إخفاء الإضافية <span class="more-count hidden" id="moreFiltersCount">0</span></button>
+      <button class="btn-reset" id="btnReset" type="button"><i class="fa-solid fa-rotate-left"></i> مسح الفلاتر</button>
+    </div>
+  </div>
+  <div class="filter-grid" id="filterPrimary">
+<div class="fgroup filter-search">
+  <label for="fSearch">بحث (اسم، بوليصة، محتوى)</label>
+  <input type="text" id="fSearch" placeholder="اكتب للبحث…">
+  <i class="fa-solid fa-magnifying-glass"></i>
+</div>
+<div class="fgroup">
     <label for="fOwner">مسؤول الشكوى</label>
     <select id="fOwner" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fBranch">الفرع المتسبب</label>
     <select id="fBranch" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fType">نوع الشكوى</label>
     <select id="fType" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fStatus">حالة الشكوى</label>
     <select id="fStatus" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fMonth">شهر إضافة الشكوى</label>
     <select id="fMonth" multiple></select>
   </div>
-  <div class="fgroup">
-    <label for="fClassification">تصنيف المشكلة</label>
-    <select id="fClassification" multiple></select>
-  </div>
-  <div class="fgroup">
-    <label for="fCompMonth">شهر التعويض</label>
-    <select id="fCompMonth" multiple></select>
-  </div>
-  <div class="fgroup">
-    <label for="fSender">اسم الراسل</label>
-    <select id="fSender" multiple></select>
-  </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fDateFrom">تاريخ الشكوى من</label>
     <input type="date" id="fDateFrom">
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fDateTo">تاريخ الشكوى إلى</label>
     <input type="date" id="fDateTo">
   </div>
-  <div class="fgroup">
-    <label for="fSearch">بحث (اسم، بوليصة، محتوى)</label>
-    <input type="text" id="fSearch" placeholder="اكتب للبحث…">
   </div>
-  <div class="filter-spacer"></div>
-  <div class="result-count"><b id="resultCount">0</b> نتيجة</div>
-  <button class="btn-reset" id="btnReset">إعادة التصفية</button>
-
-  <div class="filter-divider"></div>
-
-  <div class="fgroup">
+  <div class="filter-grid filter-more" id="filterMore">
+<div class="fgroup">
+    <label for="fClassification">تصنيف المشكلة</label>
+    <select id="fClassification" multiple></select>
+  </div>
+<div class="fgroup">
+    <label for="fCompMonth">شهر التعويض</label>
+    <select id="fCompMonth" multiple></select>
+  </div>
+<div class="fgroup">
+    <label for="fSender">اسم الراسل</label>
+    <select id="fSender" multiple></select>
+  </div>
+<div class="fgroup">
     <label for="fBearer">وظيفة المتحمل للتعويض</label>
     <select id="fBearer" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fReviewResult">نتيجة مراجعة التعويض</label>
     <select id="fReviewResult" multiple></select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fConfirm">التأكيد على المراجعة</label>
     <select id="fConfirm" multiple>
       <option value="yes">تم التأكيد</option>
       <option value="no">لم يتم التأكيد</option>
     </select>
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fReviewFrom">تاريخ المراجعة من</label>
     <input type="date" id="fReviewFrom">
   </div>
-  <div class="fgroup">
+<div class="fgroup">
     <label for="fReviewTo">تاريخ المراجعة إلى</label>
     <input type="date" id="fReviewTo">
   </div>
+  </div>
+</div>
 </div>
 
 <div class="active-filters-bar" id="activeFiltersBar"></div>
@@ -1326,111 +165,90 @@
   <section class="exec-snapshot-panel" id="execSnapshotPanel"></section>
 
   <div class="section-heading">
-    <h2><span class="tag">Exec</span> الملخص التنفيذي</h2>
-    <span class="section-sub">أهم مؤشرات الأداء المحسوبة آليًا من البيانات الحالية ضمن عوامل التصفية</span>
+    <h2><span class="tag">مؤشرات</span> المؤشرات الرئيسية</h2>
+    <span class="section-sub" id="kpiPeriodSub">محسوبة ضمن عوامل التصفية الحالية</span>
   </div>
-  <section class="exec-core-panel" id="execCorePanel">
-    <div class="exec-core-grid" id="execCoreGrid"></div>
-  </section>
-
   <section class="kpi-row" id="kpiRow">
-    <div class="stub">
-      <div class="barcode" id="bc1"></div>
-      <div class="stub-label">إجمالي الشكاوى</div>
-      <div class="stub-value num" id="kpiTotal">0</div>
+    <div class="stub tone-brand">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-folder-open" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">إجمالي الشكاوى</div>
+          <div class="stub-value num" id="kpiTotal">0</div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiTotalSub">—</div>
       <div class="stub-enh" id="kpiTotalEnh"></div>
     </div>
-    <div class="stub accent-accepted">
-      <div class="barcode" id="bc2"></div>
-      <div class="stub-label">نسبة قبول التعويض</div>
-      <div class="stub-value num" id="kpiAcceptRate">0<sup>%</sup></div>
+    <div class="stub tone-success">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">نسبة قبول التعويض</div>
+          <div class="stub-value num" id="kpiAcceptRate">0<sup>%</sup></div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiAcceptSub">—</div>
       <div class="stub-enh" id="kpiAcceptRateEnh"></div>
     </div>
-    <div class="stub accent-rejected">
-      <div class="barcode" id="bc3"></div>
-      <div class="stub-label">تعويضات مرفوضة</div>
-      <div class="stub-value num" id="kpiRejected">0</div>
+    <div class="stub tone-violation">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-ban" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">تعويضات مرفوضة</div>
+          <div class="stub-value num" id="kpiRejected">0</div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiRejectedSub">—</div>
       <div class="stub-enh" id="kpiRejectedEnh"></div>
     </div>
-    <div class="stub accent-pending">
-      <div class="barcode" id="bc4"></div>
-      <div class="stub-label">قيد التحقيق</div>
-      <div class="stub-value num" id="kpiPending">0</div>
+    <div class="stub tone-under-action">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">قيد التحقيق</div>
+          <div class="stub-value num" id="kpiPending">0</div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiPendingSub">—</div>
       <div class="stub-enh" id="kpiPendingEnh"></div>
     </div>
-    <div class="stub accent-gold">
-      <div class="barcode" id="bc5"></div>
-      <div class="stub-label">متوسط زمن الحل (يوم)</div>
-      <div class="stub-value num" id="kpiSla">0</div>
+    <div class="stub tone-in-progress">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-clock" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">متوسط زمن الحل (يوم)</div>
+          <div class="stub-value num" id="kpiSla">0</div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiSlaSub">—</div>
       <div class="stub-enh" id="kpiSlaEnh"></div>
     </div>
-    <div class="stub accent-gold">
-      <div class="barcode" id="bc6"></div>
-      <div class="stub-label">متوسط زمن تنفيذ التعويض (يوم)</div>
-      <div class="stub-value num" id="kpiCompSla">0</div>
+    <div class="stub tone-in-progress">
+      <div class="stub-top">
+        <div class="stub-ic"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></div>
+        <div class="stub-main">
+          <div class="stub-label">متوسط زمن تنفيذ التعويض (يوم)</div>
+          <div class="stub-value num" id="kpiCompSla">0</div>
+        </div>
+      </div>
       <div class="stub-sub" id="kpiCompSlaSub">—</div>
       <div class="stub-enh" id="kpiCompSlaEnh"></div>
     </div>
   </section>
 
   <div class="section-heading">
-    <h2><span class="tag">Score</span> مؤشر الصحة التنفيذي</h2>
-    <span class="section-sub">درجة موزونة (0-100) من معدل الإغلاق، الالتزام بـ SLA، زمن الحل، نسبة الشكاوى المعلّقة، تكلفة التعويضات، ونمو الشكاوى</span>
+    <h2><span class="tag">ملخص</span> الملخص التنفيذي</h2>
+    <span class="section-sub">أهم مؤشرات الأداء المحسوبة آليًا من البيانات الحالية ضمن عوامل التصفية</span>
   </div>
-  <section class="health-score-panel" id="healthScorePanel"></section>
-
-  <div class="section-heading">
-    <h2><span class="tag">Live</span> مركز التنبيهات التنفيذي</h2>
-    <span class="section-sub">تنبيهات مصنّفة (حرج / تحذير / معلومة) ومرتبة تلقائيًا حسب الخطورة — تختفي فور تحسّن الحالة</span>
-  </div>
-  <section class="alert-grid" id="alertCenter"></section>
-
-  <div class="section-heading">
-    <h2><span class="tag">Act</span> مركز الإجراءات التنفيذية</h2>
-    <span class="section-sub">إجراءات إدارية مقترحة تلقائيًا مع الأولوية، الجهة المسؤولة، والأثر المتوقع</span>
-  </div>
-  <section class="action-center-grid" id="actionCenterGrid"></section>
-
-  <div class="section-heading">
-    <h2><span class="tag">AI</span> رؤى ذكية للإدارة (Smart Insights)</h2>
-    <span class="section-sub">رؤى ومقارنات وتوصيات تُبنى آليًا بقواعد برمجية من البيانات الحالية — لا تُغيّر أي حساب أو رسم بياني قائم</span>
-  </div>
-  <section class="exec-summary-panel" id="execSummaryPanel">
-    <h4 class="exec-subheading">بطاقات الرؤى التنفيذية</h4>
-    <div class="exec-summary-grid" id="execSummaryGrid"></div>
-    <div class="exec-summary-subgrid">
-      <div class="exec-compare-col">
-        <h4 class="exec-subheading">مقارنة الأداء</h4>
-        <div class="exec-compare-grid" id="execCompareGrid"></div>
-      </div>
-      <div class="exec-reasons-col">
-        <h4 class="exec-subheading">أبرز أسباب الشكاوى</h4>
-        <div class="exec-reasons-list" id="execReasonsList"></div>
-      </div>
-    </div>
-    <div class="exec-reco-block">
-      <h4 class="exec-subheading">توصيات ذكية للإدارة <span class="exec-rule-tag">مبنية على قواعد آلية — وليست ذكاءً اصطناعيًا خارجيًا</span></h4>
-      <div id="execRecommendations" class="exec-reco-list"></div>
-    </div>
+  <section class="exec-core-panel" id="execCorePanel">
+    <div class="exec-core-grid" id="execCoreGrid"></div>
   </section>
 
   <div class="section-heading">
-    <h2><span class="tag">AI</span> رؤى تفصيلية (Problem · Impact · Action)</h2>
-    <span class="section-sub">لكل رؤية: المشكلة، الأثر على الأعمال، الإجراء الموصى به، والأولوية — مبنية بقواعد برمجية من البيانات الحالية</span>
+    <h2><span class="tag">اتجاهات</span> الاتجاهات والتوزيعات</h2>
+    <span class="section-sub">اضغط على أي عنصر داخل الرسم البياني لتصفية اللوحة بأكملها</span>
   </div>
-  <section class="insights-panel" id="insightsPanel"></section>
-
-  <div class="section-heading">
-    <h2><span class="tag">Top</span> أفضل وأضعف الأداء</h2>
-    <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 معالجين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
-  </div>
-  <section class="top-performers-grid" id="topPerformersGrid"></section>
-
   <section class="panel-grid">
     <div class="panel">
       <h3>الاتجاه اليومي للشكاوى</h3>
@@ -1475,8 +293,63 @@
     </div>
   </section>
 
+  
+
   <div class="section-heading">
-    <h2><span class="tag">Index</span> مؤشر أداء مسؤولي الشكاوى</h2>
+    <h2><span class="tag">استثناءات</span> مركز التنبيهات التنفيذي</h2>
+    <span class="section-sub">تنبيهات مصنّفة (حرج / تحذير / معلومة) ومرتبة تلقائيًا حسب الخطورة — تختفي فور تحسّن الحالة</span>
+  </div>
+  <section class="alert-grid" id="alertCenter"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">مؤشر</span> مؤشر الصحة التنفيذي</h2>
+    <span class="section-sub">درجة موزونة (0-100) من معدل الإغلاق، الالتزام بـ SLA، زمن الحل، نسبة الشكاوى المعلّقة، تكلفة التعويضات، ونمو الشكاوى</span>
+  </div>
+  <section class="health-score-panel" id="healthScorePanel"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">إجراءات</span> مركز الإجراءات التنفيذية</h2>
+    <span class="section-sub">إجراءات إدارية مقترحة تلقائيًا مع الأولوية، الجهة المسؤولة، والأثر المتوقع</span>
+  </div>
+  <section class="action-center-grid" id="actionCenterGrid"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">رؤى</span> رؤى ذكية للإدارة</h2>
+    <span class="section-sub">رؤى ومقارنات وتوصيات تُبنى آليًا بقواعد برمجية من البيانات الحالية — لا تُغيّر أي حساب أو رسم بياني قائم</span>
+  </div>
+  <section class="exec-summary-panel" id="execSummaryPanel">
+    <h4 class="exec-subheading">بطاقات الرؤى التنفيذية</h4>
+    <div class="exec-summary-grid" id="execSummaryGrid"></div>
+    <div class="exec-summary-subgrid">
+      <div class="exec-compare-col">
+        <h4 class="exec-subheading">مقارنة الأداء</h4>
+        <div class="exec-compare-grid" id="execCompareGrid"></div>
+      </div>
+      <div class="exec-reasons-col">
+        <h4 class="exec-subheading">أبرز أسباب الشكاوى</h4>
+        <div class="exec-reasons-list" id="execReasonsList"></div>
+      </div>
+    </div>
+    <div class="exec-reco-block">
+      <h4 class="exec-subheading">توصيات ذكية للإدارة <span class="exec-rule-tag">مبنية على قواعد آلية — وليست ذكاءً اصطناعيًا خارجيًا</span></h4>
+      <div id="execRecommendations" class="exec-reco-list"></div>
+    </div>
+  </section>
+
+  <div class="section-heading">
+    <h2><span class="tag">رؤى</span> رؤى تفصيلية</h2>
+    <span class="section-sub">لكل رؤية: المشكلة، الأثر على الأعمال، الإجراء الموصى به، والأولوية — مبنية بقواعد برمجية من البيانات الحالية</span>
+  </div>
+  <section class="insights-panel" id="insightsPanel"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">ترتيب</span> أفضل وأضعف الأداء</h2>
+    <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 معالجين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
+  </div>
+  <section class="top-performers-grid" id="topPerformersGrid"></section>
+
+  <div class="section-heading">
+    <h2><span class="tag">أداء</span> مؤشر أداء مسؤولي الشكاوى</h2>
     <span class="section-sub">درجة من 100 لكل مسؤول شكوى بناءً على معدل الإغلاق، الالتزام بـ SLA، متوسط زمن الحل، والشكاوى المفتوحة</span>
   </div>
   <section class="health-panel">
@@ -1502,8 +375,8 @@
 
   <section class="table-panel">
     <div class="table-head-bar">
-      <h3 style="font-family:'Tajawal',sans-serif; font-weight:700; font-size:15px; color:var(--navy-deep);">سجل الشكاوى</h3>
-      <div class="panel-sub" style="margin:0;">اضغط على أي صف لعرض التفاصيل الكاملة</div>
+      <h3>سجل الشكاوى</h3>
+      <div class="panel-sub" style="margin:0;">اضغط على أي صف لعرض التفاصيل الكاملة · الفرز بالضغط على عنوان العمود</div>
     </div>
     <div class="table-scroll">
       <table id="dataTable">
@@ -1522,6 +395,10 @@
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
+    </div>
+    <div class="pager" id="tablePager">
+      <div class="pager-info" id="pagerInfo">—</div>
+      <div class="pager-ctl" id="pagerCtl"></div>
     </div>
   </section>
 
@@ -1555,9 +432,9 @@
 
   <div class="compare-toolbar">
     <div class="compare-toolbar-actions">
-      <button class="qa-btn" id="btnSyncFilters" type="button"><span class="qa-icon">⇉</span> مزامنة القيم (يسار ← يمين)</button>
-      <button class="qa-btn" id="btnSwapFilters" type="button"><span class="qa-icon">⇄</span> تبديل اللوحتين</button>
-      <button class="qa-btn" id="btnCloseCompare" type="button"><span class="qa-icon">✕</span> إغلاق وضع المقارنة</button>
+      <button class="qa-btn" id="btnSyncFilters" type="button"><i class="fa-solid fa-angles-right qa-icon"></i> مزامنة القيم (يسار ← يمين)</button>
+      <button class="qa-btn" id="btnSwapFilters" type="button"><i class="fa-solid fa-right-left qa-icon"></i> تبديل اللوحتين</button>
+      <button class="qa-btn" id="btnCloseCompare" type="button"><i class="fa-solid fa-xmark qa-icon"></i> إغلاق وضع المقارنة</button>
     </div>
   </div>
 
@@ -1567,7 +444,7 @@
     <div class="compare-panel" data-panel="L">
       <div class="compare-panel-head">
         <span class="compare-panel-badge left">اللوحة الأولى (يسار)<em class="compare-badge-value" id="cBadgeValue_L"></em></span>
-        <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة اليسرى"><span class="qa-icon">⬇</span> تصدير CSV</button>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة اليسرى"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="compare-filter-fields" id="compareFilterFields_L"></div>
@@ -1652,7 +529,7 @@
     <div class="compare-panel" data-panel="R">
       <div class="compare-panel-head">
         <span class="compare-panel-badge right">اللوحة الثانية (يمين)<em class="compare-badge-value" id="cBadgeValue_R"></em></span>
-        <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة اليمنى"><span class="qa-icon">⬇</span> تصدير CSV</button>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة اليمنى"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="compare-filter-fields" id="compareFilterFields_R"></div>
@@ -1739,16 +616,12 @@
 
 <footer class="enterprise-footer">
   <div class="footer-brand-row">
-    <div class="footer-mark" aria-hidden="true">
-      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6 40 L32 12 L58 40" stroke="#F3F1E9" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <span class="footer-brand-text">ARRIVE Complaints Management Dashboard</span>
-    <span class="footer-version-pill">Version 3.0</span>
+    <img src="assets/arrive-logo.png" alt="ARRIVE">
+    <span class="footer-brand-text">لوحة متابعة الشكاوى — ARRIVE</span>
+    <span class="footer-version-pill">v3.0</span>
   </div>
   <div class="footer-inner">
-    <span class="f-item">تم إنشاؤها بواسطة <b>ARRIVE Operations Audit</b></span>
+    <span class="f-item">أُعدّت بواسطة <b>إدارة المراجعة التشغيلية</b></span>
     <span class="footer-divider"></span>
     <span class="f-item">إصدار اللوحة <b id="footVersion">v3.0.0</b></span>
     <span class="footer-divider"></span>
@@ -1766,6 +639,8 @@
 
 <div id="smartTooltip"></div>
 
+<div id="reportOverlay" class="report-overlay" hidden aria-hidden="true"></div>
+
 <div id="pageSkeleton" aria-hidden="true">
   <div class="sk-row">
     <div class="sk-block sk-kpi"></div><div class="sk-block sk-kpi"></div><div class="sk-block sk-kpi"></div>
@@ -1779,7 +654,7 @@
 
 <!-- Slim non-blocking banner for background auto-refresh problems (doesn't hide the dashboard) -->
 <div id="refreshBanner" class="refresh-banner hidden" role="status">
-  <span class="refresh-banner-icon">⚠️</span>
+  <i class="fa-solid fa-triangle-exclamation refresh-banner-icon"></i>
   <span id="refreshBannerMsg" class="refresh-banner-msg">—</span>
   <button class="refresh-banner-btn" id="refreshBannerRetryBtn" type="button">إعادة المحاولة الآن</button>
 </div>
@@ -1789,14 +664,14 @@
   <div class="modal settings-modal">
     <div class="modal-head">
       <div>
-        <div class="mid">SETTINGS · الإعدادات</div>
+        <div class="mid">الإعدادات</div>
         <h2>إعدادات مصدر البيانات</h2>
       </div>
-      <button class="modal-close" id="settingsClose" aria-label="إغلاق">✕</button>
+      <button class="modal-close" id="settingsClose" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="settings-body">
       <div class="settings-warning" id="settingsUrlWarning">
-        <span>⚠️</span>
+        <i class="fa-solid fa-triangle-exclamation"></i>
         <span>لم يتم إعداد رابط الـ API بعد. أدخل الرابط أدناه واضغط "حفظ والاتصال" لتفعيل جلب البيانات.</span>
       </div>
       <label class="settings-label" for="settingsApiUrlInput">رابط الـ Google Apps Script API</label>
@@ -1808,15 +683,15 @@
 
       <label class="settings-label" for="autoRefreshSelect">التحديث التلقائي</label>
       <select id="autoRefreshSelect" class="settings-input">
-        <option value="0">إيقاف (Off)</option>
-        <option value="1">كل دقيقة (1 Minute)</option>
-        <option value="5">كل 5 دقائق (5 Minutes)</option>
-        <option value="15">كل 15 دقيقة (15 Minutes)</option>
-        <option value="30">كل 30 دقيقة (30 Minutes)</option>
+        <option value="0">إيقاف</option>
+        <option value="1">كل دقيقة</option>
+        <option value="5">كل 5 دقائق</option>
+        <option value="15">كل 15 دقيقة</option>
+        <option value="30">كل 30 دقيقة</option>
       </select>
 
       <div class="settings-row-actions">
-        <button class="icon-btn settings-refresh-btn" id="refreshNowBtn" type="button">⟳ تحديث الآن</button>
+        <button class="icon-btn settings-refresh-btn" id="refreshNowBtn" type="button"><i class="fa-solid fa-rotate"></i> تحديث الآن</button>
         <span class="settings-cache-note" id="lastCacheNote"></span>
       </div>
     </div>
@@ -1826,6 +701,8 @@
 <script>
 // RAW_DATA removed: data is now fetched live from the Google Apps Script API (see API_URL / fetch logic below).
 const RAW_DATA = [];
+// Shared empty state (Design System: EmptyState) — message requested by management.
+const EMPTY_HTML = `<div class="empty-state"><i class="fa-solid fa-folder-open" aria-hidden="true"></i><b>لا توجد بيانات متاحة وفقًا للفلاتر المحددة.</b><span>جرّب تعديل الفلاتر أو مسحها لعرض النتائج.</span></div>`;
 
 // ---------- Embedded demo/sample data ----------
 // Used automatically on startup whenever no Google Apps Script API URL is configured,
@@ -2021,7 +898,7 @@ function mountMultiSelect(id, opts={}){
   control.type = 'button';
   control.className = 'ms-control';
   control.setAttribute('aria-haspopup','listbox');
-  control.innerHTML = `<span class="ms-chips" id="${id}_chips"><span class="ms-placeholder">الكل</span></span><span class="ms-caret">▾</span>`;
+  control.innerHTML = `<span class="ms-chips" id="${id}_chips"><span class="ms-placeholder">الكل</span></span><span class="ms-caret"><i class="fa-solid fa-chevron-down"></i></span>`;
   wrap.appendChild(control);
 
   const panel = document.createElement('div');
@@ -2076,7 +953,7 @@ function mountMultiSelect(id, opts={}){
     const MAX_CHIPS = 2;
     let html = '';
     selected.slice(0, MAX_CHIPS).forEach(o=>{
-      html += `<span class="ms-chip" data-val="${escapeHtmlAttr(o.value)}"><span>${o.textContent}</span><button type="button" title="إزالة">✕</button></span>`;
+      html += `<span class="ms-chip" data-val="${escapeHtmlAttr(o.value)}"><span>${o.textContent}</span><button type="button" title="إزالة"><i class="fa-solid fa-xmark"></i></button></span>`;
     });
     if(selected.length > MAX_CHIPS) html += `<span class="ms-chip-more">+${selected.length - MAX_CHIPS}</span>`;
     chipsBox.innerHTML = html;
@@ -2255,30 +1132,26 @@ function updateMetaBar(){
   }
 }
 
-let barcodesDrawn = false;
-function drawBarcodes(){
-  if(barcodesDrawn) return;
-  barcodesDrawn = true;
-  ['bc1','bc2','bc3','bc4','bc5','bc6'].forEach(id=>{
-    const el = document.getElementById(id);
-    let html='';
-    for(let i=0;i<14;i++){
-      const w = Math.random()>0.7 ? 2 : 1;
-      const h = 8 + Math.random()*12;
-      html += `<i style="width:${w}px;height:${h}px;"></i>`;
-    }
-    el.innerHTML = html;
-  });
-}
+function drawBarcodes(){ /* removed in ARRIVE redesign: KPI cards now use the approved KPICard layout */ }
 
 // ---------- Chart instances ----------
-Chart.defaults.font.family = "'IBM Plex Sans Arabic', sans-serif";
-Chart.defaults.color = '#5B6478';
+// Chart colours are read from the central design tokens (design-system/arrive-tokens.css).
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+Chart.defaults.font.family = "'Cairo','Inter',sans-serif";
+Chart.defaults.color = cssv('--gray-500');
 Chart.defaults.font.size = 11.5;
+Chart.defaults.locale = 'en-US';
+Chart.defaults.plugins.tooltip.backgroundColor = cssv('--arrive-navy');
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
+Chart.defaults.plugins.tooltip.titleFont = { family:"'Cairo','Inter',sans-serif", weight:'700' };
+Chart.defaults.plugins.tooltip.bodyFont = { family:"'Cairo','Inter',sans-serif" };
 
 const palette = {
-  navy:'#2C4257', gold:'#A9832E', accepted:'#3F7D58', rejected:'#B5473F', pending:'#C08A2E', neutral:'#8E96A6',
-  soft:['#2C4257','#4A6178','#7B8DA0','#A9832E','#C4A45E','#3F7D58','#6FA684','#B5473F','#CC7B75','#8E96A6']
+  navy:cssv('--chart-1'), gold:cssv('--chart-2'),            // brand series: ARRIVE Blue, ARRIVE Teal
+  accepted:cssv('--status-success'), rejected:cssv('--status-violation'), pending:cssv('--status-under-action'), neutral:cssv('--status-closed'),   // status series only
+  grid:cssv('--chart-grid'), blueTint:'rgba(8,55,201,0.08)', blueMid:'rgba(8,55,201,0.35)',
+  soft:[cssv('--arrive-blue'),cssv('--arrive-teal'),cssv('--arrive-navy'),cssv('--gray-400'),cssv('--arrive-blue-700'),cssv('--arrive-teal-600'),cssv('--gray-300'),cssv('--arrive-blue-900'),cssv('--gray-500'),cssv('--arrive-blue-50')]
 };
 
 let chartTrend, chartStatus, chartBranch, chartType, chartClassification, chartBearer, chartReviewResult;
@@ -2287,11 +1160,11 @@ function makeCharts(){
   const ctxTrend = document.getElementById('chartTrend');
   chartTrend = new Chart(ctxTrend, {
     type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(44,66,87,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
-      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
 
@@ -2310,7 +1183,7 @@ function makeCharts(){
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false} } }
+      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false} } }
     }
   });
 
@@ -2320,7 +1193,7 @@ function makeCharts(){
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:26, minRotation:0, font:{size:10.5} } }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:26, minRotation:0, font:{size:10.5} } }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
 
@@ -2330,7 +1203,7 @@ function makeCharts(){
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false} } }
+      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false} } }
     }
   });
 
@@ -2338,14 +1211,14 @@ function makeCharts(){
     type:'bar',
     data:{ labels:[], datasets:[
       { label:'إجمالي التعويض (ج.م)', data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:22, yAxisID:'y' },
-      { label:'عدد الحالات', data:[], backgroundColor:'rgba(44,66,87,0.35)', borderRadius:4, maxBarThickness:22, yAxisID:'y1' }
+      { label:'عدد الحالات', data:[], backgroundColor:palette.blueMid, borderRadius:4, maxBarThickness:22, yAxisID:'y1' }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } },
       scales:{
         x:{ grid:{display:false} },
-        y:{ position:'left', beginAtZero:true, grid:{color:'#EEEDE6'}, title:{display:true, text:'ج.م', font:{size:10.5}} },
+        y:{ position:'left', beginAtZero:true, grid:{color:palette.grid}, title:{display:true, text:'ج.م', font:{size:10.5}} },
         y1:{ position:'right', beginAtZero:true, grid:{display:false}, ticks:{precision:0}, title:{display:true, text:'حالات', font:{size:10.5}} }
       }
     }
@@ -2361,6 +1234,9 @@ function makeCharts(){
   });
 }
 makeCharts();
+[[chartTrend,'y'],[chartType,'y'],[chartBranch,'x'],[chartClassification,'x']].forEach(([c,ax])=>{
+  c.options.scales[ax].title = { display:true, text:'عدد الشكاوى', font:{size:10.5} };
+});
 
 // ---------- Filtering ----------
 // Each categorical filter is now a multi-select: an empty array means "no
@@ -2509,7 +1385,7 @@ function renderActiveFilters(){
     ${chips.map((c,i)=>`
       <span class="active-filter-chip${c.isAlert?' is-alert':''}" data-idx="${i}">
         <span>${c.label}</span>
-        <button type="button" aria-label="إزالة هذا الفلتر">✕</button>
+        <button type="button" aria-label="إزالة هذا الفلتر"><i class="fa-solid fa-xmark"></i></button>
       </span>
     `).join('')}
     <button type="button" class="active-filters-clear-all" id="activeFiltersClearAll">مسح الكل</button>
@@ -2602,6 +1478,7 @@ function render(){
   renderKpiEnhancements(rows);
   updateLiveStats(rows);
   renderActiveFilters();
+  arriveAfterRender(rows);
 }
 
 function uniqueVals(rows, key){ return [...new Set(rows.map(r=>r[key]).filter(Boolean))]; }
@@ -2691,7 +1568,8 @@ function updateCharts(rows){
 
 function statusBadge(status){
   const m = STATUS_MAP[status] || {cls:'neutral', label:status};
-  return `<span class="badge ${m.cls}">${m.label}</span>`;
+  const ic = { accepted:'circle-check', rejected:'circle-xmark', pending:'hourglass-half', neutral:'circle-minus' }[m.cls] || 'circle-minus';
+  return `<span class="badge ${m.cls}"><i class="fa-solid fa-${ic}" aria-hidden="true"></i>${m.label}</span>`;
 }
 
 function updateTable(rows){
@@ -2705,7 +1583,7 @@ function updateTable(rows){
   });
   const tbody = document.getElementById('tableBody');
   if(!sorted.length){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">لا توجد نتائج مطابقة لعوامل التصفية الحالية</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">${EMPTY_HTML}</td></tr>`;
     return;
   }
   tbody.innerHTML = sorted.map((d,i)=>`
@@ -2754,7 +1632,7 @@ function openModal(d){
         <div class="mid">#${d.id ?? ''}</div>
         <h2>${d.complainant ?? 'شكوى'}</h2>
       </div>
-      <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
+      <button class="modal-close" id="modalClose" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       ${field('التاريخ', d.date_added)}
@@ -2840,7 +1718,7 @@ function openInsightDrilldown({ icon, title, subtitle, summaryFields, bodyHtml, 
         <div class="mid">${icon ? icon+' ' : ''}رؤية ذكية</div>
         <h2>${title}</h2>
       </div>
-      <button class="modal-close" id="modalClose" aria-label="إغلاق">✕</button>
+      <button class="modal-close" id="modalClose" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body" style="display:block;">
       ${subtitle ? `<div class="exec-stat-sub" style="margin-bottom:10px;">${subtitle}</div>` : ''}
@@ -2892,14 +1770,14 @@ function splitByDateHalves(rows){
 // Generic trend badge for any two comparable numbers — shows ▲ improving / ▼ declining / ▬ stable.
 function kpiTrend(curr, prev, lowerIsBetter){
   if(curr===null || curr===undefined || prev===null || prev===undefined || prev===0){
-    if(curr && !prev) return `<span class="kpi-trend-badge up">▲ جديد</span>`;
-    return `<span class="kpi-trend-badge flat">▬ مستقر</span>`;
+    if(curr && !prev) return `<span class="kpi-trend-badge up"><i class="fa-solid fa-arrow-up"></i> جديد</span>`;
+    return `<span class="kpi-trend-badge flat"><i class="fa-solid fa-minus"></i> مستقر</span>`;
   }
   const diffPct = ((curr-prev)/Math.abs(prev))*100;
-  if(Math.abs(diffPct) < 1) return `<span class="kpi-trend-badge flat">▬ مستقر</span>`;
+  if(Math.abs(diffPct) < 1) return `<span class="kpi-trend-badge flat"><i class="fa-solid fa-minus"></i> مستقر</span>`;
   const isUp = diffPct > 0;
   const good = lowerIsBetter ? !isUp : isUp;
-  return `<span class="kpi-trend-badge ${good?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
+  return `<span class="kpi-trend-badge ${good?'up':'down'}">${isUp?'<i class="fa-solid fa-arrow-up"></i>':'<i class="fa-solid fa-arrow-down"></i>'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
 }
 
 // ---------- 1) Alert Center ----------
@@ -2909,7 +1787,7 @@ function computeAlerts(rows){
   // Complaints exceeding SLA target (7 days)
   const slaBreach = rows.filter(d=> typeof d.sla_resolution_days==='number' && d.sla_resolution_days > 4);
   alerts.push({
-    priority:'crit', emoji:'🔴', label:'حرج',
+    priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى تجاوزت مدة الحل المستهدفة (4 أيام)',
     count: slaBreach.length,
     onClick: ()=> setExtraFilter(d=> typeof d.sla_resolution_days==='number' && d.sla_resolution_days>4, 'شكاوى تجاوزت SLA')
@@ -2930,7 +1808,7 @@ function computeAlerts(rows){
     return c >= 3 && c > p * 1.5;
   });
   alerts.push({
-    priority:'high', emoji:'🟡', label:'مرتفع',
+    priority:'high', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'مرتفع',
     desc:'معالجو شكاوى بهم ارتفاع سريع في عدد الشكاوى (آخر 7 أيام مقابل الأسبوع السابق)',
     count: risingHandlers.length,
     onClick: ()=> setExtraFilter(d=> risingHandlers.includes(d.owner), 'معالجو شكاوى بارتفاع سريع')
@@ -2939,7 +1817,7 @@ function computeAlerts(rows){
   // Complaints waiting for compensation approval (accepted but amount not yet finalized)
   const waitingApproval = rows.filter(d=> d.status && d.status.includes('قبول') && d.compensation_amount==null);
   alerts.push({
-    priority:'low', emoji:'🟢', label:'منخفض',
+    priority:'low', emoji:'<i class="fa-solid fa-circle-check" style="color:var(--status-success)"></i>', label:'منخفض',
     desc:'شكاوى مقبولة بانتظار اعتماد قيمة التعويض',
     count: waitingApproval.length,
     onClick: ()=> setExtraFilter(d=> d.status && d.status.includes('قبول') && d.compensation_amount==null, 'بانتظار اعتماد التعويض')
@@ -2948,7 +1826,7 @@ function computeAlerts(rows){
   // Complaints without investigation
   const noInvestigation = rows.filter(d=> !d.investigation_result || !d.investigation_result.trim());
   alerts.push({
-    priority:'crit', emoji:'🔴', label:'حرج',
+    priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى بدون نتيجة تحقيق مسجّلة',
     count: noInvestigation.length,
     onClick: ()=> setExtraFilter(d=> !d.investigation_result || !d.investigation_result.trim(), 'بدون تحقيق')
@@ -2961,7 +1839,7 @@ function computeAlerts(rows){
   const openThreshold = 5;
   const overOpenThreshold = Object.keys(openHandlerTotals).filter(o=> openHandlerTotals[o] > openThreshold);
   alerts.push({
-    priority:'high', emoji:'🟡', label:'مرتفع',
+    priority:'high', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'مرتفع',
     desc:`معالجو شكاوى تجاوزوا الحد الأقصى المسموح للشكاوى المفتوحة (${openThreshold} شكوى)`,
     count: overOpenThreshold.length,
     onClick: ()=> setExtraFilter(d=> isOpenStatus(d) && overOpenThreshold.includes(d.owner), `معالجو شكاوى تجاوزوا ${openThreshold} شكوى مفتوحة`)
@@ -2974,7 +1852,7 @@ function computeAlerts(rows){
     return daysBetween(REF_DATE, new Date(d.date_added)) > 5;
   });
   alerts.push({
-    priority:'crit', emoji:'🔴', label:'حرج',
+    priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى قيد التحقيق منذ أكثر من 5 أيام',
     count: pendingLong.length,
     onClick: ()=> setExtraFilter(d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق')) && d.date_added && daysBetween(REF_DATE,new Date(d.date_added))>5, 'قيد التحقيق > 5 أيام')
@@ -2986,7 +1864,7 @@ function computeAlerts(rows){
   const compThreshold = compAvg * 2;
   const highCompRows = compVals.length ? rows.filter(d=> isCompensationCountable(d) && d.compensation_amount > compThreshold && compThreshold>0) : [];
   alerts.push({
-    priority:'high', emoji:'🟡', label:'مرتفع',
+    priority:'high', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'مرتفع',
     desc:`شكاوى بتعويض مرتفع بشكل غير معتاد (أكثر من ضعف متوسط التعويض الحالي البالغ ${Math.round(compAvg).toLocaleString('en-US')} ج.م)`,
     count: highCompRows.length,
     onClick: ()=> setExtraFilter(d=> isCompensationCountable(d) && d.compensation_amount>compThreshold && compThreshold>0, 'تعويضات مرتفعة بشكل غير معتاد')
@@ -2997,7 +1875,7 @@ function computeAlerts(rows){
   const perfHandlers = computeHandlerPerformance(rows).filter(h=> h.count>0);
   const droppingHandlers = perfHandlers.filter(h=> trendsForAlert[h.owner] === 'down' && h.score < 70).map(h=>h.owner);
   alerts.push({
-    priority:'med', emoji:'🟠', label:'متوسط',
+    priority:'med', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'متوسط',
     desc:'معالجو شكاوى بتراجع ملحوظ في درجة الأداء خلال الفترة الحالية',
     count: droppingHandlers.length,
     onClick: ()=> setExtraFilter(d=> droppingHandlers.includes(d.owner), 'تراجع في أداء المعالج')
@@ -3010,7 +1888,7 @@ function renderAlerts(rows){
   const allAlerts = computeAlerts(rows);
   // Categorize into 3 tiers (Critical / Warning / Information) and sort automatically by severity.
   const tierMap = { crit:'critical', high:'warning', med:'warning', low:'info' };
-  const tierLabel = { critical:'حرج (Critical)', warning:'تحذير (Warning)', info:'معلومة (Information)' };
+  const tierLabel = { critical:'حرج', warning:'تحذير', info:'معلومة' };
   const tierRank = { critical:0, warning:1, info:2 };
   const alerts = allAlerts
     .filter(a=> a.count>0) // each alert disappears independently once its own condition clears
@@ -3018,7 +1896,7 @@ function renderAlerts(rows){
     .sort((a,b)=> tierRank[a.tier]-tierRank[b.tier] || b.count-a.count);
   const wrap = document.getElementById('alertCenter');
   if(!alerts.length){
-    wrap.innerHTML = `<div class="alert-empty">لا توجد تنبيهات نشطة ضمن عوامل التصفية الحالية 👍</div>`;
+    wrap.innerHTML = `<div class="alert-empty">لا توجد تنبيهات نشطة ضمن عوامل التصفية الحالية</div>`;
   } else {
     wrap.innerHTML = alerts.map((a,i)=>`
       <div class="alert-card ${a.priority}" data-idx="${i}">
@@ -3029,7 +1907,7 @@ function renderAlerts(rows){
         <div class="alert-desc">${a.desc}</div>
         <div class="alert-bottom">
           <span class="alert-count num value-pop">${a.count}</span>
-          <span class="alert-cta">اضغط للتصفية ←</span>
+          <span class="alert-cta">اضغط للتصفية <i class="fa-solid fa-arrow-left"></i></span>
         </div>
       </div>
     `).join('');
@@ -3041,7 +1919,7 @@ function renderAlerts(rows){
   // active-filter chip in control bar
   const chipWrap = document.getElementById('alertChipWrap');
   chipWrap.innerHTML = extraFilter
-    ? `<span class="active-alert-chip">${extraFilterLabel} <button id="clearAlertChip">✕</button></span>`
+    ? `<span class="active-alert-chip">${extraFilterLabel} <button id="clearAlertChip"><i class="fa-solid fa-xmark"></i></button></span>`
     : '';
   if(extraFilter){
     document.getElementById('clearAlertChip').addEventListener('click', clearExtraFilter);
@@ -3081,7 +1959,7 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
   const { prevHalf, currHalf } = splitByDateHalves(rows);
   const mPrev = prevHalf.length ? computeCoreExecutiveMetrics(prevHalf) : null;
   const mCurr = computeCoreExecutiveMetrics(currHalf.length ? currHalf : rows);
-  const trendFor = (key, lowerIsBetter) => mPrev ? kpiTrend(mCurr[key], mPrev[key], lowerIsBetter) : `<span class="kpi-trend-badge flat">▬ لا توجد بيانات كافية للمقارنة</span>`;
+  const trendFor = (key, lowerIsBetter) => mPrev ? kpiTrend(mCurr[key], mPrev[key], lowerIsBetter) : `<span class="kpi-trend-badge flat"><i class="fa-solid fa-minus"></i> لا توجد بيانات كافية للمقارنة</span>`;
   const cards = [
     { tone:'', label:'إجمالي الشكاوى', value: m.total, trend: trendFor('total', true) },
     { tone:'tone-pending', label:'الشكاوى المفتوحة', value: m.open, trend: trendFor('open', true) },
@@ -3141,7 +2019,7 @@ function computeHealthScore(rows){
   ];
   const score = Math.round(factors.reduce((s,f)=> s + f.score*f.weight, 0));
   const band = score>=90?'excellent': score>=75?'good': score>=60?'attention':'critical';
-  const bandLabel = { excellent:'ممتاز (Excellent)', good:'جيد (Good)', attention:'يحتاج انتباه (Needs Attention)', critical:'حرج (Critical)' }[band];
+  const bandLabel = { excellent:'ممتاز', good:'جيد', attention:'يحتاج انتباه', critical:'حرج' }[band];
   const bandColor = { excellent:'var(--health-green)', good:'var(--health-yellow)', attention:'var(--health-orange)', critical:'var(--health-red)' }[band];
   return { score, band, bandLabel, bandColor, factors };
 }
@@ -3160,7 +2038,7 @@ function renderHealthScore(rows){
     <div class="hs-gauge">
       <svg viewBox="0 0 132 132">
         <circle class="track" cx="66" cy="66" r="${r}"></circle>
-        <circle class="fill" cx="66" cy="66" r="${r}" stroke="${h.bandColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+        <circle class="fill" cx="66" cy="66" r="${r}" style="stroke:${h.bandColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
       </svg>
       <div class="hs-gauge-num">
         <b class="value-pop">${h.score}</b>
@@ -3169,7 +2047,7 @@ function renderHealthScore(rows){
     </div>
     <div>
       <div class="hs-breakdown-title">مؤشر الصحة التنفيذي</div>
-      <span class="hs-band-badge" style="background:${h.bandColor}22;color:${h.bandColor}">${h.bandLabel}</span>
+      <span class="hs-band-badge" style="background:color-mix(in srgb, ${h.bandColor} 16%, transparent);color:var(--ink);border:1px solid ${h.bandColor}">${h.bandLabel}</span>
     </div>
     <div class="hs-breakdown">
       <div class="hs-breakdown-title">تفصيل الوزن المحسوب</div>
@@ -3202,13 +2080,14 @@ function renderExecutiveSnapshot(rows){
 
   const r = 33, circ = 2*Math.PI*r;
   const offset = h ? circ - (h.score/100)*circ : circ;
-  const todayStatus = !h ? '—' : (h.band==='excellent'||h.band==='good') ? '🟢 الأداء ضمن الحدود المستهدفة' : (h.band==='attention' ? '🟠 يتطلب متابعة' : '🔴 يتطلب تدخلاً عاجلاً');
+  const _ic = (n,c)=>`<i class="fa-solid fa-${n}" style="color:${c}" aria-hidden="true"></i>`;
+  const todayStatus = !h ? '—' : (h.band==='excellent'||h.band==='good') ? `${_ic('circle-check','var(--status-success)')} الأداء ضمن الحدود المستهدفة` : (h.band==='attention' ? `${_ic('triangle-exclamation','var(--status-under-action)')} يتطلب متابعة` : `${_ic('circle-exclamation','#FCA5A5')} يتطلب تدخلاً عاجلاً`);
 
   panel.innerHTML = `
     <div class="snap-score-ring">
       <svg viewBox="0 0 78 78">
         <circle class="track" cx="39" cy="39" r="${r}"></circle>
-        <circle class="fill" cx="39" cy="39" r="${r}" stroke="${h?h.bandColor:'var(--neutral)'}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+        <circle class="fill" cx="39" cy="39" r="${r}" style="stroke:${h?h.bandColor:'var(--neutral)'}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
       </svg>
       <div class="snap-score-num"><b class="value-pop">${h?h.score:'—'}</b><span>الصحة العامة</span></div>
     </div>
@@ -3298,26 +2177,26 @@ function computeExecutiveSummary(rows){
   // Smart, rule-based recommendations for management (no external AI — thresholds only)
   const recos = [];
   if(result.lowestSlaHandler && result.lowestSlaHandler.slaCompliance < 0.6){
-    recos.push({ icon:'⚠️', text:`مراجعة أداء <b>${result.lowestSlaHandler.owner}</b> — الالتزام بـ SLA حاليًا ${Math.round(result.lowestSlaHandler.slaCompliance*100)}% فقط، الأدنى بين معالجي الشكاوى.` });
+    recos.push({ icon:'<i class="fa-solid fa-triangle-exclamation"></i>', text:`مراجعة أداء <b>${result.lowestSlaHandler.owner}</b> — الالتزام بـ SLA حاليًا ${Math.round(result.lowestSlaHandler.slaCompliance*100)}% فقط، الأدنى بين معالجي الشكاوى.` });
   }
   const overOpen = handlers.filter(h=> h.open > 5);
   if(overOpen.length){
-    recos.push({ icon:'📋', text:`إعادة توزيع الحمل على <b>${overOpen.map(h=>h.owner).join('، ')}</b> — تجاوزوا 5 شكاوى مفتوحة لكل منهم، ما قد يؤخر زمن الحل.` });
+    recos.push({ icon:'<i class="fa-solid fa-clipboard-list"></i>', text:`إعادة توزيع الحمل على <b>${overOpen.map(h=>h.owner).join('، ')}</b> — تجاوزوا 5 شكاوى مفتوحة لكل منهم، ما قد يؤخر زمن الحل.` });
   }
   if(result.topReasons.length && result.topReasons[0].pct >= 25){
-    recos.push({ icon:'🔎', text:`دراسة السبب الجذري لـ <b>${result.topReasons[0].name}</b> — يمثل ${result.topReasons[0].pct}% من الشكاوى المصنّفة ضمن النتائج الحالية.` });
+    recos.push({ icon:'<i class="fa-solid fa-magnifying-glass"></i>', text:`دراسة السبب الجذري لـ <b>${result.topReasons[0].name}</b> — يمثل ${result.topReasons[0].pct}% من الشكاوى المصنّفة ضمن النتائج الحالية.` });
   }
   if(result.weeklyCompare.prevCount > 0){
     const pct = Math.round(((result.weeklyCompare.curCount - result.weeklyCompare.prevCount) / result.weeklyCompare.prevCount) * 100);
     if(pct >= 30){
-      recos.push({ icon:'📈', text:`حجم الشكاوى ارتفع بنسبة ${pct}% خلال آخر 7 أيام مقارنة بالأسبوع السابق — يُنصح بمتابعة السبب قبل تفاقمه.` });
+      recos.push({ icon:'<i class="fa-solid fa-arrow-trend-up"></i>', text:`حجم الشكاوى ارتفع بنسبة ${pct}% خلال آخر 7 أيام مقارنة بالأسبوع السابق — يُنصح بمتابعة السبب قبل تفاقمه.` });
     }
   }
   if(result.avgResolution !== null && result.avgResolution > 4){
-    recos.push({ icon:'⏱', text:`متوسط زمن الحل الحالي ${result.avgResolution.toFixed(1)} يوم، أعلى من المهلة المستهدفة (4 أيام) — يُنصح بتسريع دورة المراجعة.` });
+    recos.push({ icon:'<i class="fa-solid fa-clock"></i>', text:`متوسط زمن الحل الحالي ${result.avgResolution.toFixed(1)} يوم، أعلى من المهلة المستهدفة (4 أيام) — يُنصح بتسريع دورة المراجعة.` });
   }
   if(!recos.length){
-    recos.push({ icon:'✅', text:'لا توجد تنبيهات إدارية عاجلة ضمن عوامل التصفية الحالية — الأداء ضمن الحدود المستهدفة.' });
+    recos.push({ icon:'<i class="fa-solid fa-circle-check" style="color:var(--status-success)"></i>', text:'لا توجد تنبيهات إدارية عاجلة ضمن عوامل التصفية الحالية — الأداء ضمن الحدود المستهدفة.' });
   }
   result.recommendations = recos.slice(0,5);
 
@@ -3331,7 +2210,7 @@ function deltaBadgeHtml(curr, prev, lowerIsBetter){
   const isUp = diff > 0;
   const good = lowerIsBetter ? !isUp : isUp;
   const cls = isUp ? (good?'up-good':'up-bad') : (good?'down-good':'down-bad');
-  return `<span class="exec-compare-delta ${cls}">${isUp?'▲':'▼'} ${Math.abs(diff).toFixed(1)}</span>`;
+  return `<span class="exec-compare-delta ${cls}">${isUp?'<i class="fa-solid fa-arrow-up"></i>':'<i class="fa-solid fa-arrow-down"></i>'} ${Math.abs(diff).toFixed(1)}</span>`;
 }
 
 function renderExecutiveSummary(rows){
@@ -3370,7 +2249,7 @@ function renderExecutiveSummary(rows){
   const reasonDrilldown = (reason)=> ()=>{
     const reasonRows = rows.filter(d=> d.classification === reason.name);
     openInsightDrilldown({
-      icon:'🔎', title:`أكثر سبب شكوى تكرارًا: ${reason.name}`,
+      icon:'<i class="fa-solid fa-magnifying-glass"></i>', title:`أكثر سبب شكوى تكرارًا: ${reason.name}`,
       subtitle:'كل الشكاوى المصنّفة بهذا السبب ضمن عوامل التصفية الحالية.',
       summaryFields: [
         { label:'عدد الشكاوى', value:reason.count },
@@ -3382,45 +2261,45 @@ function renderExecutiveSummary(rows){
   };
 
   const cards = [
-    { tone:'tone-accept', icon:'🏆', label:'أفضل معالج شكاوى',
+    { tone:'tone-accept', icon:'<i class="fa-solid fa-trophy"></i>', label:'أفضل معالج شكاوى',
       value: s.bestHandler ? s.bestHandler.owner : '—',
       sub: s.bestHandler ? `درجة الأداء ${s.bestHandler.score}/100 · ${s.bestHandler.count} شكوى مسندة` : 'لا توجد بيانات كافية',
-      onClick: s.bestHandler ? handlerDrilldown(s.bestHandler, 'أفضل معالج شكاوى', '🏆') : null },
-    { tone:'tone-reject', icon:'⚠️', label:'أضعف معالج شكاوى أداءً',
+      onClick: s.bestHandler ? handlerDrilldown(s.bestHandler, 'أفضل معالج شكاوى', '<i class="fa-solid fa-trophy"></i>') : null },
+    { tone:'tone-reject', icon:'<i class="fa-solid fa-triangle-exclamation"></i>', label:'أضعف معالج شكاوى أداءً',
       value: s.lowestPerformingHandler ? s.lowestPerformingHandler.owner : '—',
       sub: s.lowestPerformingHandler ? `درجة الأداء ${s.lowestPerformingHandler.score}/100 · ${s.lowestPerformingHandler.open} شكوى مفتوحة` : 'لا توجد بيانات كافية',
-      onClick: s.lowestPerformingHandler ? handlerDrilldown(s.lowestPerformingHandler, 'أضعف معالج شكاوى أداءً', '⚠️') : null },
-    { tone:'', icon:'📊', label:'أعلى حجم شكاوى',
+      onClick: s.lowestPerformingHandler ? handlerDrilldown(s.lowestPerformingHandler, 'أضعف معالج شكاوى أداءً', '<i class="fa-solid fa-triangle-exclamation"></i>') : null },
+    { tone:'', icon:'<i class="fa-solid fa-chart-simple"></i>', label:'أعلى حجم شكاوى',
       value: s.highestVolumeHandler ? s.highestVolumeHandler.owner : '—',
       sub: s.highestVolumeHandler ? `${s.highestVolumeHandler.count} شكوى (${Math.round((s.highestVolumeHandler.count/rows.length)*100)}% من الإجمالي)` : 'لا توجد بيانات كافية',
-      onClick: s.highestVolumeHandler ? handlerDrilldown(s.highestVolumeHandler, 'أعلى حجم شكاوى', '📊') : null },
-    { tone:'tone-gold', icon:'💰', label:'أعلى قيمة تعويض',
+      onClick: s.highestVolumeHandler ? handlerDrilldown(s.highestVolumeHandler, 'أعلى حجم شكاوى', '<i class="fa-solid fa-chart-simple"></i>') : null },
+    { tone:'tone-gold', icon:'<i class="fa-solid fa-coins"></i>', label:'أعلى قيمة تعويض',
       value: s.highestComp ? `${s.highestComp.compensation_amount.toLocaleString('en-US')} ج.م` : '—',
       sub: s.highestComp ? `شكوى #${s.highestComp.id} · ${s.highestComp.owner || 'غير محدد'}` : 'لا توجد حالات تعويض',
       onClick: s.highestComp ? (()=> openModal(s.highestComp)) : null },
-    { tone:'', icon:'🔎', label:'أكثر سبب شكوى تكرارًا',
+    { tone:'', icon:'<i class="fa-solid fa-magnifying-glass"></i>', label:'أكثر سبب شكوى تكرارًا',
       value: s.topReasons && s.topReasons.length ? s.topReasons[0].name : '—',
       sub: s.topReasons && s.topReasons.length ? `${s.topReasons[0].count} شكوى (${s.topReasons[0].pct}% من الإجمالي)` : 'لا توجد تصنيفات كافية',
       onClick: (s.topReasons && s.topReasons.length) ? reasonDrilldown(s.topReasons[0]) : null },
-    { tone:'tone-pending', icon:'⏳', label:'أطول شكوى معلّقة',
+    { tone:'tone-pending', icon:'<i class="fa-solid fa-hourglass-half"></i>', label:'أطول شكوى معلّقة',
       value: s.longestPending ? `#${s.longestPending.row.id ?? ''}` : '—',
       sub: s.longestPending ? `معلّقة منذ ${s.longestPending.days} يوم · ${s.longestPending.row.owner || 'غير محدد'}` : 'لا توجد شكاوى مفتوحة حاليًا',
       onClick: s.longestPending ? (()=> openModal(s.longestPending.row)) : null },
-    { tone:'tone-accept', icon:'✅', label:'أعلى التزام بـ SLA',
+    { tone:'tone-accept', icon:'<i class="fa-solid fa-circle-check" style="color:var(--status-success)"></i>', label:'أعلى التزام بـ SLA',
       value: s.highestSlaHandler ? s.highestSlaHandler.owner : '—',
       sub: s.highestSlaHandler ? `التزام ${Math.round(s.highestSlaHandler.slaCompliance*100)}% بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية',
-      onClick: s.highestSlaHandler ? handlerDrilldown(s.highestSlaHandler, 'أعلى التزام بـ SLA', '✅') : null },
-    { tone:'tone-reject', icon:'📉', label:'أقل التزام بـ SLA',
+      onClick: s.highestSlaHandler ? handlerDrilldown(s.highestSlaHandler, 'أعلى التزام بـ SLA', '<i class="fa-solid fa-circle-check" style="color:var(--status-success)"></i>') : null },
+    { tone:'tone-reject', icon:'<i class="fa-solid fa-arrow-trend-down"></i>', label:'أقل التزام بـ SLA',
       value: s.lowestSlaHandler ? s.lowestSlaHandler.owner : '—',
       sub: s.lowestSlaHandler ? `التزام ${Math.round(s.lowestSlaHandler.slaCompliance*100)}% فقط بمهلة الحل المستهدفة` : 'لا توجد بيانات كافية',
-      onClick: s.lowestSlaHandler ? handlerDrilldown(s.lowestSlaHandler, 'أقل التزام بـ SLA', '📉') : null },
+      onClick: s.lowestSlaHandler ? handlerDrilldown(s.lowestSlaHandler, 'أقل التزام بـ SLA', '<i class="fa-solid fa-arrow-trend-down"></i>') : null },
   ];
   grid.innerHTML = cards.map((c,i)=>`
     <div class="exec-stat-card ${c.tone}" data-idx="${i}" ${c.onClick ? 'tabindex="0" role="button"' : ''}>
       <div class="exec-stat-label"><span class="exec-stat-icon">${c.icon}</span>${c.label}</div>
       <div class="exec-stat-value">${c.value}</div>
       <div class="exec-stat-sub">${c.sub}</div>
-      ${c.onClick ? `<div class="exec-stat-cta">اضغط لعرض التفاصيل ←</div>` : ''}
+      ${c.onClick ? `<div class="exec-stat-cta">اضغط لعرض التفاصيل <i class="fa-solid fa-arrow-left"></i></div>` : ''}
     </div>
   `).join('');
   grid.querySelectorAll('.exec-stat-card').forEach(card=>{
@@ -3516,7 +2395,7 @@ function computeInsights(rows){
     insights.push({
       problem: `السبب الأكثر تكرارًا هو <b>${topClass[0]}</b> بنسبة <b>${pct}%</b> من الشكاوى المصنّفة.`,
       impact: 'نمط متكرر بهذا الحجم يشير غالبًا إلى مشكلة تشغيلية جذرية تغذّي حجم الشكاوى.',
-      action: `فتح تحقيق جذري (root-cause) في سبب "${topClass[0]}" مع الفريق التشغيلي المعني.`,
+      action: `فتح تحقيق جذري في سبب "${topClass[0]}" مع الفريق التشغيلي المعني.`,
       priority: pct>=40?'critical':pct>=25?'high':'medium'
     });
   }
@@ -3589,9 +2468,9 @@ function renderInsights(rows){
       <div class="insight-card-v2-head">
         <span class="insight-priority ${ins.priority}">${priorityLabel[ins.priority]}</span>
       </div>
-      <div class="insight-card-v2-row"><span class="k">المشكلة (Problem)</span><span class="v">${ins.problem}</span></div>
-      <div class="insight-card-v2-row"><span class="k">الأثر على الأعمال (Business Impact)</span><span class="v">${ins.impact}</span></div>
-      <div class="insight-card-v2-row"><span class="k">الإجراء الموصى به (Recommended Action)</span><span class="v">${ins.action}</span></div>
+      <div class="insight-card-v2-row"><span class="k">المشكلة</span><span class="v">${ins.problem}</span></div>
+      <div class="insight-card-v2-row"><span class="k">الأثر على الأعمال</span><span class="v">${ins.impact}</span></div>
+      <div class="insight-card-v2-row"><span class="k">الإجراء الموصى به</span><span class="v">${ins.action}</span></div>
     </div>
   `).join('')}</div>`;
 }
@@ -3607,7 +2486,7 @@ function computeActionCenter(rows){
   const overdue = rows.filter(d=> isOpen(d) && d.date_added && daysBetween(REF_DATE, new Date(d.date_added)) > 5);
   if(overdue.length){
     actions.push({
-      icon:'⏰', title:'مراجعة الشكاوى المتأخرة',
+      icon:'<i class="fa-solid fa-clock"></i>', title:'مراجعة الشكاوى المتأخرة',
       desc:`${overdue.length} شكوى قيد التحقيق منذ أكثر من 5 أيام دون حل.`,
       owner:'مدير العمليات', impact:'تقليل خطر تصعيد العملاء وتراكم الشكاوى المفتوحة',
       priority: overdue.length>10?'critical':overdue.length>5?'high':'medium'
@@ -3619,7 +2498,7 @@ function computeActionCenter(rows){
   const lowPerf = handlers.filter(h=> h.score<60);
   if(lowPerf.length){
     actions.push({
-      icon:'📉', title:'متابعة معالجي الشكاوى ضعيفي الأداء',
+      icon:'<i class="fa-solid fa-arrow-trend-down"></i>', title:'متابعة معالجي الشكاوى ضعيفي الأداء',
       desc:`${lowPerf.map(h=>h.owner).join('، ')} — درجة أداء أقل من 60/100.`,
       owner:'مدير جودة خدمة العملاء', impact:'رفع مستوى الالتزام بـ SLA وتقليل الشكاوى المفتوحة لكل معالج',
       priority: lowPerf.some(h=>h.score<40) ? 'critical' : 'high'
@@ -3638,7 +2517,7 @@ function computeActionCenter(rows){
     if(prevComp>0 && lastComp > prevComp*1.2){
       const growthPct = Math.round(((lastComp-prevComp)/prevComp)*100);
       actions.push({
-        icon:'💰', title:'مراجعة ارتفاع تكلفة التعويضات',
+        icon:'<i class="fa-solid fa-coins"></i>', title:'مراجعة ارتفاع تكلفة التعويضات',
         desc:`إجمالي التعويضات ارتفع بنسبة ${growthPct}% في ${lastM} مقارنة بـ ${prevM}.`,
         owner:'الإدارة المالية', impact:'ضبط التكلفة التشغيلية المرتبطة بالتعويضات قبل تفاقمها',
         priority: growthPct>=50?'critical':'high'
@@ -3655,7 +2534,7 @@ function computeActionCenter(rows){
   if(prevWeek>0 && curWeek > prevWeek*1.3){
     const growthPct = Math.round(((curWeek-prevWeek)/prevWeek)*100);
     actions.push({
-      icon:'📈', title:'التحقيق في ارتفاع حجم الشكاوى',
+      icon:'<i class="fa-solid fa-arrow-trend-up"></i>', title:'التحقيق في ارتفاع حجم الشكاوى',
       desc:`حجم الشكاوى ارتفع بنسبة ${growthPct}% خلال آخر 7 أيام مقابل الأسبوع السابق.`,
       owner:'مدير العمليات', impact:'تحديد السبب الجذري قبل أن يتحول الارتفاع إلى نمط دائم',
       priority: growthPct>=60?'critical':'high'
@@ -3667,7 +2546,7 @@ function computeActionCenter(rows){
   const slaCompliance = slaVals.length ? (slaVals.filter(v=>v<=4).length/slaVals.length)*100 : null;
   if(slaCompliance!==null && slaCompliance<70){
     actions.push({
-      icon:'🎯', title:'تحسين الالتزام بمهلة SLA',
+      icon:'<i class="fa-solid fa-bullseye"></i>', title:'تحسين الالتزام بمهلة SLA',
       desc:`الالتزام الحالي بمهلة الحل (4 أيام) هو ${Math.round(slaCompliance)}% فقط.`,
       owner:'مدير جودة خدمة العملاء', impact:'رفع رضا العملاء وتقليل خطر التصعيد المرتبط بتأخر الحل',
       priority: slaCompliance<50?'critical':'high'
@@ -3682,7 +2561,7 @@ function renderActionCenter(rows){
   if(!grid) return;
   const actions = computeActionCenter(rows);
   if(!actions.length){
-    grid.innerHTML = `<div class="action-empty">لا توجد إجراءات عاجلة مطلوبة ضمن عوامل التصفية الحالية 👍</div>`;
+    grid.innerHTML = `<div class="action-empty">لا توجد إجراءات عاجلة مطلوبة ضمن عوامل التصفية الحالية</div>`;
     return;
   }
   const priorityLabel = { critical:'حرج', high:'مرتفع', medium:'متوسط', low:'منخفض' };
@@ -3765,7 +2644,7 @@ function renderHandlerPerformance(rows){
   });
   const colorVar = { green:'var(--health-green)', yellow:'var(--health-yellow)', orange:'var(--health-orange)', red:'var(--health-red)' };
   const colorLabel = { green:'ممتاز', yellow:'جيد', orange:'يحتاج متابعة', red:'حرج' };
-  const trendArrow = { up:'▲', down:'▼', flat:'—' };
+  const trendArrow = { up:'<i class="fa-solid fa-arrow-up"></i>', down:'<i class="fa-solid fa-arrow-down"></i>', flat:'<i class="fa-solid fa-minus"></i>' };
   const trendCls = { up:'up', down:'down', flat:'flat' };
   const tbody = document.getElementById('healthTableBody');
   if(!list.length){
@@ -3786,7 +2665,7 @@ function renderHandlerPerformance(rows){
           <span class="health-dot" style="background:${colorVar[h.colorKey]}"></span>
           <span class="health-score-num">${h.score}</span>
           <span class="health-bar-track"><span class="health-bar-fill" style="width:${h.score}%;background:${colorVar[h.colorKey]}"></span></span>
-          <span class="health-badge" style="background:${colorVar[h.colorKey]}22;color:${colorVar[h.colorKey]}">${colorLabel[h.colorKey]}</span>
+          <span class="health-badge" style="background:color-mix(in srgb, ${colorVar[h.colorKey]} 16%, transparent);color:var(--ink);border:1px solid ${colorVar[h.colorKey]}">${colorLabel[h.colorKey]}</span>
         </div>
       </td>
       <td class="num"><span class="health-trend ${trendCls[h.trend]}">${trendArrow[h.trend]}</span></td>
@@ -3852,19 +2731,19 @@ function renderTopPerformers(rows){
 
   wrap.innerHTML = `
     <div class="tp-card">
-      <h5>🏆 أفضل 5 معالجي شكاوى</h5>
+      <h5><i class="fa-solid fa-trophy"></i> أفضل 5 معالجي شكاوى</h5>
       ${handlerRows(t.top5Handlers, h=>`${h.score}/100`)}
     </div>
     <div class="tp-card">
-      <h5>📉 أضعف 5 معالجي شكاوى</h5>
+      <h5><i class="fa-solid fa-arrow-trend-down"></i> أضعف 5 معالجي شكاوى</h5>
       ${handlerRows(t.bottom5Handlers, h=>`${h.score}/100`)}
     </div>
     <div class="tp-card">
-      <h5>🔎 أبرز أسباب الشكاوى</h5>
+      <h5><i class="fa-solid fa-magnifying-glass"></i> أبرز أسباب الشكاوى</h5>
       ${entryRows(t.topReasons, 'count')}
     </div>
     <div class="tp-card">
-      <h5>💰 أعلى أسباب تكلفة التعويض</h5>
+      <h5><i class="fa-solid fa-coins"></i> أعلى أسباب تكلفة التعويض</h5>
       ${entryRows(t.topCompReasons, 'amount')}
     </div>
   `;
@@ -3903,7 +2782,7 @@ function trendBadge(curr, prev, lowerIsBetter){
   if(Math.abs(diffPct) < 1) return `<span class="stub-trend flat">= مستقر</span>`;
   const isUp = diffPct > 0;
   const good = lowerIsBetter ? !isUp : isUp;
-  return `<span class="stub-trend ${good?'up':'down'}">${isUp?'▲':'▼'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
+  return `<span class="stub-trend ${good?'up':'down'}">${isUp?'<i class="fa-solid fa-arrow-up"></i>':'<i class="fa-solid fa-arrow-down"></i>'} ${Math.abs(diffPct).toFixed(0)}%</span>`;
 }
 function achieveBar(pct, good){
   const clamped = Math.max(0, Math.min(100, pct));
@@ -4011,14 +2890,14 @@ function countActiveFilters(){
   return n;
 }
 function updateLiveStats(rows){
-  document.getElementById('lsRefresh').textContent = new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('lsRefresh').textContent = new Date().toLocaleTimeString('ar-EG-u-nu-latn', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
   document.getElementById('lsTotal').textContent = DATA.length.toLocaleString('en-US');
   document.getElementById('lsFilters').textContent = countActiveFilters();
   document.getElementById('lsVisible').textContent = rows.length.toLocaleString('en-US');
 }
 function tickClock(){
   const el = document.getElementById('lsClock');
-  if(el) el.textContent = new Date().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if(el) el.textContent = new Date().toLocaleTimeString('ar-EG-u-nu-latn', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
 }
 setInterval(tickClock, 1000);
 tickClock();
@@ -4053,7 +2932,7 @@ document.getElementById('qaExport').addEventListener('click', ()=>{
 // ---------- 6) Dark mode ----------
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
-  document.getElementById('themeToggleIcon').textContent = theme==='dark' ? '☀️' : '🌙';
+  document.getElementById('themeToggleIcon').className = 'fa-solid ' + (theme==='dark' ? 'fa-sun' : 'fa-moon');
   document.getElementById('themeToggleLabel').textContent = theme==='dark' ? 'الوضع الفاتح' : 'الوضع الداكن';
   try{ localStorage.setItem('arrive_dashboard_theme', theme); }catch(e){}
 }
@@ -4155,10 +3034,8 @@ document.getElementById('headerSettings')?.addEventListener('click', ()=>{
   openSettingsModal();
 });
 
-// ---------- 11) Performance: lazy/chunked table rendering for large datasets ----------
-const TABLE_CHUNK = 150;
-let tableRenderedCount = 0;
-let tableRowsCache = [];
+// ---------- 11) Table pagination (same sort/filter pipeline; replaces the old scroll-append chunking) ----------
+let tablePage = 1, tablePageSize = 50, tableRowsCache = [], tableSig = '';
 const _originalUpdateTable = updateTable;
 updateTable = function(rows){
   const sorted = [...rows].sort((a,b)=>{
@@ -4170,21 +3047,27 @@ updateTable = function(rows){
     return 0;
   });
   tableRowsCache = sorted;
-  tableRenderedCount = 0;
+  // go back to page 1 when the result set or sort order changes; keep the page on silent auto-refresh
+  const sig = sorted.length + '|' + sortKey + '|' + sortDir + '|' + (sorted[0] ? sorted[0].id : '');
+  if(sig !== tableSig){ tablePage = 1; tableSig = sig; }
+  renderTablePage();
+};
+function renderTablePage(){
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
-  if(!sorted.length){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">لا توجد نتائج مطابقة لعوامل التصفية الحالية</td></tr>`;
+  const pagerInfo = document.getElementById('pagerInfo');
+  const pagerCtl = document.getElementById('pagerCtl');
+  const total = tableRowsCache.length;
+  if(!total){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">${EMPTY_HTML}</td></tr>`;
+    pagerInfo.textContent = '—'; pagerCtl.innerHTML = '';
     return;
   }
-  appendTableChunk();
-};
-function appendTableChunk(){
-  const tbody = document.getElementById('tableBody');
-  const next = tableRowsCache.slice(tableRenderedCount, tableRenderedCount+TABLE_CHUNK);
-  if(!next.length) return;
-  const html = next.map(d=>`
-    <tr data-idx="${DATA.indexOf(d)}">
+  const pages = Math.max(1, Math.ceil(total / tablePageSize));
+  tablePage = Math.min(Math.max(1, tablePage), pages);
+  const start = (tablePage-1)*tablePageSize;
+  const slice = tableRowsCache.slice(start, start+tablePageSize);
+  tbody.innerHTML = slice.map(d=>`
+    <tr data-idx="${DATA.indexOf(d)}" tabindex="0">
       <td class="id-cell">${d.id ?? ''}</td>
       <td class="num">${d.date_added ?? '—'}</td>
       <td>${d.owner ?? ''}</td>
@@ -4196,15 +3079,22 @@ function appendTableChunk(){
       <td class="amount-cell">${isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
     </tr>
   `).join('');
-  tbody.insertAdjacentHTML('beforeend', html);
   tbody.querySelectorAll('tr[data-idx]').forEach(tr=>{
-    if(!tr._bound){ tr._bound = true; tr.addEventListener('click', ()=> openModal(DATA[+tr.dataset.idx])); }
+    tr.addEventListener('click', ()=> openModal(DATA[+tr.dataset.idx]));
+    tr.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openModal(DATA[+tr.dataset.idx]); } });
   });
-  tableRenderedCount += next.length;
+  pagerInfo.innerHTML = `عرض <b>${start+1}</b>–<b>${Math.min(start+tablePageSize,total)}</b> من <b>${total.toLocaleString('en-US')}</b> سجل · صفحة <b>${tablePage}</b> من <b>${pages}</b>`;
+  const win = []; for(let p=Math.max(1,tablePage-2); p<=Math.min(pages,tablePage+2); p++) win.push(p);
+  pagerCtl.innerHTML = `
+    <button class="pg-btn" data-pg="1" ${tablePage===1?'disabled':''} aria-label="الصفحة الأولى"><i class="fa-solid fa-angles-right"></i></button>
+    <button class="pg-btn" data-pg="${tablePage-1}" ${tablePage===1?'disabled':''} aria-label="السابق"><i class="fa-solid fa-chevron-right"></i></button>
+    ${win.map(p=>`<button class="pg-btn ${p===tablePage?'active':''}" data-pg="${p}">${p}</button>`).join('')}
+    <button class="pg-btn" data-pg="${tablePage+1}" ${tablePage===pages?'disabled':''} aria-label="التالي"><i class="fa-solid fa-chevron-left"></i></button>
+    <button class="pg-btn" data-pg="${pages}" ${tablePage===pages?'disabled':''} aria-label="الصفحة الأخيرة"><i class="fa-solid fa-angles-left"></i></button>
+    <select id="pageSizeSel" aria-label="عدد الصفوف في الصفحة">${[25,50,100,200].map(n=>`<option value="${n}" ${n===tablePageSize?'selected':''}>${n} / صفحة</option>`).join('')}</select>`;
+  pagerCtl.querySelectorAll('[data-pg]').forEach(btn=> btn.addEventListener('click', ()=>{ tablePage = +btn.dataset.pg; renderTablePage(); document.getElementById('dataTable').scrollIntoView({block:'nearest'}); }));
+  document.getElementById('pageSizeSel').addEventListener('change', e=>{ tablePageSize = +e.target.value; tablePage = 1; renderTablePage(); });
 }
-document.querySelector('.table-scroll').addEventListener('scroll', function(){
-  if(this.scrollTop + this.clientHeight >= this.scrollHeight - 80){ appendTableChunk(); }
-});
 
 // =========================================================
 // 12) LIVE DATA: Google Apps Script API integration
@@ -4233,7 +3123,7 @@ function saveApiUrlToStorage(url){
   try{ localStorage.setItem(API_URL_STORAGE_KEY, currentApiUrl); }catch(e){}
 }
 
-// ---------- Cache of last successful API response (localStorage) ----------
+// ---------- Cache of last successful API response  ----------
 function saveDataToCache(rows){
   try{
     localStorage.setItem(CACHE_DATA_STORAGE_KEY, JSON.stringify(rows));
@@ -4252,7 +3142,7 @@ function getCacheTimeLabel(){
   try{
     const t = localStorage.getItem(CACHE_TIME_STORAGE_KEY);
     if(!t) return '';
-    return new Date(parseInt(t,10)).toLocaleString('ar-EG');
+    return new Date(parseInt(t,10)).toLocaleString('ar-EG-u-nu-latn');
   }catch(e){ return ''; }
 }
 
@@ -4294,7 +3184,7 @@ function setConnStatus(state){
   console.log('%c[TRACE] setConnStatus("'+state+'") called from:', 'color:#e67e22;font-weight:bold', new Error().stack);
   if(!connStatusChip) return;
   connStatusChip.dataset.state = state;
-  const labels = { live:'🟢 متصل', demo:'🟡 وضع تجريبي', error:'🔴 غير متصل' };
+  const labels = { live:'متصل', demo:'وضع تجريبي', error:'غير متصل' };
   if(connStatusLabel) connStatusLabel.textContent = labels[state] || labels.live;
 }
 
@@ -4628,11 +3518,11 @@ function buildCompareChartSet(suf){
 
   set.trend = new Chart(document.getElementById('chartTrend_'+suf), {
     type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(44,66,87,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
+    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, pointRadius:2, pointBackgroundColor:palette.navy, borderWidth:2 }]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'IBM Plex Mono',monospace"} } },
-      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:8} }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:8} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
 
@@ -4651,7 +3541,7 @@ function buildCompareChartSet(suf){
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
+      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
     }
   });
 
@@ -4661,7 +3551,7 @@ function buildCompareChartSet(suf){
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:30, minRotation:0, font:{size:9.5} } }, y:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} } }
+      scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:30, minRotation:0, font:{size:9.5} } }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
     }
   });
 
@@ -4671,7 +3561,7 @@ function buildCompareChartSet(suf){
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ beginAtZero:true, grid:{color:'#EEEDE6'}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
+      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
     }
   });
 
@@ -4679,14 +3569,14 @@ function buildCompareChartSet(suf){
     type:'bar',
     data:{ labels:[], datasets:[
       { label:'إجمالي التعويض (ج.م)', data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:18, yAxisID:'y' },
-      { label:'عدد الحالات', data:[], backgroundColor:'rgba(44,66,87,0.35)', borderRadius:4, maxBarThickness:18, yAxisID:'y1' }
+      { label:'عدد الحالات', data:[], backgroundColor:palette.blueMid, borderRadius:4, maxBarThickness:18, yAxisID:'y1' }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } },
       scales:{
         x:{ grid:{display:false} },
-        y:{ position:'left', beginAtZero:true, grid:{color:'#EEEDE6'}, title:{display:true, text:'ج.م', font:{size:10}} },
+        y:{ position:'left', beginAtZero:true, grid:{color:palette.grid}, title:{display:true, text:'ج.م', font:{size:10}} },
         y1:{ position:'right', beginAtZero:true, grid:{display:false}, ticks:{precision:0}, title:{display:true, text:'حالات', font:{size:10}} }
       }
     }
@@ -5162,7 +4052,7 @@ document.getElementById('btnReset').addEventListener('click', ()=>{ if(compareMo
 (function initHeaderCurrentDate(){
   const el = document.getElementById('headerCurrentDate');
   if(!el) return;
-  el.textContent = new Date().toLocaleDateString('ar-EG', { day:'2-digit', month:'2-digit', year:'numeric' });
+  el.textContent = new Date().toLocaleDateString('en-CA');
 })();
 
 // ---------- Boot + auto-refresh (data only — the page itself is never reloaded, never blocked) ----------
@@ -5170,6 +4060,33 @@ loadApiUrlFromStorage();
 loadAutoRefreshFromStorage();
 loadDashboardData({ isRefresh: false });
 setupAutoRefresh();
+
+// ---------- ARRIVE UI helpers (presentation only — no business logic) ----------
+const MORE_FILTER_IDS = ['fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm','fReviewFrom','fReviewTo'];
+function arriveAfterRender(rows){
+  const ds = rows.map(d=>d.date_added).filter(Boolean).sort();
+  const sub = document.getElementById('kpiPeriodSub');
+  if(sub) sub.textContent = ds.length ? `الفترة: ${ds[0]} — ${ds[ds.length-1]} · ${rows.length.toLocaleString('en-US')} سجل` : 'لا توجد سجلات ضمن الفلاتر الحالية';
+  let n = 0;
+  MORE_FILTER_IDS.forEach(id=>{
+    const el = document.getElementById(id); if(!el) return;
+    if(el.tagName==='SELECT' && el.multiple){ if(getSelValues(id).length) n++; } else if(el.value) n++;
+  });
+  const badge = document.getElementById('moreFiltersCount');
+  if(badge){ badge.textContent = n; badge.classList.toggle('hidden', n===0); }
+}
+(function(){
+  const btn = document.getElementById('btnMoreFilters'), panel = document.getElementById('filterMore'), caret = document.getElementById('moreFiltersCaret');
+  if(!btn || !panel) return;
+  btn.addEventListener('click', ()=>{
+    const willOpen = panel.hasAttribute('hidden');
+    if(willOpen) panel.removeAttribute('hidden'); else panel.setAttribute('hidden','');
+    btn.setAttribute('aria-expanded', String(willOpen));
+    caret.className = 'fa-solid ' + (willOpen ? 'fa-chevron-up' : 'fa-chevron-down');
+  });
+})();
+document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(window.ArriveReport) window.ArriveReport.open(); });
 </script>
+<script src="report/arrive-report.js"></script>
 </body>
 </html>
