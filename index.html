@@ -2315,10 +2315,11 @@ function buildData(raw){
   const INVALID_ID_RE = /^(?:[-–—_.]+|null|undefined|nan|n\/a|#n\/a|#ref!|#value!|#name\?)$/i;
   const fingerprint = d => [d.date_added, d.owner, d.branch, d.type, d.status, d.compensation_amount, d.compensation_review_result, d.content].map(v=>String(v==null?'':v).trim()).join('|');
   const firstById = new Map();
+  const excludedDetail = [];
   mapped.forEach(d=>{
     const idKey = safeStr(d.id).trim();
-    if(!idKey){ skippedNoId.push(d); return; }
-    if(INVALID_ID_RE.test(idKey)){ skippedInvalidId.push(idKey); return; }
+    if(!idKey){ skippedNoId.push(d); excludedDetail.push({reason:'رقم شكوى فارغ', id:idKey, status:d.status, date_added:d.date_added, branch:d.branch, type:d.type}); return; }
+    if(INVALID_ID_RE.test(idKey)){ skippedInvalidId.push(idKey); excludedDetail.push({reason:'رقم شكوى غير صالح', id:idKey, status:d.status, date_added:d.date_added, branch:d.branch, type:d.type}); return; }
     if(seenIds.has(idKey)){
       skippedDuplicate.push(idKey);
       if(fingerprint(firstById.get(idKey)) !== fingerprint(d)) conflictingDuplicates.push(idKey);
@@ -2331,7 +2332,8 @@ function buildData(raw){
   window.ARRIVE_DATA_QUALITY = {
     inputRows: mapped.length, keptRows: result.length,
     noId: skippedNoId.length, invalidId: skippedInvalidId.length,
-    duplicateRows: skippedDuplicate.length, conflictingDuplicateIds: [...new Set(conflictingDuplicates)]
+    duplicateRows: skippedDuplicate.length, conflictingDuplicateIds: [...new Set(conflictingDuplicates)],
+    excluded: excludedDetail.slice(0,50)
   };
   if(skippedNoId.length) console.warn('[buildData] Skipped', skippedNoId.length, 'row(s) with no id (likely non-complaint/summary rows).');
   if(skippedInvalidId.length) console.warn('[buildData] Skipped', skippedInvalidId.length, 'row(s) with an invalid id placeholder:', skippedInvalidId);
@@ -2899,15 +2901,31 @@ function animateNumber(el, toValue, opts={}){
   requestAnimationFrame(step);
 }
 
-// قرار التعويض من «حالة الشكوى الحاليه» (STATUS_MAP). مصنِّف واحد حصري: لا تُحتسب الحالة مقبولة ومرفوضة معًا.
-// الأولوية للرفض إذا احتوى النص على الكلمتين (حالة غير متوقعة — تظهر في arriveProfileData().decisionConflicts).
-function compDecisionOf(d){
+// ---------- قرار التعويض ----------
+// مصدر القرار الحالي (المعتمد في اللوحة منذ البداية): «حالة الشكوى الحاليه» (STATUS_MAP).
+// البديل 'review' = «نتيجه مراجعة التعويض» (To be paid = مقبول، refused = مرفوض، تم التعويض مسبقا = سابق).
+// لا يُغيَّر المصدر إلا بعد اعتماده من الإدارة بناءً على مطابقة العمودين (arriveProfileData().decisionBySource).
+let COMPENSATION_DECISION_SOURCE = 'status';
+// «التعويض مسبقا» يُحتسب مقبولًا كما في STATUS_MAP الأصلي (cls:'accepted'). اجعلها false لاستبعاده من المقام والبسط
+// حتى يُعتمد حكمه (قاعدة عمل لم تُعتمد بعد).
+let PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED = true;
+function statusDecisionOf(d){
   const s = d && d.status ? d.status : '';
-  if(s.includes('رفض')) return 'rejected';
-  if(s.includes('قبول') || s.includes('مسبقا')) return 'accepted';
+  if(s.includes('رفض')) return 'rejected';          // الأولوية للرفض إن احتوى النص الكلمتين (يظهر في decisionConflicts)
+  if(s.includes('قبول')) return 'accepted';
+  if(s.includes('مسبقا')) return PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED ? 'accepted' : null;
   return null;
 }
-// نسبتا القبول والرفض بخانة عشرية؛ الرفض = 100 − القبول المقرَّب فيكون المجموع 100.0% دائمًا عند وجود حالات محسومة.
+function reviewDecisionOf(d){
+  const v = normArText(d && d.compensation_review_result);
+  if(v === 'refused') return 'rejected';
+  if(v === 'to be paid') return 'accepted';
+  if(v === normArText('تم التعويض مسبقا')) return PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED ? 'accepted' : null;
+  return null;
+}
+function compDecisionOf(d){ return COMPENSATION_DECISION_SOURCE === 'review' ? reviewDecisionOf(d) : statusDecisionOf(d); }
+// نسبتا القبول والرفض بخانة عشرية. المقام = (مقبول + مرفوض) حصرًا، لذا الرفض = 100 − القبول المقرَّب صحيح
+// ويضمن المجموع 100.0% دون خطأ تقريب. لا تستخدم هذه الدالة مع مقام فيه حالات أخرى.
 function fmtPctPair(acc, rej){
   const dec = acc + rej;
   if(!dec) return ['—','—'];
@@ -2952,21 +2970,35 @@ function countOpenExtended(rows){
 // ---------- فحص القيم الفعلية (للمراجعة — لا يغيّر أي حساب) ----------
 // من Console بعد تحميل البيانات الحقيقية:  arriveProfileData()
 function arriveProfileData(){
-  const rows = DATA, tally = (fn)=>{ const m={}; rows.forEach(d=>{ const k=fn(d); m[k]=(m[k]||0)+1; }); return Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1])); };
+  const rows = DATA, tally = (fn)=>{ const m={}; rows.forEach(d=>{ const k=fn(d); if(k===null) return; m[k]=(m[k]||0)+1; }); return Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1])); };
   const rv = d=> d.compensation_review_result;
+  const rvLabel = d=> rv(d)==null || normArText(rv(d))==='' ? '(فارغ)' : rv(d);
+  const lab = x=> x || 'غير محسوم';
+  // مطابقة العمودين: حالة الشكوى × نتيجة المراجعة
+  const cross = {}; rows.forEach(d=>{ const a=d.status, b=rvLabel(d); (cross[a]=cross[a]||{})[b]=((cross[a]||{})[b]||0)+1; });
+  const bySrc = fn=>{ const m={accepted:0,rejected:0,'غير محسوم':0}; rows.forEach(d=>{ m[lab(fn(d))]++; }); return m; };
+  const disagree = {}; rows.forEach(d=>{ const a=lab(statusDecisionOf(d)), b=lab(reviewDecisionOf(d)); if(a!==b){ const k=a+' (حالة) ≠ '+b+' (مراجعة)'; disagree[k]=(disagree[k]||0)+1; } });
+  const stOpen = rows.filter(isOpenByStatus), rvOpen = rows.filter(isReviewOpenState);
+  const ids = arr=> new Set(arr.map(d=>String(d.id).trim()));
+  const sI = ids(stOpen), rI = ids(rvOpen), both = [...sI].filter(x=>rI.has(x));
+  const emptyRows = rows.filter(d=> normArText(rv(d))==='');
   const out = {
     records: rows.length,
     uniqueIds: new Set(rows.map(d=>String(d.id).trim())).size,
     dataQuality: window.ARRIVE_DATA_QUALITY || null,
     statusValues: tally(d=>d.status),
-    reviewResultValues: tally(d=>rv(d)==null ? '(فارغ)' : rv(d)),
+    reviewResultValues: tally(rvLabel),
     reviewResultNormalized: tally(d=> normArText(rv(d)) || '(فارغ)'),
-    emptyReviewByStatus: tally(d=> normArText(rv(d))==='' ? d.status : null),
-    emptyReviewWithCompensationAmount: rows.filter(d=> normArText(rv(d))==='' && isCompensationCountable(d) && d.compensation_amount>0).length,
+    crossStatusByReview: cross,
+    decisionBySource: { status: bySrc(statusDecisionOf), review: bySrc(reviewDecisionOf), disagreements: disagree, activeSource: COMPENSATION_DECISION_SOURCE, priorCountsAsAccepted: PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED },
     decisionConflicts: rows.filter(d=> d.status && d.status.includes('رفض') && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length,
-    decisions: tally(d=> compDecisionOf(d) || 'غير محسوم'),
-    openByStatus: rows.filter(isOpenByStatus).length,
-    openByReviewState: rows.filter(isReviewOpenState).length,
+    openOverlap: { byStatus: sI.size, byReviewState: rI.size, inBoth: both.length, union: new Set([...sI,...rI]).size,
+                   byReviewStateValues: tally(d=> isReviewOpenState(d) ? rvLabel(d) : null),
+                   reviewStateByStatus: tally(d=> isReviewOpenState(d) ? d.status+' | '+rvLabel(d) : null) },
+    emptyReview: { count: emptyRows.length, byStatus: tally(d=> normArText(rv(d))==='' ? d.status : null),
+                   withAmountGreaterThanZero: emptyRows.filter(d=> isCompensationCountable(d) && d.compensation_amount>0).length,
+                   withAnyAmount: emptyRows.filter(d=> isCompensationCountable(d)).length,
+                   rows: emptyRows.slice(0,50).map(d=>({id:d.id,status:d.status,amount:d.compensation_amount,date_added:d.date_added})) },
     openExtended: countOpenExtended(rows)
   };
   console.log('[arriveProfileData]', out); return out;

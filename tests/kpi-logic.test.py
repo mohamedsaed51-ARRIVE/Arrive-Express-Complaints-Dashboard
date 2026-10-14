@@ -64,6 +64,26 @@ with sync_playwright() as p:
     check('8b بعد فلتر الفرع ب: الإجمالي 3 / قبول 1 / رفض 1 / مفتوحة 1', f['total']=='3' and f['acc']=='1' and f['rej']=='1' and f['open']=='1',str(f))
     pg.evaluate("()=>{const e=document.getElementById('fReviewResult'); e.value='مراجعة الشكاوي'; syncMultiSelectUI('fReviewResult'); document.getElementById('fBranch').value=''; syncMultiSelectUI('fBranch'); render();}"); pg.wait_for_timeout(1300); f2=kpis(pg)
     check('8c فلتر نتيجة المراجعة', f2['total']=='1' and f2['open']=='1' and f2['rej']=='1',str(f2))
+    # 10) أشكال القيم الفعلية المكتشفة (To be paid / refused / معلقة / رد الشكاوي / فارغ) — بيانات اصطناعية بنفس الأشكال
+    PRIOR='التعويض مسبقا'
+    rows=[row('r1',ACC,'To be paid'),row('r2',ACC,'To be paid'),row('r3',ACC,'To be paid'),row('r4',ACC,'refused'),
+          row('r5',REJ,'refused'),row('r6',REJ,'refused'),row('r7',INV,'معلقة'),row('r8',ACC,'معلقة'),
+          row('r9',REJ,'رد الشكاوي'),row('r10',ACC,None,compensation_amount=100),row('r11',INV,None),
+          row('r12',PRIOR,'تم التعويض مسبقا'),row('-',ACC,'To be paid')]
+    load(pg,rows); k=kpis(pg)
+    check('10 مصدر القرار الحالي = الحالة: مقبول 7 / مرفوض 3 / 70.0% / 30.0%', k['acc']=='7' and k['rej']=='3' and k['accPct']=='70.0%' and k['rejPct']=='30.0%',str(k))
+    check('10b المفتوحة = اتحاد بلا تكرار (r7,r8,r9,r11 = 4) لا 5 (جمع بسيط)', k['open']=='4',str(k))
+    pr=pg.evaluate('arriveProfileData()')
+    check('10c تداخل المفتوحة: حالة 2 / مراجعة 3 / مشترك 1 / اتحاد 4', (pr['openOverlap']['byStatus'],pr['openOverlap']['byReviewState'],pr['openOverlap']['inBoth'],pr['openOverlap']['union'])==(2,3,1,4),str(pr['openOverlap']))
+    check('10d الفارغ: 2 سجل، واحد منهما له مبلغ > 0 وهو مغلق (لا يُحتسب مفتوحًا)', pr['emptyReview']['count']==2 and pr['emptyReview']['withAmountGreaterThanZero']==1,str(pr['emptyReview']))
+    d=pr['decisionBySource']; check('10e مقارنة المصدرين: الحالة 7/3 مقابل المراجعة 4/3 مع رصد الاختلاف', d['status']['accepted']==7 and d['review']['accepted']==4 and d['review']['rejected']==3 and len(d['disagreements'])>0,str(d))
+    ex=pr['dataQuality']['excluded']; check('10f السجل غير الصالح مُستبعد ومسجَّل بسببه (لا يُدمج)', len(ex)==1 and ex[0]['reason']=='رقم شكوى غير صالح' and pr['records']==12,str(ex))
+    # التبديل لمصدر المراجعة (غير معتمد — للتحقق فقط)
+    pg.evaluate("()=>{COMPENSATION_DECISION_SOURCE='review'; render();}"); pg.wait_for_timeout(1300); k=kpis(pg)
+    check('10g لو اعتُمد مصدر المراجعة: 4 / 3 / 57.1% / 42.9%', k['acc']=='4' and k['rej']=='3' and k['accPct']=='57.1%' and k['rejPct']=='42.9%',str(k))
+    pg.evaluate("()=>{COMPENSATION_DECISION_SOURCE='status'; PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED=false; render();}"); pg.wait_for_timeout(1300); k=kpis(pg)
+    check('10h لو استُبعد «التعويض مسبقا»: 6 / 3 / 66.7% / 33.3%', k['acc']=='6' and k['rej']=='3' and k['accPct']=='66.7%' and k['rejPct']=='33.3%',str(k))
+    pg.evaluate("()=>{PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED=true; render();}"); pg.wait_for_timeout(1000)
     check('9 لا أخطاء JavaScript', not errs, str(errs))
     b.close()
 bad=[r for r in results if not r[1]]
