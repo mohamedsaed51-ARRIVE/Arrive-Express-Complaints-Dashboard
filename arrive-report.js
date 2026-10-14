@@ -131,7 +131,7 @@
       <div class="rp-exec-top">${hs}
         <div class="rp-kpis">
           ${kp('إجمالي الشكاوى',N(m.total),'','tone-brand')}
-          ${kp('الشكاوى المفتوحة',N(m.open),'','tone-under-action')}
+          ${kp('الشكاوى المفتوحة',N(m.openExt),'','tone-under-action')}
           ${kp('الشكاوى المغلقة',N(m.closed),'','tone-success')}
           ${kp('الالتزام بـ SLA',m.slaCompliance===null?'—':m.slaCompliance,m.slaCompliance===null?'':'%',m.slaCompliance!==null&&m.slaCompliance<70?'tone-violation':'tone-success')}
         </div>
@@ -177,19 +177,14 @@
 
     /* 4) التحليل التفصيلي */
     const imgs = {
-      trend: chartImage(liveChart('chartTrend'),1000,300),
-      status: chartImage(liveChart('chartStatus'),480,300),
       type: chartImage(liveChart('chartType'),480,300),
       branch: chartImage(liveChart('chartBranch'),1000,320),
-      cls: chartImage(liveChart('chartClassification'),1000,320)
+      cls: chartImage(liveChart('chartClassification'),480,300)
     };
     const fig = (t,sub,src) => `<div class="rp-fig"><div class="rp-cap"><b>${t}</b><span>${sub}</span></div>${src?`<img src="${src}" alt="${esc(t)}">`:`<div class="rp-note">${MISSING}</div>`}</div>`;
-    pages.push(page(head('التحليل التفصيلي (1/2): الاتجاه والتوزيعات',ctx)+
-      fig('الاتجاه اليومي للشكاوى','عدد الشكاوى الواردة يوميًا خلال الفترة',imgs.trend)+
-      `<div class="rp-two">${fig('حالة التعويض','توزيع الشكاوى حسب الحالة',imgs.status)}${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}</div>`+foot()));
-    pages.push(page(head('التحليل التفصيلي (2/2): الفروع والتصنيفات',ctx)+
+    pages.push(page(head('التحليل التفصيلي: الفروع والتوزيعات',ctx)+
       fig('الشكاوى حسب الفرع','أعلى الفروع من حيث عدد الشكاوى',imgs.branch)+
-      fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)+foot()));
+      `<div class="rp-two">${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
 
     /* 5) أداء مسؤولي الشكاوى */
     let handlers = [];

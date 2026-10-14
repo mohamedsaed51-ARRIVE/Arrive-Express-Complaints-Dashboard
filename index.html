@@ -1236,17 +1236,22 @@ main.hidden{display:none}
 .stub-value{font-family:var(--font-numeric);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-size:clamp(26px,2.3vw,var(--fs-kpi));font-weight:var(--fw-bold);color:var(--navy-deep);line-height:1.1;text-align:start;white-space:nowrap}
 .stub-value sup{font-size:16px;font-weight:var(--fw-semibold);color:var(--ink-faint);margin-inline-start:3px;vertical-align:baseline;position:static}
 .stub-sub{font-size:var(--fs-micro);color:var(--ink-soft);line-height:1.5}
+.stub-pct{font-family:var(--font-numeric);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-size:clamp(15px,1.3vw,19px);font-weight:var(--fw-semibold);color:var(--text-secondary);line-height:1.2;text-align:right}
+.compare-kpi-row .stub-pct{font-size:14px}
 .stub-enh{margin-top:0;padding-top:var(--space-3);border-top:1px solid var(--line)}
 .stub-enh:empty{display:none}
 
 /* ---------- Panels / charts ---------- */
 .panel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);align-items:stretch}
 .panel-grid.thirds{grid-template-columns:1fr 1fr 1fr}
+.panel-grid.single{grid-template-columns:1fr}
+.panel-grid.halves{grid-template-columns:1fr 1fr}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:18px 20px 14px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;min-width:0}
 .panel h3{font-size:var(--fs-subtitle);font-weight:var(--fw-bold);color:var(--navy-deep);margin-bottom:2px;line-height:var(--lh-snug)}
 .panel .panel-sub{font-size:var(--fs-caption);color:var(--ink-faint);margin-bottom:var(--space-3)}
 .chart-wrap{position:relative;height:250px;background:var(--chart-bg);border-radius:var(--radius-sm);flex:1}
-.chart-wrap.tall{height:300px}
+.chart-wrap.tall{height:340px;flex:0 0 auto}
+.chart-wrap.xl{height:460px;flex:0 0 auto}
 
 /* ---------- Tables ---------- */
 .table-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow-card);overflow:hidden}
@@ -1372,7 +1377,8 @@ footer.enterprise-footer{background:var(--arrive-navy);color:rgba(255,255,255,.8
 @media (max-width:1280px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:1100px){
   :root{--page-pad:18px}
-  .panel-grid,.panel-grid.thirds{grid-template-columns:1fr}
+  .panel-grid,.panel-grid.thirds,.panel-grid.halves{grid-template-columns:1fr}
+  .chart-wrap.xl{height:380px}
   .modal-body{grid-template-columns:1fr}
   .top-inner.top-second{align-items:flex-start}
 }
@@ -1712,7 +1718,8 @@ body.report-open{overflow:hidden}
         <div class="stub-ic"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
         <div class="stub-main">
           <div class="stub-label">نسبة قبول التعويض</div>
-          <div class="stub-value num" id="kpiAcceptRate">0<sup>%</sup></div>
+          <div class="stub-value num" id="kpiAcceptRate">0</div>
+          <div class="stub-pct num" id="kpiAcceptPct">—</div>
         </div>
       </div>
       <div class="stub-sub" id="kpiAcceptSub">—</div>
@@ -1724,6 +1731,7 @@ body.report-open{overflow:hidden}
         <div class="stub-main">
           <div class="stub-label">تعويضات مرفوضة</div>
           <div class="stub-value num" id="kpiRejected">0</div>
+          <div class="stub-pct num" id="kpiRejectedPct">—</div>
         </div>
       </div>
       <div class="stub-sub" id="kpiRejectedSub">—</div>
@@ -1773,25 +1781,15 @@ body.report-open{overflow:hidden}
     <h2><span class="tag">اتجاهات</span> الاتجاهات والتوزيعات</h2>
     <span class="section-sub">اضغط على أي عنصر داخل الرسم البياني لتصفية اللوحة بأكملها</span>
   </div>
-  <section class="panel-grid">
-    <div class="panel">
-      <h3>الاتجاه اليومي للشكاوى</h3>
-      <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
-      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>حالة التعويض</h3>
-      <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
-      <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
-    </div>
-  </section>
-
-  <section class="panel-grid thirds">
+  <section class="panel-grid single">
     <div class="panel">
       <h3>الشكاوى حسب الفرع</h3>
       <div class="panel-sub">أعلى 10 فروع من حيث عدد الشكاوى</div>
-      <div class="chart-wrap tall"><canvas id="chartBranch"></canvas></div>
+      <div class="chart-wrap xl"><canvas id="chartBranch"></canvas></div>
     </div>
+  </section>
+
+  <section class="panel-grid halves">
     <div class="panel">
       <h3>نوع الشكوى</h3>
       <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
@@ -1804,16 +1802,11 @@ body.report-open{overflow:hidden}
     </div>
   </section>
 
-  <section class="panel-grid">
+  <section class="panel-grid single">
     <div class="panel">
       <h3>التعويض حسب الجهة المتحملة</h3>
       <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
-      <div class="chart-wrap"><canvas id="chartBearer"></canvas></div>
-    </div>
-    <div class="panel">
-      <h3>نتيجة مراجعة التعويض</h3>
-      <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
-      <div class="chart-wrap"><canvas id="chartReviewResult"></canvas></div>
+      <div class="chart-wrap tall"><canvas id="chartBearer"></canvas></div>
     </div>
   </section>
 
@@ -1985,12 +1978,14 @@ body.report-open{overflow:hidden}
         </div>
         <div class="stub accent-accepted">
           <div class="stub-label">نسبة قبول التعويض</div>
-          <div class="stub-value num" id="kpiAcceptRate_L">0<sup>%</sup></div>
+          <div class="stub-value num" id="kpiAcceptRate_L">0</div>
+          <div class="stub-pct num" id="kpiAcceptPct_L">—</div>
           <div class="stub-sub" id="kpiAcceptSub_L">—</div>
         </div>
         <div class="stub accent-rejected">
           <div class="stub-label">تعويضات مرفوضة</div>
           <div class="stub-value num" id="kpiRejected_L">0</div>
+          <div class="stub-pct num" id="kpiRejectedPct_L">—</div>
           <div class="stub-sub" id="kpiRejectedSub_L">—</div>
         </div>
         <div class="stub accent-pending">
@@ -2002,19 +1997,6 @@ body.report-open{overflow:hidden}
           <div class="stub-label">متوسط زمن الحل (يوم)</div>
           <div class="stub-value num" id="kpiSla_L">0</div>
           <div class="stub-sub" id="kpiSlaSub_L">—</div>
-        </div>
-      </section>
-
-      <section class="panel-grid">
-        <div class="panel">
-          <h3>الاتجاه اليومي للشكاوى</h3>
-          <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
-          <div class="chart-wrap"><canvas id="chartTrend_L"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>حالة التعويض</h3>
-          <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
-          <div class="chart-wrap"><canvas id="chartStatus_L"></canvas></div>
         </div>
       </section>
 
@@ -2042,11 +2024,6 @@ body.report-open{overflow:hidden}
           <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
           <div class="chart-wrap"><canvas id="chartBearer_L"></canvas></div>
         </div>
-        <div class="panel">
-          <h3>نتيجة مراجعة التعويض</h3>
-          <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
-          <div class="chart-wrap"><canvas id="chartReviewResult_L"></canvas></div>
-        </div>
       </section>
     </div>
 
@@ -2070,12 +2047,14 @@ body.report-open{overflow:hidden}
         </div>
         <div class="stub accent-accepted">
           <div class="stub-label">نسبة قبول التعويض</div>
-          <div class="stub-value num" id="kpiAcceptRate_R">0<sup>%</sup></div>
+          <div class="stub-value num" id="kpiAcceptRate_R">0</div>
+          <div class="stub-pct num" id="kpiAcceptPct_R">—</div>
           <div class="stub-sub" id="kpiAcceptSub_R">—</div>
         </div>
         <div class="stub accent-rejected">
           <div class="stub-label">تعويضات مرفوضة</div>
           <div class="stub-value num" id="kpiRejected_R">0</div>
+          <div class="stub-pct num" id="kpiRejectedPct_R">—</div>
           <div class="stub-sub" id="kpiRejectedSub_R">—</div>
         </div>
         <div class="stub accent-pending">
@@ -2087,19 +2066,6 @@ body.report-open{overflow:hidden}
           <div class="stub-label">متوسط زمن الحل (يوم)</div>
           <div class="stub-value num" id="kpiSla_R">0</div>
           <div class="stub-sub" id="kpiSlaSub_R">—</div>
-        </div>
-      </section>
-
-      <section class="panel-grid">
-        <div class="panel">
-          <h3>الاتجاه اليومي للشكاوى</h3>
-          <div class="panel-sub">عدد الشكاوى الواردة يوميًا خلال الفترة المحددة</div>
-          <div class="chart-wrap"><canvas id="chartTrend_R"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>حالة التعويض</h3>
-          <div class="panel-sub">توزيع الشكاوى حسب نتيجة المراجعة</div>
-          <div class="chart-wrap"><canvas id="chartStatus_R"></canvas></div>
         </div>
       </section>
 
@@ -2126,11 +2092,6 @@ body.report-open{overflow:hidden}
           <h3>التعويض حسب الجهة المتحملة</h3>
           <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
           <div class="chart-wrap"><canvas id="chartBearer_R"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>نتيجة مراجعة التعويض</h3>
-          <div class="panel-sub">توزيع الحالات حسب نتيجة المراجعة المحاسبية</div>
-          <div class="chart-wrap"><canvas id="chartReviewResult_R"></canvas></div>
         </div>
       </section>
     </div>
@@ -2347,17 +2308,35 @@ function buildData(raw){
   // leak in from a non-complaint row anywhere downstream (KPIs, charts, panels).
   const seenIds = new Set();
   const result = [];
-  const skippedNoId = [];
-  const skippedDuplicate = [];
+  const skippedNoId = [];        // رقم الشكوى فارغ
+  const skippedInvalidId = [];   // رقم غير صالح (علامة مكان مثل - أو #N/A)
+  const skippedDuplicate = [];   // نفس الرقم تكرر (نحتفظ بأول سجل)
+  const conflictingDuplicates = []; // نفس الرقم لكن بيانات مختلفة => يحتاج مراجعة يدوية
+  const INVALID_ID_RE = /^(?:[-–—_.]+|null|undefined|nan|n\/a|#n\/a|#ref!|#value!|#name\?)$/i;
+  const fingerprint = d => [d.date_added, d.owner, d.branch, d.type, d.status, d.compensation_amount, d.compensation_review_result, d.content].map(v=>String(v==null?'':v).trim()).join('|');
+  const firstById = new Map();
   mapped.forEach(d=>{
     const idKey = safeStr(d.id).trim();
     if(!idKey){ skippedNoId.push(d); return; }
-    if(seenIds.has(idKey)){ skippedDuplicate.push(idKey); return; }
-    seenIds.add(idKey);
+    if(INVALID_ID_RE.test(idKey)){ skippedInvalidId.push(idKey); return; }
+    if(seenIds.has(idKey)){
+      skippedDuplicate.push(idKey);
+      if(fingerprint(firstById.get(idKey)) !== fingerprint(d)) conflictingDuplicates.push(idKey);
+      return;
+    }
+    seenIds.add(idKey); firstById.set(idKey, d);
     result.push(d);
   });
+  // ملخص جودة البيانات متاح للمراجعة: ARRIVE_DATA_QUALITY
+  window.ARRIVE_DATA_QUALITY = {
+    inputRows: mapped.length, keptRows: result.length,
+    noId: skippedNoId.length, invalidId: skippedInvalidId.length,
+    duplicateRows: skippedDuplicate.length, conflictingDuplicateIds: [...new Set(conflictingDuplicates)]
+  };
   if(skippedNoId.length) console.warn('[buildData] Skipped', skippedNoId.length, 'row(s) with no id (likely non-complaint/summary rows).');
+  if(skippedInvalidId.length) console.warn('[buildData] Skipped', skippedInvalidId.length, 'row(s) with an invalid id placeholder:', skippedInvalidId);
   if(skippedDuplicate.length) console.warn('[buildData] Skipped duplicate complaint id(s) from source data:', skippedDuplicate);
+  if(conflictingDuplicates.length) console.warn('[buildData] Duplicate ids whose rows DIFFER (first row kept, review needed):', [...new Set(conflictingDuplicates)]);
   return result;
 }
 
@@ -2678,36 +2657,16 @@ const palette = {
   soft:[cssv('--arrive-blue'),cssv('--arrive-teal'),cssv('--arrive-navy'),cssv('--gray-400'),cssv('--arrive-blue-700'),cssv('--arrive-teal-600'),cssv('--gray-300'),cssv('--arrive-blue-900'),cssv('--gray-500'),cssv('--arrive-blue-50')]
 };
 
-let chartTrend, chartStatus, chartBranch, chartType, chartClassification, chartBearer, chartReviewResult;
+let chartBranch, chartType, chartClassification, chartBearer;
 
 function makeCharts(){
-  const ctxTrend = document.getElementById('chartTrend');
-  chartTrend = new Chart(ctxTrend, {
-    type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, cubicInterpolationMode:'monotone', pointRadius:0, pointHoverRadius:5, pointHitRadius:14, pointBackgroundColor:palette.navy, borderWidth:2 }]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'Inter','Cairo',sans-serif"}, callbacks:{ title:(items)=>{ const c=items[0].chart; return (c.rawLabels && c.rawLabels[items[0].dataIndex]) || items[0].label; }, label:(it)=>' عدد الشكاوى: '+it.parsed.y } } },
-      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:10} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
-    }
-  });
-
-  chartStatus = new Chart(document.getElementById('chartStatus'), {
-    type:'doughnut',
-    data:{ labels:[], datasets:[{ data:[], backgroundColor:[], borderWidth:3, borderColor:'#fff' }]},
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'62%',
-      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } }
-    }
-  });
-
   chartBranch = new Chart(document.getElementById('chartBranch'), {
     type:'bar',
-    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:16 }]},
+    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:24 }]},
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
-      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false} } }
+      scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{ autoSkip:false } } }
     }
   });
 
@@ -2748,17 +2707,9 @@ function makeCharts(){
     }
   });
 
-  chartReviewResult = new Chart(document.getElementById('chartReviewResult'), {
-    type:'doughnut',
-    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.soft, borderWidth:3, borderColor:'#fff' }]},
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'62%',
-      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:14 } } }
-    }
-  });
 }
 makeCharts();
-[[chartTrend,'y'],[chartType,'y'],[chartBranch,'x'],[chartClassification,'x']].forEach(([c,ax])=>{
+[[chartType,'y'],[chartBranch,'x'],[chartClassification,'x']].forEach(([c,ax])=>{
   c.options.scales[ax].title = { display:true, text:'عدد الشكاوى', font:{size:10.5} };
 });
 
@@ -2948,14 +2899,88 @@ function animateNumber(el, toValue, opts={}){
   requestAnimationFrame(step);
 }
 
+// قرار التعويض من «حالة الشكوى الحاليه» (STATUS_MAP). مصنِّف واحد حصري: لا تُحتسب الحالة مقبولة ومرفوضة معًا.
+// الأولوية للرفض إذا احتوى النص على الكلمتين (حالة غير متوقعة — تظهر في arriveProfileData().decisionConflicts).
+function compDecisionOf(d){
+  const s = d && d.status ? d.status : '';
+  if(s.includes('رفض')) return 'rejected';
+  if(s.includes('قبول') || s.includes('مسبقا')) return 'accepted';
+  return null;
+}
+// نسبتا القبول والرفض بخانة عشرية؛ الرفض = 100 − القبول المقرَّب فيكون المجموع 100.0% دائمًا عند وجود حالات محسومة.
+function fmtPctPair(acc, rej){
+  const dec = acc + rej;
+  if(!dec) return ['—','—'];
+  const a = Math.round((acc/dec)*1000)/10;
+  return [a.toFixed(1)+'%', (Math.round((100-a)*10)/10).toFixed(1)+'%'];
+}
+// نسبة مئوية بخانة عشرية واحدة؛ المقام صفر => «—» (لا نعرض 0% مضللة).
+function fmtPct(num, den){ return den ? (Math.round((num/den)*1000)/10).toFixed(1)+'%' : '—'; }
+
+// ---------- الشكاوى المفتوحة (الموسّعة) ----------
+// تُحتسب الشكوى مفتوحة إذا: (أ) حالتها قيد التحقيق/جارى (المنطق القديم)، أو
+// (ب) نتيجة مراجعة التعويض = مراجعة الشكاوي / رد الشكاوي / معلقة.
+// الخلية الفارغة لا تجعل الشكوى مفتوحة تلقائيًا: أغلب الشكاوى لا تتعلق بتعويض فتكون النتيجة فارغة
+// وهي مغلقة. الفارغ مع حالة «قيد التحقيق» محتسب أصلًا بالبند (أ). أي شرط إضافي للفارغ
+// ينتظر قاعدة عمل معتمدة — يُضاف في EMPTY_REVIEW_COUNTS_AS_OPEN أدناه.
+// التوحيد قبل المقارنة: إزالة التشكيل والتطويل، توحيد الهمزات وي/ى وة/ه، ودمج المسافات.
+function normArText(v){
+  return String(v==null?'':v).replace(/[\u064B-\u065F\u0670\u0640]/g,'')
+    .replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
+    .replace(/[\s\u00A0\u200B-\u200F\u202A-\u202E]+/g,' ').trim().toLowerCase();
+}
+const OPEN_REVIEW_STATES = ['مراجعة الشكاوي','رد الشكاوي','معلقة'].map(normArText);
+// قاعدة الفارغ (نتيجة مراجعة بلا قيمة فعلية أو مسافات فقط). افتراضيًا: لا تُحتسب مفتوحة بذاتها.
+// مكان واحد للتعديل عند اعتماد قاعدة: ارجع true للحالات التي تثبت الحاجة للمتابعة.
+function EMPTY_REVIEW_COUNTS_AS_OPEN(d){ return false; }
+function isReviewOpenState(d){
+  const v = normArText(d.compensation_review_result);
+  if(v === '') return EMPTY_REVIEW_COUNTS_AS_OPEN(d);
+  return OPEN_REVIEW_STATES.includes(v);
+}
+function isOpenByStatus(d){ return !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'))); }
+// يعدّ كل رقم شكوى مرة واحدة فقط (id فريد) حتى لو تكرر السجل.
+function countOpenExtended(rows){
+  const seen = new Set();
+  rows.forEach(d=>{
+    if(!(isOpenByStatus(d) || isReviewOpenState(d))) return;
+    seen.add(String(d.id==null?'':d.id).trim() || ('__row'+seen.size));
+  });
+  return seen.size;
+}
+
+// ---------- فحص القيم الفعلية (للمراجعة — لا يغيّر أي حساب) ----------
+// من Console بعد تحميل البيانات الحقيقية:  arriveProfileData()
+function arriveProfileData(){
+  const rows = DATA, tally = (fn)=>{ const m={}; rows.forEach(d=>{ const k=fn(d); m[k]=(m[k]||0)+1; }); return Object.fromEntries(Object.entries(m).sort((a,b)=>b[1]-a[1])); };
+  const rv = d=> d.compensation_review_result;
+  const out = {
+    records: rows.length,
+    uniqueIds: new Set(rows.map(d=>String(d.id).trim())).size,
+    dataQuality: window.ARRIVE_DATA_QUALITY || null,
+    statusValues: tally(d=>d.status),
+    reviewResultValues: tally(d=>rv(d)==null ? '(فارغ)' : rv(d)),
+    reviewResultNormalized: tally(d=> normArText(rv(d)) || '(فارغ)'),
+    emptyReviewByStatus: tally(d=> normArText(rv(d))==='' ? d.status : null),
+    emptyReviewWithCompensationAmount: rows.filter(d=> normArText(rv(d))==='' && isCompensationCountable(d) && d.compensation_amount>0).length,
+    decisionConflicts: rows.filter(d=> d.status && d.status.includes('رفض') && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length,
+    decisions: tally(d=> compDecisionOf(d) || 'غير محسوم'),
+    openByStatus: rows.filter(isOpenByStatus).length,
+    openByReviewState: rows.filter(isReviewOpenState).length,
+    openExtended: countOpenExtended(rows)
+  };
+  console.log('[arriveProfileData]', out); return out;
+}
+window.arriveProfileData = arriveProfileData;
+
 function render(){
   const rows = getFiltered();
   document.getElementById('resultCount').textContent = rows.length;
 
   // KPIs
   const total = rows.length;
-  const accepted = rows.filter(d=> d.status.includes('قبول') || d.status.includes('مسبقا')).length;
-  const rejected = rows.filter(d=> d.status.includes('رفض')).length;
+  const accepted = rows.filter(d=> compDecisionOf(d)==='accepted').length;
+  const rejected = rows.filter(d=> compDecisionOf(d)==='rejected').length;
   const pending = rows.filter(d=> d.status.includes('جارى') || d.status.includes('التحقيق')).length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
@@ -2973,10 +2998,14 @@ function render(){
 
   document.getElementById('kpiTotalSub').textContent = `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`;
   animateNumber(document.getElementById('kpiTotal'), total);
-  document.getElementById('kpiAcceptSub').textContent = `${accepted} حالة من أصل ${decided} تم البتّ فيها`;
-  animateNumber(document.getElementById('kpiAcceptRate'), acceptRate, { suffix:'<sup>%</sup>' });
-  document.getElementById('kpiRejectedSub').textContent = decided ? `${Math.round((rejected/decided)*100)}% من الحالات المقررة` : '—';
+  // نسبة القبول/الرفض: العدد في السطر الأول، والنسبة (من الحالات المقررة فقط: مقبول + مرفوض) في السطر الثاني.
+  document.getElementById('kpiAcceptSub').textContent = `${accepted} مقبولة من أصل ${decided} حالة تم البتّ فيها`;
+  animateNumber(document.getElementById('kpiAcceptRate'), accepted);
+  const [accPct, rejPct] = fmtPctPair(accepted, rejected);
+  document.getElementById('kpiAcceptPct').textContent = accPct;
+  document.getElementById('kpiRejectedSub').textContent = `${rejected} مرفوضة من أصل ${decided} حالة تم البتّ فيها`;
   animateNumber(document.getElementById('kpiRejected'), rejected);
+  document.getElementById('kpiRejectedPct').textContent = rejPct;
   document.getElementById('kpiPendingSub').textContent = `من أصل ${total} شكوى`;
   animateNumber(document.getElementById('kpiPending'), pending);
   document.getElementById('kpiSlaSub').textContent = `يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى · إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
@@ -3020,28 +3049,6 @@ function topN(rows, key, n, filterFn){
 }
 
 function updateCharts(rows){
-  // trend
-  const byDate = {};
-  rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
-  const dateKeys = (function(){ const ks=Object.keys(byDate).sort(); if(ks.length<2) return ks; const out=[]; const t0=Date.parse(ks[0]+'T00:00:00Z'), t1=Date.parse(ks[ks.length-1]+'T00:00:00Z'); for(let t=t0;t<=t1;t+=86400000){ const k=new Date(t).toISOString().slice(0,10); if(byDate[k]===undefined) byDate[k]=0; out.push(k); } return out; })();
-  chartTrend.data.labels = dateKeys.map(d=>d.slice(5));
-  chartTrend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
-  // Full (unstripped) date strings, index-aligned with the display labels
-  // above — needed so a chart click can filter to that exact date.
-  chartTrend.rawLabels = dateKeys;
-
-  // status
-  const statusCounts = {};
-  rows.forEach(d=>{ statusCounts[d.status] = (statusCounts[d.status]||0)+1; });
-  const sLabels = Object.keys(statusCounts);
-  chartStatus.data.labels = sLabels.map(s => STATUS_MAP[s] ? STATUS_MAP[s].label : s);
-  chartStatus.data.datasets[0].data = sLabels.map(s=>statusCounts[s]);
-  chartStatus.data.datasets[0].backgroundColor = sLabels.map(s=>{
-    const c = STATUS_MAP[s] ? STATUS_MAP[s].cls : 'neutral';
-    return {accepted:palette.accepted, rejected:palette.rejected, pending:palette.pending, neutral:palette.neutral}[c];
-  });
-  chartStatus.update();
-
   // branch top 10
   const branchTop = topN(rows, 'branch', 10);
   chartBranch.data.labels = branchTop.map(x=>x[0]);
@@ -3078,16 +3085,6 @@ function updateCharts(rows){
   chartBearer.data.datasets[1].data = bearerEntries.map(x=>x[1].count);
   chartBearer.update();
 
-  // compensation review result
-  const reviewCounts = {};
-  rows.forEach(d=>{
-    if(!d.compensation_review_result) return;
-    reviewCounts[d.compensation_review_result] = (reviewCounts[d.compensation_review_result]||0)+1;
-  });
-  const reviewEntries = Object.entries(reviewCounts).sort((a,b)=>b[1]-a[1]);
-  chartReviewResult.data.labels = reviewEntries.map(x=>x[0]);
-  chartReviewResult.data.datasets[0].data = reviewEntries.map(x=>x[1]);
-  chartReviewResult.update();
 }
 
 function statusBadge(status){
@@ -3455,6 +3452,7 @@ function computeCoreExecutiveMetrics(rows){
   const total = rows.length;
   const isOpen = d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'));
   const open = rows.filter(isOpen).length;
+  const openExt = countOpenExtended(rows);   // مؤشر «الشكاوى المفتوحة» فقط؛ بقية المؤشرات تبقى على `open`
   const closed = total - open;
   const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v==='number');
   const slaOk = slaVals.filter(v=> v<=4).length;
@@ -3469,7 +3467,7 @@ function computeCoreExecutiveMetrics(rows){
   const avgComp = compRows.length ? totalComp/compRows.length : null;
   const handlerCount = new Set(rows.filter(d=> d.owner && d.owner!=='غير محدد').map(d=>d.owner)).size;
   const avgPerHandler = handlerCount ? total/handlerCount : null;
-  return { total, open, closed, slaCompliance, avgResolution, avgCompensationSla, compensationSlaCount, totalComp, closureRate, avgComp, avgPerHandler };
+  return { total, open, openExt, closed, slaCompliance, avgResolution, avgCompensationSla, compensationSlaCount, totalComp, closureRate, avgComp, avgPerHandler };
 }
 
 function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
@@ -3486,7 +3484,8 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
   const trendFor = (key, lowerIsBetter) => mPrev ? kpiTrend(mCurr[key], mPrev[key], lowerIsBetter) : `<span class="kpi-trend-badge flat"><i class="fa-solid fa-minus"></i> لا توجد بيانات كافية للمقارنة</span>`;
   const cards = [
     { tone:'', label:'إجمالي الشكاوى', value: m.total, trend: trendFor('total', true) },
-    { tone:'tone-pending', label:'الشكاوى المفتوحة', value: m.open, trend: trendFor('open', true) },
+    { tone:'tone-pending', label:'الشكاوى المفتوحة', value: m.openExt, trend: trendFor('openExt', true),
+      hint:'تشمل: الشكاوى قيد التحقيق + أي شكوى نتيجة مراجعة التعويض فيها «مراجعة الشكاوي» أو «رد الشكاوي» أو «معلقة». الفارغة لا تُحتسب مفتوحة بذاتها. تُحسب كل شكوى مرة واحدة برقمها.' },
     { tone:'tone-accept', label:'الشكاوى المغلقة', value: m.closed, trend: trendFor('closed', false) },
     { tone: m.slaCompliance===null ? '' : (m.slaCompliance>=70?'tone-accept':'tone-reject'),
       label:'الالتزام بـ SLA', value: m.slaCompliance===null ? '—' : `${m.slaCompliance}<sup>%</sup>`, trend: trendFor('slaCompliance', false) },
@@ -3624,7 +3623,7 @@ function renderExecutiveSnapshot(rows){
       <div class="snap-stat"><div class="sl">تنبيهات حرجة</div><div class="sv ${criticalAlerts>0?'crit':''}">${criticalAlerts}</div></div>
       <div class="snap-stat"><div class="sl">أفضل معالج</div><div class="sv">${best ? best.owner : '—'}</div></div>
       <div class="snap-stat"><div class="sl">أضعف معالج</div><div class="sv">${worst ? worst.owner : '—'}</div></div>
-      <div class="snap-stat"><div class="sl">الشكاوى المفتوحة</div><div class="sv">${m.open}</div></div>
+      <div class="snap-stat"><div class="sl">الشكاوى المفتوحة</div><div class="sv">${m.openExt}</div></div>
       <div class="snap-stat"><div class="sl">الالتزام بـ SLA</div><div class="sv">${m.slaCompliance===null?'—':m.slaCompliance+'%'}</div></div>
     </div>
   `;
@@ -3948,8 +3947,8 @@ function computeInsights(rows){
   }
 
   // Compensation outcome / "savings" from rejected claims
-  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length;
-  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const accepted = rows.filter(d=> compDecisionOf(d)==='accepted').length;
+  const rejected = rows.filter(d=> compDecisionOf(d)==='rejected').length;
   const decided = accepted + rejected;
   if(decided){
     const rejPct = Math.round((rejected/decided)*100);
@@ -4326,9 +4325,9 @@ function renderKpiEnhancements(rows){
     const mid = Math.floor(dated.length/2);
     prevHalf = dated.slice(0, mid); currHalf = dated.slice(mid);
   }
-  const decidedOf = arr => arr.filter(d=> d.status && (d.status.includes('قبول')||d.status.includes('مسبقا')||d.status.includes('رفض')));
-  const acceptRateOf = arr => { const dec = decidedOf(arr); const acc = arr.filter(d=>d.status && (d.status.includes('قبول')||d.status.includes('مسبقا'))).length; return dec.length ? (acc/dec.length)*100 : null; };
-  const rejectedPctOf = arr => { const dec = decidedOf(arr); const rej = arr.filter(d=>d.status && d.status.includes('رفض')).length; return dec.length ? (rej/dec.length)*100 : null; };
+  const decidedOf = arr => arr.filter(d=> compDecisionOf(d));
+  const acceptRateOf = arr => { const dec = decidedOf(arr); const acc = arr.filter(d=>compDecisionOf(d)==='accepted').length; return dec.length ? (acc/dec.length)*100 : null; };
+  const rejectedPctOf = arr => { const dec = decidedOf(arr); const rej = arr.filter(d=>compDecisionOf(d)==='rejected').length; return dec.length ? (rej/dec.length)*100 : null; };
   const pendingPctOf = arr => arr.length ? (arr.filter(isOpen).length/arr.length)*100 : null;
   const avgSlaOf = arr => { const v = arr.map(d=>d.sla_resolution_days).filter(x=>typeof x==='number'); return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; };
   // Same unified helper as everywhere else "SLA تنفيذ التعويض" is shown.
@@ -4357,7 +4356,7 @@ function renderKpiEnhancements(rows){
   // Rejected rate (lower is better)
   const rejTarget = 15;
   const rejCurr = rejectedPctOf(rows);
-  const rejSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(d=>d.status && d.status.includes('رفض')).length);
+  const rejSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(d=>compDecisionOf(d)==='rejected').length);
   const rejAch = rejCurr===null ? 100 : Math.round(Math.min(100, (rejTarget/Math.max(rejCurr,0.001))*100));
   const rejEl = document.getElementById('kpiRejectedEnh');
   if(rejEl) rejEl.innerHTML = `
@@ -4508,14 +4507,7 @@ document.querySelectorAll('.panel h3').forEach(h=>{
 // ---------- 8) Drill-down navigation on charts ----------
 function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; syncMultiSelectUI(id); render(); } }
 chartBranch.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBranch', chartBranch.data.labels[els[0].index]); } };
-chartStatus.options.onClick = (evt, els)=>{
-  if(!els.length) return;
-  const label = chartStatus.data.labels[els[0].index];
-  const rawKey = Object.keys(STATUS_MAP).find(k=> (STATUS_MAP[k].label===label)) || label;
-  drillSet('fStatus', rawKey);
-};
 chartBearer.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBearer', chartBearer.data.labels[els[0].index]); } };
-chartReviewResult.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fReviewResult', chartReviewResult.data.labels[els[0].index]); } };
 chartType.options.onClick = (evt, els)=>{
   if(!els.length) return;
   // Use the raw (unstripped) type value so it matches an actual fType option.
@@ -4527,18 +4519,7 @@ chartClassification.options.onClick = (evt, els)=>{
   if(!els.length) return;
   drillSet('fClassification', chartClassification.data.labels[els[0].index]);
 };
-chartTrend.options.onClick = (evt, els)=>{
-  if(!els.length) return;
-  const idx = els[0].index;
-  const rawDate = chartTrend.rawLabels && chartTrend.rawLabels[idx];
-  if(!rawDate) return;
-  // Filter to that single day (drill-down on the trend line, same spirit as
-  // the other chart click-to-filter handlers).
-  document.getElementById('fDateFrom').value = rawDate;
-  document.getElementById('fDateTo').value = rawDate;
-  render();
-};
-[chartBranch, chartStatus, chartBearer, chartReviewResult, chartType, chartClassification, chartTrend].forEach(c=>{
+[chartBranch, chartBearer, chartType, chartClassification].forEach(c=>{
   c.canvas.style.cursor = 'pointer';
 });
 
@@ -5040,25 +5021,6 @@ const compareCharts = { L:{}, R:{} };
 function buildCompareChartSet(suf){
   const set = {};
 
-  set.trend = new Chart(document.getElementById('chartTrend_'+suf), {
-    type:'line',
-    data:{ labels:[], datasets:[{ data:[], borderColor:palette.navy, backgroundColor:'rgba(8,55,201,0.08)', fill:true, tension:.3, cubicInterpolationMode:'monotone', pointRadius:0, pointHoverRadius:5, pointHitRadius:14, pointBackgroundColor:palette.navy, borderWidth:2 }]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ rtl:true, titleFont:{family:"'Inter','Cairo',sans-serif"}, callbacks:{ title:(items)=>{ const c=items[0].chart; return (c.rawLabels && c.rawLabels[items[0].dataIndex]) || items[0].label; }, label:(it)=>' عدد الشكاوى: '+it.parsed.y } } },
-      scales:{ x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:8} }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
-    }
-  });
-
-  set.status = new Chart(document.getElementById('chartStatus_'+suf), {
-    type:'doughnut',
-    data:{ labels:[], datasets:[{ data:[], backgroundColor:[], borderWidth:3, borderColor:'#fff' }]},
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'62%',
-      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } }
-    }
-  });
-
   set.branch = new Chart(document.getElementById('chartBranch_'+suf), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:14 }]},
@@ -5106,14 +5068,6 @@ function buildCompareChartSet(suf){
     }
   });
 
-  set.reviewResult = new Chart(document.getElementById('chartReviewResult_'+suf), {
-    type:'doughnut',
-    data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.soft, borderWidth:3, borderColor:'#fff' }]},
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'62%',
-      plugins:{ legend:{ position:'bottom', rtl:true, labels:{ usePointStyle:true, boxWidth:8, padding:10, font:{size:10.5} } } }
-    }
-  });
 
   return set;
 }
@@ -5126,26 +5080,6 @@ function initCompareCharts(){
 }
 
 function updateCompareChartSet(set, rows){
-  // trend
-  const byDate = {};
-  rows.forEach(d=>{ if(d.date_added){ byDate[d.date_added] = (byDate[d.date_added]||0)+1; } });
-  const dateKeys = (function(){ const ks=Object.keys(byDate).sort(); if(ks.length<2) return ks; const out=[]; const t0=Date.parse(ks[0]+'T00:00:00Z'), t1=Date.parse(ks[ks.length-1]+'T00:00:00Z'); for(let t=t0;t<=t1;t+=86400000){ const k=new Date(t).toISOString().slice(0,10); if(byDate[k]===undefined) byDate[k]=0; out.push(k); } return out; })();
-  set.trend.data.labels = dateKeys.map(d=>d.slice(5));
-  set.trend.data.datasets[0].data = dateKeys.map(d=>byDate[d]);
-  set.trend.update();
-
-  // status
-  const statusCounts = {};
-  rows.forEach(d=>{ statusCounts[d.status] = (statusCounts[d.status]||0)+1; });
-  const sLabels = Object.keys(statusCounts);
-  set.status.data.labels = sLabels.map(s => STATUS_MAP[s] ? STATUS_MAP[s].label : s);
-  set.status.data.datasets[0].data = sLabels.map(s=>statusCounts[s]);
-  set.status.data.datasets[0].backgroundColor = sLabels.map(s=>{
-    const c = STATUS_MAP[s] ? STATUS_MAP[s].cls : 'neutral';
-    return {accepted:palette.accepted, rejected:palette.rejected, pending:palette.pending, neutral:palette.neutral}[c];
-  });
-  set.status.update();
-
   // branch top 10
   const branchTop = topN(rows, 'branch', 10);
   set.branch.data.labels = branchTop.map(x=>x[0]);
@@ -5178,16 +5112,6 @@ function updateCompareChartSet(set, rows){
   set.bearer.data.datasets[1].data = bearerEntries.map(x=>x[1].count);
   set.bearer.update();
 
-  // compensation review result
-  const reviewCounts = {};
-  rows.forEach(d=>{
-    if(!d.compensation_review_result) return;
-    reviewCounts[d.compensation_review_result] = (reviewCounts[d.compensation_review_result]||0)+1;
-  });
-  const reviewEntries = Object.entries(reviewCounts).sort((a,b)=>b[1]-a[1]);
-  set.reviewResult.data.labels = reviewEntries.map(x=>x[0]);
-  set.reviewResult.data.datasets[0].data = reviewEntries.map(x=>x[1]);
-  set.reviewResult.update();
 }
 
 // ---- Generic comparison engine ----------------------------------------------------
@@ -5390,8 +5314,8 @@ function exportPanelCsv(suf){
 
 function computeCompareSummaryMetrics(rows){
   const total = rows.length;
-  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول') || d.status.includes('مسبقا'))).length;
-  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const accepted = rows.filter(d=> compDecisionOf(d)==='accepted').length;
+  const rejected = rows.filter(d=> compDecisionOf(d)==='rejected').length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
   const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v === 'number');
@@ -5446,8 +5370,8 @@ function renderComparePanel(suf, rows){
   setCompareText('cResultCount_'+suf, rows.length);
 
   const total = rows.length;
-  const accepted = rows.filter(d=> d.status && (d.status.includes('قبول') || d.status.includes('مسبقا'))).length;
-  const rejected = rows.filter(d=> d.status && d.status.includes('رفض')).length;
+  const accepted = rows.filter(d=> compDecisionOf(d)==='accepted').length;
+  const rejected = rows.filter(d=> compDecisionOf(d)==='rejected').length;
   const pending = rows.filter(d=> d.status && (d.status.includes('جارى') || d.status.includes('التحقيق'))).length;
   const decided = accepted + rejected;
   const acceptRate = decided ? Math.round((accepted/decided)*100) : 0;
@@ -5457,10 +5381,13 @@ function renderComparePanel(suf, rows){
 
   setCompareText('kpiTotal_'+suf, total.toLocaleString('en-US'));
   setCompareText('kpiTotalSub_'+suf, `${uniqueVals(rows,'branch').length} فرعًا · ${uniqueVals(rows,'owner').length} مسؤول`);
-  setCompareHtml('kpiAcceptRate_'+suf, `${acceptRate}<sup>%</sup>`);
-  setCompareText('kpiAcceptSub_'+suf, `${accepted} حالة من أصل ${decided} تم البتّ فيها`);
+  setCompareText('kpiAcceptRate_'+suf, accepted.toLocaleString('en-US'));
+  const [accPct, rejPct] = fmtPctPair(accepted, rejected);
+  setCompareText('kpiAcceptPct_'+suf, accPct);
+  setCompareText('kpiAcceptSub_'+suf, `${accepted} مقبولة من أصل ${decided} حالة تم البتّ فيها`);
   setCompareText('kpiRejected_'+suf, rejected.toLocaleString('en-US'));
-  setCompareText('kpiRejectedSub_'+suf, decided ? `${Math.round((rejected/decided)*100)}% من الحالات المقررة` : '—');
+  setCompareText('kpiRejectedPct_'+suf, rejPct);
+  setCompareText('kpiRejectedSub_'+suf, `${rejected} مرفوضة من أصل ${decided} حالة تم البتّ فيها`);
   setCompareText('kpiPending_'+suf, pending.toLocaleString('en-US'));
   setCompareText('kpiPendingSub_'+suf, `من أصل ${total} شكوى`);
   setCompareText('kpiSla_'+suf, avgSla.toFixed(1));
@@ -5745,7 +5672,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       <div class="rp-exec-top">${hs}
         <div class="rp-kpis">
           ${kp('إجمالي الشكاوى',N(m.total),'','tone-brand')}
-          ${kp('الشكاوى المفتوحة',N(m.open),'','tone-under-action')}
+          ${kp('الشكاوى المفتوحة',N(m.openExt),'','tone-under-action')}
           ${kp('الشكاوى المغلقة',N(m.closed),'','tone-success')}
           ${kp('الالتزام بـ SLA',m.slaCompliance===null?'—':m.slaCompliance,m.slaCompliance===null?'':'%',m.slaCompliance!==null&&m.slaCompliance<70?'tone-violation':'tone-success')}
         </div>
@@ -5791,19 +5718,14 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
 
     /* 4) التحليل التفصيلي */
     const imgs = {
-      trend: chartImage(liveChart('chartTrend'),1000,300),
-      status: chartImage(liveChart('chartStatus'),480,300),
       type: chartImage(liveChart('chartType'),480,300),
       branch: chartImage(liveChart('chartBranch'),1000,320),
-      cls: chartImage(liveChart('chartClassification'),1000,320)
+      cls: chartImage(liveChart('chartClassification'),480,300)
     };
     const fig = (t,sub,src) => `<div class="rp-fig"><div class="rp-cap"><b>${t}</b><span>${sub}</span></div>${src?`<img src="${src}" alt="${esc(t)}">`:`<div class="rp-note">${MISSING}</div>`}</div>`;
-    pages.push(page(head('التحليل التفصيلي (1/2): الاتجاه والتوزيعات',ctx)+
-      fig('الاتجاه اليومي للشكاوى','عدد الشكاوى الواردة يوميًا خلال الفترة',imgs.trend)+
-      `<div class="rp-two">${fig('حالة التعويض','توزيع الشكاوى حسب الحالة',imgs.status)}${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}</div>`+foot()));
-    pages.push(page(head('التحليل التفصيلي (2/2): الفروع والتصنيفات',ctx)+
+    pages.push(page(head('التحليل التفصيلي: الفروع والتوزيعات',ctx)+
       fig('الشكاوى حسب الفرع','أعلى الفروع من حيث عدد الشكاوى',imgs.branch)+
-      fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)+foot()));
+      `<div class="rp-two">${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
 
     /* 5) أداء مسؤولي الشكاوى */
     let handlers = [];

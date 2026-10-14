@@ -1090,17 +1090,22 @@ main.hidden{display:none}
 .stub-value{font-family:var(--font-numeric);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-size:clamp(26px,2.3vw,var(--fs-kpi));font-weight:var(--fw-bold);color:var(--navy-deep);line-height:1.1;text-align:start;white-space:nowrap}
 .stub-value sup{font-size:16px;font-weight:var(--fw-semibold);color:var(--ink-faint);margin-inline-start:3px;vertical-align:baseline;position:static}
 .stub-sub{font-size:var(--fs-micro);color:var(--ink-soft);line-height:1.5}
+.stub-pct{font-family:var(--font-numeric);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;font-size:clamp(15px,1.3vw,19px);font-weight:var(--fw-semibold);color:var(--text-secondary);line-height:1.2;text-align:right}
+.compare-kpi-row .stub-pct{font-size:14px}
 .stub-enh{margin-top:0;padding-top:var(--space-3);border-top:1px solid var(--line)}
 .stub-enh:empty{display:none}
 
 /* ---------- Panels / charts ---------- */
 .panel-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4);align-items:stretch}
 .panel-grid.thirds{grid-template-columns:1fr 1fr 1fr}
+.panel-grid.single{grid-template-columns:1fr}
+.panel-grid.halves{grid-template-columns:1fr 1fr}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:18px 20px 14px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;min-width:0}
 .panel h3{font-size:var(--fs-subtitle);font-weight:var(--fw-bold);color:var(--navy-deep);margin-bottom:2px;line-height:var(--lh-snug)}
 .panel .panel-sub{font-size:var(--fs-caption);color:var(--ink-faint);margin-bottom:var(--space-3)}
 .chart-wrap{position:relative;height:250px;background:var(--chart-bg);border-radius:var(--radius-sm);flex:1}
-.chart-wrap.tall{height:300px}
+.chart-wrap.tall{height:340px;flex:0 0 auto}
+.chart-wrap.xl{height:460px;flex:0 0 auto}
 
 /* ---------- Tables ---------- */
 .table-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow-card);overflow:hidden}
@@ -1226,7 +1231,8 @@ footer.enterprise-footer{background:var(--arrive-navy);color:rgba(255,255,255,.8
 @media (max-width:1280px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:1100px){
   :root{--page-pad:18px}
-  .panel-grid,.panel-grid.thirds{grid-template-columns:1fr}
+  .panel-grid,.panel-grid.thirds,.panel-grid.halves{grid-template-columns:1fr}
+  .chart-wrap.xl{height:380px}
   .modal-body{grid-template-columns:1fr}
   .top-inner.top-second{align-items:flex-start}
 }
