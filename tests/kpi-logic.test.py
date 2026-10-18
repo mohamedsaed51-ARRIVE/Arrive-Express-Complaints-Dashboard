@@ -15,8 +15,9 @@ def load(pg,rows):
     pg.evaluate('(r)=>renderDataset(r)',rows); pg.wait_for_timeout(1300)
 def kpis(pg):
     return pg.evaluate("""()=>{const t=s=>document.querySelector(s).textContent.trim();
+      const _r=getFiltered(), _a=_r.filter(d=>compDecisionOf(d)==='accepted').length, RJ=_r.filter(d=>compDecisionOf(d)==='rejected').length, RP=fmtPctPair(_a,RJ)[1];
       const open=[...document.querySelectorAll('#execCoreGrid .exec-core-card')].find(c=>c.textContent.includes('الشكاوى المفتوحة')).querySelector('.exec-core-value').textContent.trim();
-      return {total:t('#kpiTotal'),acc:t('#kpiAcceptRate'),accPct:t('#kpiAcceptPct'),rej:t('#kpiRejected'),rejPct:t('#kpiRejectedPct'),open}}""")
+      return {total:t('#kpiTotal'),acc:t('#kpiAcceptRate'),accPct:t('#kpiAcceptPct'),rej:String(RJ),rejPct:RP,open}}""")
 results=[]
 def check(name,cond,detail=''):
     results.append((name,bool(cond),detail)); print(('PASS' if cond else 'FAIL'),name,detail)

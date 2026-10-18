@@ -1449,6 +1449,11 @@ main .exec-core-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 @media (max-width:900px){.kpi-all{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:640px){.kpi-all{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi-all .stub-sub{display:none}
+.kpi-all .exec-core-grid>.exec-core-card:nth-child(4){display:none}
+.kpi-all .stub-extra{font-size:11px;line-height:1.5;color:var(--text-secondary);margin-top:2px}
+.kpi-all .stub-extra b{font-family:var(--font-numeric);direction:ltr;unicode-bidi:isolate;font-weight:var(--fw-bold);color:var(--arrive-navy)}
+.kpi-all .exec-core-sub{font-size:11px;line-height:1.5;color:var(--text-secondary);margin-top:4px}
+.kpi-all .exec-core-sub b{font-family:var(--font-numeric);direction:ltr;unicode-bidi:isolate;font-weight:var(--fw-bold);color:var(--arrive-navy)}
 .kpi-all .stub-target{-webkit-line-clamp:1}
 
 </style>
@@ -1725,18 +1730,6 @@ body.report-open{overflow:hidden}
       <div class="stub-sub" id="kpiAcceptSub">—</div>
       <div class="stub-enh" id="kpiAcceptRateEnh"></div>
     </div>
-    <div class="stub tone-violation">
-      <div class="stub-top">
-        <div class="stub-ic"><i class="fa-solid fa-ban" aria-hidden="true"></i></div>
-        <div class="stub-main">
-          <div class="stub-label">تعويضات مرفوضة</div>
-          <div class="stub-value num" id="kpiRejected">0</div>
-          <div class="stub-pct num" id="kpiRejectedPct">—</div>
-        </div>
-      </div>
-      <div class="stub-sub" id="kpiRejectedSub">—</div>
-      <div class="stub-enh" id="kpiRejectedEnh"></div>
-    </div>
     <div class="stub tone-under-action">
       <div class="stub-top">
         <div class="stub-ic"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></div>
@@ -1752,8 +1745,9 @@ body.report-open{overflow:hidden}
       <div class="stub-top">
         <div class="stub-ic"><i class="fa-solid fa-clock" aria-hidden="true"></i></div>
         <div class="stub-main">
-          <div class="stub-label">متوسط زمن الحل (يوم)</div>
-          <div class="stub-value num" id="kpiSla">0</div>
+          <div class="stub-label">الالتزام بـ SLA التحقيق</div>
+          <div class="stub-value num" id="kpiSlaCompliance">0</div>
+          <div class="stub-extra">متوسط زمن الحل: <b class="num" id="kpiSla">0</b> يوم</div>
         </div>
       </div>
       <div class="stub-sub" id="kpiSlaSub">—</div>
@@ -1763,8 +1757,9 @@ body.report-open{overflow:hidden}
       <div class="stub-top">
         <div class="stub-ic"><i class="fa-solid fa-stopwatch" aria-hidden="true"></i></div>
         <div class="stub-main">
-          <div class="stub-label">متوسط زمن تنفيذ التعويض (يوم)</div>
-          <div class="stub-value num" id="kpiCompSla">0</div>
+          <div class="stub-label">الالتزام بـ SLA التعويض</div>
+          <div class="stub-value num" id="kpiCompSlaCompliance">0</div>
+          <div class="stub-extra">متوسط زمن تنفيذ التعويض: <b class="num" id="kpiCompSla">0</b> يوم</div>
         </div>
       </div>
       <div class="stub-sub" id="kpiCompSlaSub">—</div>
@@ -1776,6 +1771,31 @@ body.report-open{overflow:hidden}
     <div class="exec-core-grid" id="execCoreGrid"></div>
   </section>
   </div>
+
+  <div class="section-heading">
+    <h2><span class="tag">أداء</span> مؤشر أداء مسؤولي الشكاوى</h2>
+    <span class="section-sub">درجة من 100 لكل مسؤول شكوى بناءً على معدل الإغلاق، الالتزام بـ SLA، متوسط زمن الحل، والشكاوى المفتوحة</span>
+  </div>
+  <section class="health-panel">
+    <div class="health-table-wrap">
+      <table class="health-table" id="healthTable">
+        <thead>
+          <tr>
+            <th data-hkey="owner">مسؤول الشكوى <span class="arrow"></span></th>
+            <th data-hkey="count">إجمالي الشكاوى المسندة <span class="arrow"></span></th>
+            <th data-hkey="closed">الشكاوى المغلقة <span class="arrow"></span></th>
+            <th data-hkey="open">الشكاوى المفتوحة <span class="arrow"></span></th>
+            <th data-hkey="slaCompliance">الالتزام بـ SLA <span class="arrow"></span></th>
+            <th data-hkey="avgSla">متوسط زمن الحل <span class="arrow"></span></th>
+            <th data-hkey="csat">رضا العملاء <span class="arrow"></span></th>
+            <th data-hkey="score">درجة الأداء <span class="arrow">▼</span></th>
+            <th data-hkey="trend">الاتجاه <span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="healthTableBody"></tbody>
+      </table>
+    </div>
+  </section>
 
   <div class="section-heading">
     <h2><span class="tag">اتجاهات</span> الاتجاهات والتوزيعات</h2>
@@ -1864,31 +1884,6 @@ body.report-open{overflow:hidden}
     <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 معالجين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
   </div>
   <section class="top-performers-grid" id="topPerformersGrid"></section>
-
-  <div class="section-heading">
-    <h2><span class="tag">أداء</span> مؤشر أداء مسؤولي الشكاوى</h2>
-    <span class="section-sub">درجة من 100 لكل مسؤول شكوى بناءً على معدل الإغلاق، الالتزام بـ SLA، متوسط زمن الحل، والشكاوى المفتوحة</span>
-  </div>
-  <section class="health-panel">
-    <div class="health-table-wrap">
-      <table class="health-table" id="healthTable">
-        <thead>
-          <tr>
-            <th data-hkey="owner">مسؤول الشكوى <span class="arrow"></span></th>
-            <th data-hkey="count">إجمالي الشكاوى المسندة <span class="arrow"></span></th>
-            <th data-hkey="closed">الشكاوى المغلقة <span class="arrow"></span></th>
-            <th data-hkey="open">الشكاوى المفتوحة <span class="arrow"></span></th>
-            <th data-hkey="slaCompliance">الالتزام بـ SLA <span class="arrow"></span></th>
-            <th data-hkey="avgSla">متوسط زمن الحل <span class="arrow"></span></th>
-            <th data-hkey="csat">رضا العملاء <span class="arrow"></span></th>
-            <th data-hkey="score">درجة الأداء <span class="arrow">▼</span></th>
-            <th data-hkey="trend">الاتجاه <span class="arrow"></span></th>
-          </tr>
-        </thead>
-        <tbody id="healthTableBody"></tbody>
-      </table>
-    </div>
-  </section>
 
   <section class="table-panel">
     <div class="table-head-bar">
@@ -2270,13 +2265,12 @@ function buildData(raw){
       if(!isNaN(a) && !isNaN(b)) sla_resolution_days = Math.round((a-b)/86400000);
     }
     // 2) "SLA تنفيذ التعويض" (compensation execution SLA):
-    //    تاريخ التعويض − تاريخ إضافة الشكوى، بالأيام. This is fully
-    //    independent from sla_resolution_days above — it is NOT derived from
-    //    investigation_result_date. Both dates must be present and valid,
-    //    otherwise the record is excluded (kept null).
+    //    تاريخ التعويض − تاريخ نتيجة التحقيق، بالأيام (التعريف المعتمد من
+    //    الإدارة). Both dates must be present and valid, otherwise the record
+    //    is excluded (kept null).
     let sla_compensation_days = null;
-    if(date_added && compensation_date){
-      const a = new Date(compensation_date), b = new Date(date_added);
+    if(investigation_result_date && compensation_date){
+      const a = new Date(compensation_date), b = new Date(investigation_result_date);
       if(!isNaN(a) && !isNaN(b)) sla_compensation_days = Math.round((a-b)/86400000);
     }
     return {
@@ -2366,13 +2360,34 @@ function sumCompensation(rows){
 }
 
 // ---------- Unified "SLA تنفيذ التعويض" calculation (single source of truth) ----------
-// SLA تنفيذ التعويض = compensation_date − date_added, in days. This is the ONLY
+// SLA تنفيذ التعويض = compensation_date − investigation_result_date, in days. This is the ONLY
 // place that computes the average of this figure — every other spot in the
 // dashboard (the top KPI band, "الملخص التنفيذي", drill-downs, the compare
 // panel, CSV export, etc.) calls this same function on whatever row set it
 // has, so the number can never drift or be computed two different ways.
 // Per-row sla_compensation_days itself is computed once in buildData() from
 // the exact same two fields; this helper only averages it over valid rows.
+// مهلة SLA تنفيذ التعويض المعتمدة: يومان من تاريخ نتيجة التحقيق.
+const COMP_SLA_TARGET_DAYS = 2;
+const RES_SLA_TARGET_DAYS = 4;
+function computeCompensationSlaCompliance(rows, target=COMP_SLA_TARGET_DAYS){
+  const vals = (rows||[]).map(d=>d.sla_compensation_days).filter(v=> typeof v==='number' && isFinite(v));
+  const ok = vals.filter(v=> v<=target).length;
+  return { pct: vals.length ? (ok/vals.length)*100 : null, ok, count: vals.length };
+}
+function computeResolutionSlaCompliance(rows, target=RES_SLA_TARGET_DAYS){
+  const vals = (rows||[]).map(d=>d.sla_resolution_days).filter(v=> typeof v==='number' && isFinite(v));
+  const ok = vals.filter(v=> v<=target).length;
+  return { pct: vals.length ? (ok/vals.length)*100 : null, ok, count: vals.length };
+}
+// تعويضات الشركة: الجهة المتحملة = «الشركة» (تُطبَّع الهاء/التاء المربوطة والمسافات).
+function isCompanyBearer(d){
+  const v = String((d && d.compensation_bearer) || '').replace(/\s+/g,'').replace(/ة/g,'ه');
+  return v === 'الشركه';
+}
+function sumCompanyCompensation(rows){
+  return (rows||[]).filter(isCompanyBearer).reduce((t,d)=> t + compensationAmountOf(d), 0);
+}
 function computeAvgCompensationSla(rows){
   const vals = (rows||[]).map(d=>d.sla_compensation_days).filter(v=> typeof v==='number' && isFinite(v));
   return { avg: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null, count: vals.length };
@@ -3022,7 +3037,7 @@ function render(){
   const slaVals = rows.map(d=>d.sla_resolution_days).filter(v=> typeof v === 'number');
   const avgSla = slaVals.length ? (slaVals.reduce((a,b)=>a+b,0)/slaVals.length) : 0;
   const compSum = sumCompensation(rows);
-  // SLA تنفيذ التعويض: average of (تاريخ التعويض − تاريخ إضافة الشكوى) in
+  // SLA تنفيذ التعويض: average of (تاريخ التعويض − تاريخ نتيجة التحقيق) in
   // days, over records where both dates are present and valid. Uses the
   // single unified helper computeAvgCompensationSla() — same source as
   // "الملخص التنفيذي" and every other place this figure appears.
@@ -3035,16 +3050,20 @@ function render(){
   animateNumber(document.getElementById('kpiAcceptRate'), accepted);
   const [accPct, rejPct] = fmtPctPair(accepted, rejected);
   document.getElementById('kpiAcceptPct').textContent = accPct;
-  document.getElementById('kpiRejectedSub').textContent = `${rejected} مرفوضة من أصل ${decided} حالة تم البتّ فيها`;
-  animateNumber(document.getElementById('kpiRejected'), rejected);
-  document.getElementById('kpiRejectedPct').textContent = rejPct;
   document.getElementById('kpiPendingSub').textContent = `من أصل ${total} شكوى`;
   animateNumber(document.getElementById('kpiPending'), pending);
-  document.getElementById('kpiSlaSub').textContent = `يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى · إجمالي التعويض ${compSum.toLocaleString('en-US')} ج.م`;
-  animateNumber(document.getElementById('kpiSla'), avgSla, { decimals:1 });
+  // الالتزام بـ SLA التحقيق (هدف 4 أيام) + متوسط زمن الحل داخل نفس البطاقة
+  const resC = computeResolutionSlaCompliance(rows);
+  document.getElementById('kpiSlaSub').textContent = `يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى · ${resC.count} حالة لديها التاريخان`;
+  document.getElementById('kpiSlaCompliance').innerHTML = resC.pct===null ? '—' : `${Math.round(resC.pct)}<sup>%</sup>`;
+  if(slaVals.length){ animateNumber(document.getElementById('kpiSla'), avgSla, { decimals:1 }); }
+  else { document.getElementById('kpiSla').textContent = '—'; }
+  // الالتزام بـ SLA التعويض (هدف يومان من نتيجة التحقيق) + متوسط زمن تنفيذ التعويض داخل نفس البطاقة
+  const compC = computeCompensationSlaCompliance(rows);
   document.getElementById('kpiCompSlaSub').textContent = compSlaCount
-    ? `يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى · ${compSlaCount} حالة لديها التاريخان`
-    : 'يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى · لا تتوفر حالات كافية';
+    ? `يُحسب: تاريخ التعويض − تاريخ نتيجة التحقيق · ${compSlaCount} حالة لديها التاريخان`
+    : 'يُحسب: تاريخ التعويض − تاريخ نتيجة التحقيق · لا تتوفر حالات كافية';
+  document.getElementById('kpiCompSlaCompliance').innerHTML = compC.pct===null ? '—' : `${Math.round(compC.pct)}<sup>%</sup>`;
   if(avgCompSla === null){ document.getElementById('kpiCompSla').textContent = '—'; }
   else { animateNumber(document.getElementById('kpiCompSla'), avgCompSla, { decimals:1 }); }
 
@@ -3494,12 +3513,13 @@ function computeCoreExecutiveMetrics(rows){
   // else "SLA تنفيذ التعويض" is shown — never a separately-computed value.
   const { avg: avgCompensationSla, count: compensationSlaCount } = computeAvgCompensationSla(rows);
   const totalComp = sumCompensation(rows);
+  const companyComp = sumCompanyCompensation(rows);
   const closureRate = total ? Math.round((closed/total)*100) : null;
   const compRows = rows.filter(isCompensationCountable);
   const avgComp = compRows.length ? totalComp/compRows.length : null;
   const handlerCount = new Set(rows.filter(d=> d.owner && d.owner!=='غير محدد').map(d=>d.owner)).size;
   const avgPerHandler = handlerCount ? total/handlerCount : null;
-  return { total, open, openExt, closed, slaCompliance, avgResolution, avgCompensationSla, compensationSlaCount, totalComp, closureRate, avgComp, avgPerHandler };
+  return { total, open, openExt, closed, slaCompliance, avgResolution, avgCompensationSla, compensationSlaCount, totalComp, companyComp, closureRate, avgComp, avgPerHandler };
 }
 
 function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
@@ -3524,8 +3544,10 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
     { tone:'tone-gold', label:'متوسط زمن الحل', value: m.avgResolution===null ? '—' : `${m.avgResolution.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgResolution', true),
       hint:'يُحسب من: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى (للحالات ذات التاريخين الصحيحين فقط). الهدف: أقل من 4 أيام.' },
     { tone:'tone-gold', label:'متوسط زمن تنفيذ التعويض', value: m.avgCompensationSla===null ? '—' : `${m.avgCompensationSla.toFixed(1)}<sup>يوم</sup>`, trend: trendFor('avgCompensationSla', true),
-      hint:'يُحسب من: تاريخ التعويض − تاريخ إضافة الشكوى (للحالات ذات التاريخين الصحيحين فقط)' + (m.compensationSlaCount ? ` · ${m.compensationSlaCount} حالة` : '') },
-    { tone:'tone-gold', label:'إجمالي التعويضات', value: `${m.totalComp.toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('totalComp', true) },
+      hint:'يُحسب من: تاريخ التعويض − تاريخ نتيجة التحقيق (للحالات ذات التاريخين الصحيحين فقط)' + (m.compensationSlaCount ? ` · ${m.compensationSlaCount} حالة` : '') },
+    { tone:'tone-gold', label:'إجمالي التعويضات', value: `${m.totalComp.toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('totalComp', true),
+      sub: `تعويضات الشركة: <b>${m.companyComp.toLocaleString('en-US')}</b> ج.م`,
+      hint:'تعويضات الشركة = مجموع مبالغ التعويض للشكاوى التي الجهة المتحملة فيها «الشركة».' },
     { tone: m.closureRate===null ? '' : (m.closureRate>=60?'tone-accept':'tone-reject'),
       label:'معدل إغلاق الشكاوى', value: m.closureRate===null ? '—' : `${m.closureRate}<sup>%</sup>`, trend: trendFor('closureRate', false) },
     { tone:'tone-gold', label:'متوسط التعويض', value: m.avgComp===null ? '—' : `${Math.round(m.avgComp).toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('avgComp', true) },
@@ -3535,6 +3557,7 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
     <div class="exec-core-card ${c.tone}"${c.hint ? ` title="${c.hint.replace(/"/g,'&quot;')}"` : ''}>
       <div class="exec-core-label">${c.label}</div>
       <div class="exec-core-value value-pop">${c.value}</div>
+      ${c.sub ? `<div class="exec-core-sub">${c.sub}</div>` : ''}
       <div class="exec-core-trend">${c.trend}</div>
     </div>
   `).join('');
@@ -4345,7 +4368,7 @@ function achieveBar(pct, good){
 }
 
 function renderKpiEnhancements(rows){
-  const containers = ['kpiTotalEnh','kpiAcceptRateEnh','kpiRejectedEnh','kpiPendingEnh','kpiSlaEnh','kpiCompSlaEnh'];
+  const containers = ['kpiTotalEnh','kpiAcceptRateEnh','kpiPendingEnh','kpiSlaEnh','kpiCompSlaEnh'];
   if(!rows.length){
     containers.forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML=''; });
     return;
@@ -4385,18 +4408,6 @@ function renderKpiEnhancements(rows){
     ${sparklineSvg(acceptSeries, 'var(--accepted)')}
   `;
 
-  // Rejected rate (lower is better)
-  const rejTarget = 15;
-  const rejCurr = rejectedPctOf(rows);
-  const rejSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(d=>compDecisionOf(d)==='rejected').length);
-  const rejAch = rejCurr===null ? 100 : Math.round(Math.min(100, (rejTarget/Math.max(rejCurr,0.001))*100));
-  const rejEl = document.getElementById('kpiRejectedEnh');
-  if(rejEl) rejEl.innerHTML = `
-    <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${rejTarget}%</b></span>${trendBadge(rejectedPctOf(currHalf), rejectedPctOf(prevHalf), true)}</div>
-    ${achieveBar(rejAch, rejCurr!==null && rejCurr<=rejTarget)}
-    ${sparklineSvg(rejSeries, 'var(--rejected)')}
-  `;
-
   // Pending / open share (lower is better)
   const pendTarget = 20;
   const pendCurr = pendingPctOf(rows);
@@ -4409,30 +4420,30 @@ function renderKpiEnhancements(rows){
     ${sparklineSvg(pendSeries, 'var(--pending)')}
   `;
 
-  // Avg resolution time (lower is better)
-  const slaTarget = 4;
-  const slaCurr = avgSlaOf(rows);
-  const slaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=avgSlaOf(arr); return v===null?0:v; });
-  const slaAch = slaCurr===null ? 100 : Math.round(Math.min(100, (slaTarget/Math.max(slaCurr,0.001))*100));
+  // الالتزام بـ SLA التحقيق (الهدف: الحل خلال 4 أيام) — المتوسط معروض داخل البطاقة نفسها
+  const slaTarget = RES_SLA_TARGET_DAYS;
+  const resComplOf = arr => computeResolutionSlaCompliance(arr).pct;
+  const slaCurr = resComplOf(rows);
+  const slaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=resComplOf(arr); return v===null?0:v; });
   const slaEl = document.getElementById('kpiSlaEnh');
   if(slaEl) slaEl.innerHTML = `
-    <div class="stub-enh-row"><span class="stub-target">الهدف: أقل من <b>${slaTarget}</b> يوم</span>${trendBadge(avgSlaOf(currHalf), avgSlaOf(prevHalf), true)}</div>
-    ${achieveBar(slaAch, slaCurr!==null && slaCurr<=slaTarget)}
+    <div class="stub-enh-row"><span class="stub-target">الهدف: الحل خلال <b>${slaTarget}</b> أيام</span>${trendBadge(resComplOf(currHalf), resComplOf(prevHalf), false)}</div>
+    ${achieveBar(slaCurr===null?0:Math.round(slaCurr), slaCurr!==null && slaCurr>=70)}
     ${sparklineSvg(slaSeries, 'var(--gold)')}
     <div class="stub-formula">يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى</div>
   `;
 
-  // Avg compensation execution time (SLA تنفيذ التعويض). No approved target
-  // exists for this figure in the dashboard yet, so — unlike the resolution
-  // SLA above — this only shows the trend and the calculation method,
-  // without fabricating an achievement bar against an unset target.
-  const compSlaCurr = avgCompSlaOf(rows);
-  const compSlaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=avgCompSlaOf(arr); return v===null?0:v; });
+  // الالتزام بـ SLA التعويض (الهدف: التنفيذ خلال يومين من تاريخ نتيجة التحقيق)
+  const compSlaTarget = COMP_SLA_TARGET_DAYS;
+  const compComplOf = arr => computeCompensationSlaCompliance(arr).pct;
+  const compSlaCurr = compComplOf(rows);
+  const compSlaSeries = lastNDatesSeries(rows, 14, arr=>{ const v=compComplOf(arr); return v===null?0:v; });
   const compSlaEl = document.getElementById('kpiCompSlaEnh');
   if(compSlaEl) compSlaEl.innerHTML = `
-    <div class="stub-enh-row"><span class="stub-target">يُحسب من تاريخ إضافة الشكوى حتى تاريخ تنفيذ التعويض</span>${trendBadge(avgCompSlaOf(currHalf), avgCompSlaOf(prevHalf), true)}</div>
+    <div class="stub-enh-row"><span class="stub-target">الهدف: خلال <b>${compSlaTarget}</b> يوم من النتيجة</span>${trendBadge(compComplOf(currHalf), compComplOf(prevHalf), false)}</div>
+    ${achieveBar(compSlaCurr===null?0:Math.round(compSlaCurr), compSlaCurr!==null && compSlaCurr>=70)}
     ${sparklineSvg(compSlaSeries, 'var(--gold)')}
-    <div class="stub-formula">يُحسب: تاريخ التعويض − تاريخ إضافة الشكوى</div>
+    <div class="stub-formula">يُحسب: تاريخ التعويض − تاريخ نتيجة التحقيق</div>
   `;
 }
 
@@ -4508,10 +4519,9 @@ const tooltipContent = {
     return { title:'إجمالي الشكاوى', note:'العدد الكلي للشكاوى ضمن عوامل التصفية الحالية. إجراء مقترح: راجع مسؤولي الشكاوى الأعلى مساهمة في مؤشر أداء مسؤولي الشكاوى.' };
   },
   kpiAcceptRate: ()=> ({ title:'نسبة قبول التعويض', note:'نسبة الحالات المقبولة من إجمالي الحالات المقررة (مقبول أو مرفوض). إجراء مقترح: قارن النسبة عبر الفروع لتحديد التفاوت في معايير القبول.' }),
-  kpiRejected: ()=> ({ title:'تعويضات مرفوضة', note:'عدد الشكاوى التي تم رفض التعويض عنها. إجراء مقترح: راجع أسباب الرفض المتكررة ضمن قسم التصنيف.' }),
   kpiPending: ()=> ({ title:'قيد التحقيق', note:'شكاوى لم يُبتّ فيها بعد. إجراء مقترح: تابع الحالات المفتوحة منذ أكثر من 5 أيام عبر مركز التنبيهات.' }),
-  kpiSla: ()=> ({ title:'متوسط زمن الحل', note:'يُحسب من: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى، للحالات التي لديها التاريخان فقط. إجراء مقترح: استهدف خفض هذا الرقم إلى أقل من 4 أيام.' }),
-  kpiCompSla: ()=> ({ title:'متوسط زمن تنفيذ التعويض', note:'يُحسب من: تاريخ التعويض − تاريخ إضافة الشكوى، للحالات التي لديها التاريخان الصحيحان فقط (لا يُحسب من تاريخ نتيجة التحقيق). نفس هذا الحساب الموحّد يُستخدم في الملخص التنفيذي وكل تفاصيل الشكوى.' })
+  kpiSla: ()=> ({ title:'الالتزام بـ SLA التحقيق', note:'نسبة الشكاوى التي حُلّت خلال 4 أيام أو أقل (تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى)، للحالات التي لديها التاريخان فقط. متوسط زمن الحل معروض داخل البطاقة.' }),
+  kpiCompSla: ()=> ({ title:'الالتزام بـ SLA التعويض', note:'نسبة التعويضات التي نُفّذت خلال يومين أو أقل من تاريخ نتيجة التحقيق (تاريخ التعويض − تاريخ نتيجة التحقيق)، للحالات التي لديها التاريخان فقط. متوسط زمن تنفيذ التعويض معروض داخل البطاقة.' })
 };
 const smartTip = document.getElementById('smartTooltip');
 function showTip(el, html){
