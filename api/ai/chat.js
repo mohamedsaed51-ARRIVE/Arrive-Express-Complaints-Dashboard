@@ -29,7 +29,11 @@ function allowedOrigins() {
 function originAllowed(req) {
   const origin = req.headers.origin;
   if (!origin || !/^https?:\/\//i.test(origin)) return false;
-  return allowedOrigins().includes(origin.replace(/\/$/, ''));
+  const normalizedOrigin = origin.replace(/\/$/, '');
+  const deploymentOrigins = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+    .filter(value => typeof value === 'string' && value.trim())
+    .map(value => 'https://' + value.trim().replace(/^https?:\/\//i, '').replace(/\/$/, ''));
+  return allowedOrigins().includes(normalizedOrigin) || deploymentOrigins.includes(normalizedOrigin);
 }
 
 function rateLimit(req) {
@@ -61,7 +65,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return send(res, 405, { error: 'الطريقة غير مدعومة.' });
   }
-  if (!allowedOrigins().length) return send(res, 503, { error: 'خدمة AI غير مهيأة: يجب ضبط AI_ALLOWED_ORIGINS.' });
+  if (!allowedOrigins().length && !process.env.VERCEL_URL && !process.env.VERCEL_BRANCH_URL) return send(res, 503, { error: 'خدمة AI غير مهيأة: يجب ضبط AI_ALLOWED_ORIGINS.' });
   if (!originAllowed(req)) return send(res, 403, { error: 'مصدر الطلب غير مسموح.' });
 
   const expectedCode = process.env.AI_ACCESS_CODE;
