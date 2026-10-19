@@ -27,7 +27,10 @@
     };
     Object.entries(fields).forEach(([id, label]) => {
       const values = selectedValues(id);
-      if (values.length) filters[label] = values.slice(0, 12);
+      if (!values.length) return;
+      // Avoid sending employee or merchant/customer names as filter values.
+      if (id === 'fOwner' || id === 'fSender') filters[label] = { selectedCount: values.length };
+      else filters[label] = values.slice(0, 12);
     });
     const dateFrom = document.getElementById('fDateFrom')?.value;
     const dateTo = document.getElementById('fDateTo')?.value;
@@ -61,7 +64,7 @@
         complaints: items.length,
         compensationAccepted: accepted,
         compensationRejected: rejected,
-        compensationDecisionUnresolved: items.length - accepted - rejected,
+        compensationDecisionUnresolved: items.filter(row => typeof compDecisionOf === 'function' && compDecisionOf(row) !== 'accepted' && compDecisionOf(row) !== 'rejected').length,
         compensationAmountTotal: typeof sumCompensation === 'function' ? Math.round(sumCompensation(items) * 100) / 100 : null,
         companyCompensationAmount: typeof sumCompanyCompensation === 'function' ? Math.round(sumCompanyCompensation(items) * 100) / 100 : null,
         openByStatus: open,
