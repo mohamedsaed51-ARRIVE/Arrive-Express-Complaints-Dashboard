@@ -150,7 +150,7 @@
       };
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Arrive-AI-Access': code },
+        headers: { 'Content-Type': 'application/json', 'X-Arrive-AI-Access': btoa(Array.from(new TextEncoder().encode(code), byte => String.fromCharCode(byte)).join('')) },
         body: JSON.stringify({ question, summary })
       });
       const payload = await response.json().catch(() => ({}));
