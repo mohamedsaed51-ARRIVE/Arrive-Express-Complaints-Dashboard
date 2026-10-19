@@ -66,7 +66,12 @@ module.exports = async function handler(req, res) {
 
   const expectedCode = process.env.AI_ACCESS_CODE;
   if (!expectedCode) return send(res, 503, { error: 'خدمة AI غير مهيأة: يجب ضبط AI_ACCESS_CODE.' });
-  if (!safeEqual(req.headers['x-arrive-ai-access'], expectedCode)) return send(res, 401, { error: 'رمز الوصول غير صحيح.' });
+  const encodedCode = req.headers['x-arrive-ai-access'];
+  let suppliedCode = '';
+  try {
+    if (typeof encodedCode === 'string' && encodedCode.length <= 4096) suppliedCode = Buffer.from(encodedCode, 'base64').toString('utf8');
+  } catch (_) {}
+  if (!safeEqual(suppliedCode, expectedCode)) return send(res, 401, { error: 'رمز الوصول غير صحيح.' });
   if (!rateLimit(req)) return send(res, 429, { error: 'تم الوصول إلى حد الطلبات. حاول مرة أخرى بعد قليل.' });
 
   const apiKey = process.env.AI_API_KEY || process.env.OPENAI_API_KEY;
