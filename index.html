@@ -1881,7 +1881,7 @@ body.report-open{overflow:hidden}
 
   <div class="section-heading">
     <h2><span class="tag">ترتيب</span> أفضل وأضعف الأداء</h2>
-    <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 معالجين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
+    <span class="section-sub">تصنيفات تلقائية لأفضل وأضعف 5 مسؤولين، وأبرز أسباب الشكاوى وتكاليف التعويض</span>
   </div>
   <section class="top-performers-grid" id="topPerformersGrid"></section>
 
@@ -3385,9 +3385,9 @@ function computeAlerts(rows){
   });
   alerts.push({
     priority:'high', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'مرتفع',
-    desc:'معالجو شكاوى بهم ارتفاع سريع في عدد الشكاوى (آخر 7 أيام مقابل الأسبوع السابق)',
+    desc:'مسؤولو شكاوى بهم ارتفاع سريع في عدد الشكاوى (آخر 7 أيام مقابل الأسبوع السابق)',
     count: risingHandlers.length,
-    onClick: ()=> setExtraFilter(d=> risingHandlers.includes(d.owner), 'معالجو شكاوى بارتفاع سريع')
+    onClick: ()=> setExtraFilter(d=> risingHandlers.includes(d.owner), 'مسؤولو شكاوى بارتفاع سريع')
   });
 
   // Complaints waiting for compensation approval (accepted but amount not yet finalized)
@@ -3416,9 +3416,9 @@ function computeAlerts(rows){
   const overOpenThreshold = Object.keys(openHandlerTotals).filter(o=> openHandlerTotals[o] > openThreshold);
   alerts.push({
     priority:'high', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'مرتفع',
-    desc:`معالجو شكاوى تجاوزوا الحد الأقصى المسموح للشكاوى المفتوحة (${openThreshold} شكوى)`,
+    desc:`مسؤولو شكاوى تجاوزوا الحد الأقصى المسموح للشكاوى المفتوحة (${openThreshold} شكوى)`,
     count: overOpenThreshold.length,
-    onClick: ()=> setExtraFilter(d=> isOpenStatus(d) && overOpenThreshold.includes(d.owner), `معالجو شكاوى تجاوزوا ${openThreshold} شكوى مفتوحة`)
+    onClick: ()=> setExtraFilter(d=> isOpenStatus(d) && overOpenThreshold.includes(d.owner), `مسؤولو شكاوى تجاوزوا ${openThreshold} شكوى مفتوحة`)
   });
 
   // Complaints pending for more than 5 days
@@ -3452,9 +3452,9 @@ function computeAlerts(rows){
   const droppingHandlers = perfHandlers.filter(h=> trendsForAlert[h.owner] === 'down' && h.score < 70).map(h=>h.owner);
   alerts.push({
     priority:'med', emoji:'<i class="fa-solid fa-triangle-exclamation" style="color:var(--status-under-action)"></i>', label:'متوسط',
-    desc:'معالجو شكاوى بتراجع ملحوظ في درجة الأداء خلال الفترة الحالية',
+    desc:'مسؤولو شكاوى بتراجع ملحوظ في درجة الأداء خلال الفترة الحالية',
     count: droppingHandlers.length,
-    onClick: ()=> setExtraFilter(d=> droppingHandlers.includes(d.owner), 'تراجع في أداء المعالج')
+    onClick: ()=> setExtraFilter(d=> droppingHandlers.includes(d.owner), 'تراجع في أداء مسؤول الشكاوى')
   });
 
   return alerts;
@@ -3555,7 +3555,7 @@ function renderCoreExecutiveMetrics(rows, gridId='execCoreGrid'){
     { tone: m.closureRate===null ? '' : (m.closureRate>=60?'tone-accept':'tone-reject'),
       label:'معدل إغلاق الشكاوى', value: m.closureRate===null ? '—' : `${m.closureRate}<sup>%</sup>`, trend: trendFor('closureRate', false) },
     { tone:'tone-gold', label:'متوسط التعويض', value: m.avgComp===null ? '—' : `${Math.round(m.avgComp).toLocaleString('en-US')}<sup>ج.م</sup>`, trend: trendFor('avgComp', true) },
-    { tone:'', label:'متوسط الشكاوى لكل معالج', value: m.avgPerHandler===null ? '—' : `${m.avgPerHandler.toFixed(1)}`, trend: trendFor('avgPerHandler', true) },
+    { tone:'', label:'متوسط الشكاوى لكل مسؤول شكاوى', value: m.avgPerHandler===null ? '—' : `${m.avgPerHandler.toFixed(1)}`, trend: trendFor('avgPerHandler', true) },
   ];
   grid.innerHTML = cards.map(c=>`
     <div class="exec-core-card ${c.tone}"${c.hint ? ` title="${c.hint.replace(/"/g,'&quot;')}"` : ''}>
@@ -3683,8 +3683,8 @@ function renderExecutiveSnapshot(rows){
     <div class="snap-divider"></div>
     <div class="snap-stats">
       <div class="snap-stat"><div class="sl">شكاوى حرجة (بدون تكرار)</div><div class="sv ${criticalAlerts>0?'crit':''}">${criticalAlerts}</div></div>
-      <div class="snap-stat"><div class="sl">أفضل معالج</div><div class="sv">${best ? best.owner : '—'}</div></div>
-      <div class="snap-stat"><div class="sl">أضعف معالج</div><div class="sv">${worst ? worst.owner : '—'}</div></div>
+      <div class="snap-stat"><div class="sl">أفضل مسؤول شكاوى</div><div class="sv">${best ? best.owner : '—'}</div></div>
+      <div class="snap-stat"><div class="sl">أضعف مسؤول شكاوى</div><div class="sv">${worst ? worst.owner : '—'}</div></div>
       <div class="snap-stat"><div class="sl">الشكاوى المفتوحة</div><div class="sv">${m.openExt}</div></div>
       <div class="snap-stat"><div class="sl">الالتزام بـ SLA</div><div class="sv">${m.slaCompliance===null?'—':m.slaCompliance+'%'}</div></div>
     </div>
@@ -3762,7 +3762,7 @@ function computeExecutiveSummary(rows){
   // Smart, rule-based recommendations for management (no external AI — thresholds only)
   const recos = [];
   if(result.lowestSlaHandler && result.lowestSlaHandler.slaCompliance < 0.6){
-    recos.push({ icon:'<i class="fa-solid fa-triangle-exclamation"></i>', text:`مراجعة أداء <b>${result.lowestSlaHandler.owner}</b> — الالتزام بـ SLA حاليًا ${Math.round(result.lowestSlaHandler.slaCompliance*100)}% فقط، الأدنى بين معالجي الشكاوى.` });
+    recos.push({ icon:'<i class="fa-solid fa-triangle-exclamation"></i>', text:`مراجعة أداء <b>${result.lowestSlaHandler.owner}</b> — الالتزام بـ SLA حاليًا ${Math.round(result.lowestSlaHandler.slaCompliance*100)}% فقط، الأدنى بين مسؤولي الشكاوى.` });
   }
   const overOpen = handlers.filter(h=> h.open > 5);
   if(overOpen.length){
@@ -3846,14 +3846,14 @@ function renderExecutiveSummary(rows){
   };
 
   const cards = [
-    { tone:'tone-accept', icon:'<i class="fa-solid fa-trophy"></i>', label:'أفضل معالج شكاوى',
+    { tone:'tone-accept', icon:'<i class="fa-solid fa-trophy"></i>', label:'أفضل مسؤول شكاوى',
       value: s.bestHandler ? s.bestHandler.owner : '—',
       sub: s.bestHandler ? `درجة الأداء ${s.bestHandler.score}/100 · ${s.bestHandler.count} شكوى مسندة` : 'لا توجد بيانات كافية',
-      onClick: s.bestHandler ? handlerDrilldown(s.bestHandler, 'أفضل معالج شكاوى', '<i class="fa-solid fa-trophy"></i>') : null },
-    { tone:'tone-reject', icon:'<i class="fa-solid fa-triangle-exclamation"></i>', label:'أضعف معالج شكاوى أداءً',
+      onClick: s.bestHandler ? handlerDrilldown(s.bestHandler, 'أفضل مسؤول شكاوى', '<i class="fa-solid fa-trophy"></i>') : null },
+    { tone:'tone-reject', icon:'<i class="fa-solid fa-triangle-exclamation"></i>', label:'أضعف مسؤول شكاوى أداءً',
       value: s.lowestPerformingHandler ? s.lowestPerformingHandler.owner : '—',
       sub: s.lowestPerformingHandler ? `درجة الأداء ${s.lowestPerformingHandler.score}/100 · ${s.lowestPerformingHandler.open} شكوى مفتوحة` : 'لا توجد بيانات كافية',
-      onClick: s.lowestPerformingHandler ? handlerDrilldown(s.lowestPerformingHandler, 'أضعف معالج شكاوى أداءً', '<i class="fa-solid fa-triangle-exclamation"></i>') : null },
+      onClick: s.lowestPerformingHandler ? handlerDrilldown(s.lowestPerformingHandler, 'أضعف مسؤول شكاوى أداءً', '<i class="fa-solid fa-triangle-exclamation"></i>') : null },
     { tone:'', icon:'<i class="fa-solid fa-chart-simple"></i>', label:'أعلى حجم شكاوى',
       value: s.highestVolumeHandler ? s.highestVolumeHandler.owner : '—',
       sub: s.highestVolumeHandler ? `${s.highestVolumeHandler.count} شكوى (${Math.round((s.highestVolumeHandler.count/rows.length)*100)}% من الإجمالي)` : 'لا توجد بيانات كافية',
@@ -3964,9 +3964,9 @@ function computeInsights(rows){
   if(topOwner){
     const pct = Math.round((topOwner[1]/rows.length)*100);
     insights.push({
-      problem: `معالج الشكاوى <b>${topOwner[0]}</b> يتحمّل <b>${pct}%</b> من إجمالي الشكاوى ضمن النتائج الحالية (${topOwner[1]} من ${rows.length}).`,
-      impact: 'تركّز الحمل على معالج واحد يزيد من خطر التأخير وتراجع جودة المراجعة عند الغياب أو الضغط.',
-      action: 'إعادة توزيع جزء من الشكاوى الجديدة على معالجين آخرين لتقليل التركّز.',
+      problem: `مسؤول الشكاوى <b>${topOwner[0]}</b> يتحمّل <b>${pct}%</b> من إجمالي الشكاوى ضمن النتائج الحالية (${topOwner[1]} من ${rows.length}).`,
+      impact: 'تركّز الحمل على مسؤول واحد يزيد من خطر التأخير وتراجع جودة المراجعة عند الغياب أو الضغط.',
+      action: 'إعادة توزيع جزء من الشكاوى الجديدة على مسؤولين آخرين لتقليل التركّز.',
       priority: pct>=50?'critical':pct>=30?'high':'medium'
     });
   }
@@ -4083,9 +4083,9 @@ function computeActionCenter(rows){
   const lowPerf = handlers.filter(h=> h.score<60);
   if(lowPerf.length){
     actions.push({
-      icon:'<i class="fa-solid fa-arrow-trend-down"></i>', title:'متابعة معالجي الشكاوى ضعيفي الأداء',
+      icon:'<i class="fa-solid fa-arrow-trend-down"></i>', title:'متابعة مسؤولي الشكاوى ضعيفي الأداء',
       desc:`${lowPerf.map(h=>h.owner).join('، ')} — درجة أداء أقل من 60/100.`,
-      owner:'مدير جودة خدمة العملاء', impact:'رفع مستوى الالتزام بـ SLA وتقليل الشكاوى المفتوحة لكل معالج',
+      owner:'مدير جودة خدمة العملاء', impact:'رفع مستوى الالتزام بـ SLA وتقليل الشكاوى المفتوحة لكل مسؤول شكاوى',
       priority: lowPerf.some(h=>h.score<40) ? 'critical' : 'high'
     });
   }
@@ -4316,11 +4316,11 @@ function renderTopPerformers(rows){
 
   wrap.innerHTML = `
     <div class="tp-card">
-      <h5><i class="fa-solid fa-trophy"></i> أفضل 5 معالجي شكاوى</h5>
+      <h5><i class="fa-solid fa-trophy"></i> أفضل 5 مسؤولي شكاوى</h5>
       ${handlerRows(t.top5Handlers, h=>`${h.score}/100`)}
     </div>
     <div class="tp-card">
-      <h5><i class="fa-solid fa-arrow-trend-down"></i> أضعف 5 معالجي شكاوى</h5>
+      <h5><i class="fa-solid fa-arrow-trend-down"></i> أضعف 5 مسؤولي شكاوى</h5>
       ${handlerRows(t.bottom5Handlers, h=>`${h.score}/100`)}
     </div>
     <div class="tp-card">
@@ -5808,7 +5808,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       rowK('إجمالي الشكاوى','total',f0,true), rowK('الشكاوى المفتوحة','open',f0,true), rowK('الشكاوى المغلقة','closed',f0,false),
       rowK('الالتزام بـ SLA (هدف 4 أيام)','slaCompliance',fp,false,true), rowK('متوسط زمن الحل','avgResolution',fd,true),
       rowK('متوسط زمن تنفيذ التعويض','avgCompensationSla',fd,true), rowK('إجمالي التعويضات','totalComp',fm,true),
-      rowK('معدل إغلاق الشكاوى','closureRate',fp,false,true), rowK('متوسط التعويض','avgComp',fm,true), rowK('متوسط الشكاوى لكل معالج','avgPerHandler',v=>v==null?'—':N1(v),true)
+      rowK('معدل إغلاق الشكاوى','closureRate',fp,false,true), rowK('متوسط التعويض','avgComp',fm,true), rowK('متوسط الشكاوى لكل مسؤول شكاوى','avgPerHandler',v=>v==null?'—':N1(v),true)
     ].join('');
     const factors = health ? health.factors : [];
     pages.push(page(head('ملخص المؤشرات الرئيسية',ctx)+`
@@ -5826,6 +5826,94 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     pages.push(page(head('التحليل التفصيلي: الفروع والتوزيعات',ctx)+
       fig('الشكاوى حسب الفرع','أعلى الفروع من حيث عدد الشكاوى',imgs.branch)+
       `<div class="rp-two">${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
+
+    /* 4b) صفحات التحليل بالأرقام: الفروع، الجهة المتحملة، الأسباب والأنواع، الراسلون، مراجعة التعويض، الاتجاه الشهري */
+    const isOpenRow = d => !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')));
+    const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
+    const groupBy = (arr, keyFn) => { const mp = new Map(); arr.forEach(d=>{ const k = keyFn(d); if(!mp.has(k)) mp.set(k, []); mp.get(k).push(d); }); return mp; };
+    const gstat = g => {
+      const acc = g.filter(d=>compDecisionOf(d)==='accepted').length, rej = g.filter(d=>compDecisionOf(d)==='rejected').length;
+      const cm = g.filter(isCompensationCountable);
+      return { n:g.length, open:g.filter(isOpenRow).length, acc, rej, sla:computeResolutionSlaCompliance(g), comp:sumCompensation(g), compN:cm.length };
+    };
+    const pctOf = (a,b) => b ? N1(a/b*100)+'%' : '—';
+    const compCell = v => N(Math.round(v));
+    const slaCell = s => s.pct==null ? '—' : `${N1(s.pct)}% <span class="rp-note">(${N(s.ok)}/${N(s.count)})</span>`;
+    const totalRows = rows.length;
+    const totalCompAll = sumCompensation(rows);
+
+    // 4b-1) الفروع المتسببة
+    const brG = [...groupBy(rows, d=>lbl(d.branch)).entries()].map(([k,g])=>({k,s:gstat(g)})).sort((a,b)=>b.s.n-a.s.n||a.k.localeCompare(b.k,'ar'));
+    if(brG.length){
+      chunk(brG,14).forEach((grp,gi,all)=>{
+        pages.push(page(head('الفروع المتسببة في الشكاوى'+(all.length>1?` (${gi+1}/${all.length})`:''),ctx)+
+          tableWrap([{t:'الفرع'},{t:'الشكاوى',num:true},{t:'النسبة',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
+            grp.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
+          `<p class="rp-note">الفرع = عمود «الفرع المتسبب». النسبة من إجمالي ${N(totalRows)} سجل. مقبول/مرفوض من قرار الحالة؛ الحالات قيد التحقيق وغير المحددة و«التعويض مسبقا» خارجهما. الالتزام بمهلة الحل = المنجز خلال ${RES_SLA_TARGET_DAYS} أيام ÷ الحالات ذات التاريخين الصالحين. عدد الفروع: ${N(brG.length)}.</p>`+foot()));
+      });
+    }
+
+    // 4b-2) الجهة المتحملة للتعويض
+    const compRows = rows.filter(isCompensationCountable);
+    if(compRows.length){
+      const bG = [...groupBy(compRows, d=>lbl(d.compensation_bearer)).entries()].map(([k,g])=>({k,n:g.length,sum:sumCompensation(g)})).sort((a,b)=>b.sum-a.sum);
+      const noBearer = compRows.filter(d=>!String(d.compensation_bearer||'').trim()).length;
+      pages.push(page(head('الجهة المتحملة للتعويض',ctx)+
+        tableWrap([{t:'الجهة المتحملة'},{t:'عدد الحالات',num:true},{t:'إجمالي التعويض (ج.م)',num:true},{t:'النسبة من الإجمالي',num:true},{t:'متوسط التعويض (ج.م)',num:true}],
+          bG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${compCell(r.sum)}</td><td class="num">${pctOf(r.sum,totalCompAll)}</td><td class="num">${compCell(r.sum/r.n)}</td></tr>`).join('')+
+          `<tr class="rp-total"><td><b>الإجمالي</b></td><td class="num"><b>${N(compRows.length)}</b></td><td class="num"><b>${compCell(totalCompAll)}</b></td><td class="num"><b>100.0%</b></td><td class="num"><b>${compCell(totalCompAll/compRows.length)}</b></td></tr>`)+
+        `<p class="rp-note">الجدول يشمل الحالات التي لها مبلغ تعويض مسجّل فقط (${N(compRows.length)} من ${N(totalRows)} سجل). الجهة من عمود «وظيفة المتحمل للتعويض»${noBearer?`؛ ${N(noBearer)} حالة لها مبلغ بلا جهة متحملة مسجّلة وتظهر تحت «غير محدد»`:''}.</p>`+foot()));
+    }
+
+    // 4b-3) الأسباب والأنواع
+    const topTbl = (keyFn, title, limit) => {
+      const g = [...groupBy(rows, keyFn).entries()].map(([k,a])=>({k,s:gstat(a)})).sort((a,b)=>b.s.n-a.s.n);
+      const shown = g.slice(0,limit), rest = g.slice(limit);
+      const body = shown.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join('') +
+        (rest.length ? `<tr><td>أخرى (${N(rest.length)} بند)</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.n,0))}</td><td class="num">${pctOf(rest.reduce((t,r)=>t+r.s.n,0),totalRows)}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.acc,0))}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.rej,0))}</td><td class="num">${compCell(rest.reduce((t,r)=>t+r.s.comp,0))}</td></tr>` : '');
+      return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى',num:true},{t:'النسبة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],body,'rp-compact');
+    };
+    if(totalRows){
+      pages.push(page(head('الأسباب وأنواع الشكاوى',ctx)+
+        topTbl(d=>lbl(d.type),'حسب نوع الشكوى',8)+topTbl(d=>lbl(d.classification),'حسب تصنيف المشكلة',10)+
+        `<p class="rp-note">النسبة من إجمالي ${N(totalRows)} سجل. البنود الأقل تكرارًا مجمّعة تحت «أخرى».</p>`+foot()));
+    }
+
+    // 4b-4) الراسلون الأكثر شكاوى
+    const sG = [...groupBy(rows.filter(d=>String(d.complainant||'').trim()), d=>String(d.complainant).trim()).entries()].map(([k,g])=>({k,s:gstat(g)})).sort((a,b)=>b.s.n-a.s.n||b.s.comp-a.s.comp);
+    if(sG.length){
+      const topS = sG.slice(0,10), topShare = topS.reduce((t,r)=>t+r.s.n,0);
+      pages.push(page(head('الراسلون الأكثر شكاوى',ctx)+
+        tableWrap([{t:'الراسل'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
+          topS.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
+        `<p class="rp-note">أعلى ${N(topS.length)} راسلين من ${N(sG.length)} راسلًا؛ يمثلون ${pctOf(topShare,totalRows)} من إجمالي السجلات. الراسل من عمود «الشاكي».</p>`+foot()));
+    }
+
+    // 4b-5) مراجعة التعويض
+    const revG = [...groupBy(rows, d=>lbl(d.compensation_review_result)).entries()].map(([k,g])=>({k,n:g.length,sum:sumCompensation(g)})).sort((a,b)=>b.n-a.n);
+    const cfG = [...groupBy(rows, d=>lbl(d.confirm_review)).entries()].map(([k,g])=>({k,n:g.length})).sort((a,b)=>b.n-a.n);
+    let both=0, agree=0, disagree=0, onlyStatus=0, onlyReview=0, neither=0;
+    rows.forEach(d=>{ const s=statusDecisionOf(d), r=reviewDecisionOf(d); if(s&&r){ both++; s===r?agree++:disagree++; } else if(s) onlyStatus++; else if(r) onlyReview++; else neither++; });
+    if(totalRows){
+      pages.push(page(head('مراجعة التعويض',ctx)+
+        `<h3>نتيجة مراجعة التعويض</h3>`+tableWrap([{t:'النتيجة'},{t:'عدد السجلات',num:true},{t:'النسبة',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],revG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${pctOf(r.n,totalRows)}</td><td class="num">${compCell(r.sum)}</td></tr>`).join(''),'rp-compact')+
+        `<h3>التأكيد على المراجعة</h3>`+tableWrap([{t:'القيمة'},{t:'عدد السجلات',num:true},{t:'النسبة',num:true}],cfG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${pctOf(r.n,totalRows)}</td></tr>`).join(''),'rp-compact')+
+        `<h3>مطابقة قرار الحالة مع نتيجة المراجعة</h3>`+tableWrap([{t:'الحالة',},{t:'عدد السجلات',num:true}],
+          `<tr><td>القراران محسومان ومتطابقان</td><td class="num">${N(agree)}</td></tr><tr><td>القراران محسومان ومختلفان</td><td class="num">${N(disagree)}</td></tr><tr><td>محسوم في الحالة فقط (بلا نتيجة مراجعة محسومة)</td><td class="num">${N(onlyStatus)}</td></tr><tr><td>محسوم في المراجعة فقط</td><td class="num">${N(onlyReview)}</td></tr><tr><td>غير محسوم في أي منهما</td><td class="num">${N(neither)}</td></tr>`,'rp-compact')+
+        `<p class="rp-note">القرار المحسوم = مقبول أو مرفوض. مصدر القرار المعتمد في اللوحة هو عمود الحالة؛ نتيجة المراجعة تُعرض للمطابقة فقط، و«التعويض مسبقا» غير محسوم في الاثنين.${both?` نسبة التطابق بين المحسومين: ${pctOf(agree,both)}.`:''}</p>`+foot()));
+    }
+
+    // 4b-6) الاتجاه الشهري
+    const ym = v => (v && /^\d{4}-\d{2}/.test(String(v))) ? String(v).slice(0,7) : null;
+    const addM = [...groupBy(rows, d=>ym(d.date_added)||'بدون تاريخ').entries()].map(([k,g])=>({k,s:gstat(g)})).sort((a,b)=>a.k.localeCompare(b.k));
+    const cmpM = [...groupBy(compRows.filter(d=>ym(d.compensation_date)), d=>ym(d.compensation_date)).entries()].map(([k,g])=>({k,n:g.length,sum:sumCompensation(g)})).sort((a,b)=>a.k.localeCompare(b.k));
+    if(addM.length){
+      pages.push(page(head('الاتجاه الشهري',ctx)+
+        `<h3>الشكاوى حسب شهر الإضافة</h3>`+tableWrap([{t:'الشهر'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
+          addM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''),'rp-compact')+
+        (cmpM.length?`<h3>التعويضات حسب شهر صرف التعويض</h3>`+tableWrap([{t:'الشهر'},{t:'عدد الحالات',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],cmpM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${compCell(r.sum)}</td></tr>`).join(''),'rp-compact'):'')+
+        `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى (وتاريخ التعويض للجدول الثاني)، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات». الجدول الثاني يشمل الحالات ذات مبلغ وتاريخ تعويض صالحين.</p>`+foot()));
+    }
 
     /* 5) أداء مسؤولي الشكاوى */
     let handlers = [];
