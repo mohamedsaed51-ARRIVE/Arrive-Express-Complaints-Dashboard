@@ -5658,7 +5658,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
   /* ---------- page shell ---------- */
   function page(inner, opts){
     opts = opts || {};
-    return `<section class="rp-page${opts.land?' land':''}${opts.cover?' cover':''}">${inner}</section>`;
+    return `<section class="rp-page${opts.land?' land':''}${opts.cover?' cover':''}${opts.intro?' rp-intro':''}">${inner}</section>`;
   }
   function head(title, ctx){
     return `<header class="rp-head">
@@ -5982,17 +5982,68 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         </div>
         <div class="rp-end">نهاية التقرير</div>
       </div>`+foot()));
+    /* هدف كل تبويب ومؤشراته الرئيسية (تُرتَّب أول صفحة في تبويبها) */
+    const kpx = (l,v,sub,tone) => `<div class="rp-kpi ${tone||''}"><div class="rp-kpi-l">${l}</div><div class="rp-kpi-v" style="font-size:${String(v).replace(/<[^>]*>/g,'').length>10?14:22}px">${v}</div>${sub?`<div class="rp-note" style="margin:2px 0 0">${sub}</div>`:''}</div>`;
+    const numH = v => `<span class="num">${v}</span>`;
+    const introPg = (title, goal, cards) => page(head(title,ctx)+`<p style="margin:2px 0 12px;font-size:12px"><b>الهدف:</b> ${goal}</p><div class="rp-kpis">${cards.join('')}</div>`+foot(),{intro:true});
+    const topOf = (keyFn, skip) => { const e=[...groupBy(rows,keyFn).entries()].filter(([k])=>!(skip&&skip.includes(k))).sort((a,b)=>b[1].length-a[1].length); return e.length?{k:e[0][0],n:e[0][1].length}:null; };
+    const UNK = ['غير محدد','غير مذكور بالمصدر'];
+
+    // الفروع
+    { const known=[...groupBy(rows,d=>lbl(d.branch)).entries()].filter(([k])=>!UNK.includes(k)).map(([k,g])=>({k,n:g.length})).sort((a,b)=>b.n-a.n);
+      const noBr = rows.filter(d=>UNK.includes(lbl(d.branch))).length;
+      const top3 = known.slice(0,3).reduce((t,r)=>t+r.n,0);
+      pages.push(introPg('الهدف والمؤشرات — الفروع','تحديد الفروع المتسببة في أكبر حصة من الشكاوى والتعويضات لتوجيه المتابعة والمعالجة.',[
+        kpx('عدد الفروع المتسببة',numH(N(known.length)),'فروع مذكورة بالمصدر'),
+        kpx('أعلى فرع شكاوى',known.length?esc(known[0].k):'—',known.length?`${N(known[0].n)} شكوى · ${pctOf(known[0].n,totalRows)}`:'','tone-under-action'),
+        kpx('تركّز أعلى 3 فروع',numH(pctOf(top3,totalRows)),'من إجمالي الشكاوى'),
+        kpx('شكاوى بلا فرع مذكور',numH(N(noBr)),`${pctOf(noBr,totalRows)} من السجلات`,noBr?'tone-violation':'tone-success')])); }
+
+    // التعويضات
+    { const bt=[...groupBy(compRows,d=>lbl(d.compensation_bearer)).entries()].map(([k,g])=>({k,s:sumCompensation(g)})).sort((a,b)=>b.s-a.s);
+      pages.push(introPg('الهدف والمؤشرات — التعويضات','بيان من يتحمل تكلفة التعويض، ومراجعة اتساق قرارات التعويض مع نتائج المراجعة، وتتبع الاتجاه شهريًا.',[
+        kpx('إجمالي التعويضات',`${numH(N(Math.round(totalCompAll)))}<small> ج.م</small>`,''),
+        kpx('حالات التعويض',numH(N(compRows.length)),`من ${N(totalRows)} سجل`),
+        kpx('أعلى جهة متحملة',bt.length?esc(bt[0].k):'—',bt.length?`${pctOf(bt[0].s,totalCompAll)} من الإجمالي`:'','tone-under-action'),
+        kpx('تطابق الحالة مع المراجعة',both?numH(pctOf(agree,both)):'—',both?`${N(agree)} من ${N(both)} حالة محسومة في الاثنين`:'لا توجد حالات محسومة في الاثنين')])); }
+
+    // الأسباب والراسلون
+    { const tc=topOf(d=>lbl(d.classification),UNK), tt=topOf(d=>lbl(d.type),UNK), top10=sG.slice(0,10).reduce((t,r)=>t+r.s.n,0);
+      pages.push(introPg('الهدف والمؤشرات — الأسباب والراسلون','معرفة أكثر الأسباب والأنواع تكرارًا والراسلين الأكثر تأثيرًا، لمعالجة الأسباب المتكررة.',[
+        kpx('أكثر تصنيف مشكلة',tc?esc(tc.k):'—',tc?`${N(tc.n)} شكوى · ${pctOf(tc.n,totalRows)}`:'','tone-under-action'),
+        kpx('أكثر نوع شكوى',tt?esc(tt.k):'—',tt?`${N(tt.n)} شكوى · ${pctOf(tt.n,totalRows)}`:''),
+        kpx('عدد الراسلين',numH(N(sG.length)),'راسلون مختلفون'),
+        kpx('تركّز أعلى 10 راسلين',numH(pctOf(top10,totalRows)),'من إجمالي السجلات')])); }
+
+    // مسؤولو الشكاوى
+    if(handlers.length){
+      const maxH = Math.max.apply(null, handlers.map(h=>h.count));
+      pages.push(introPg('الهدف والمؤشرات — مسؤولو الشكاوى','متابعة حجم العمل والالتزام لدى مسؤولي الشكاوى. الدرجة المركبة أوزانها غير معتمدة، فيُنصح بالاعتماد على الأرقام الخام.',[
+        kpx('عدد مسؤولي الشكاوى',numH(N(handlers.length)),''),
+        kpx('متوسط الشكاوى لكل مسؤول',numH(m.avgPerHandler==null?'—':N1(m.avgPerHandler)),''),
+        kpx('أعلى حمل لمسؤول واحد',numH(N(maxH)),`${pctOf(maxH,totalRows)} من الشكاوى`,'tone-under-action'),
+        kpx('الالتزام بمهلة الحل',numH(resC2.pct==null?'—':N1(resC2.pct)+'%'),`المهلة ${RES_SLA_TARGET_DAYS} أيام`)]));
+    }
+
+    // النتائج والتوصيات
+    { const activeAl = alerts.filter(a=>a.count>0), hiAct = actions.filter(a=>a.priority==='critical'||a.priority==='high').length;
+      pages.push(introPg('الهدف والمؤشرات — النتائج والتوصيات','تحويل نتائج التحليل إلى ملاحظات وإجراءات مقترحة تحتاج اعتماد الإدارة قبل التنفيذ.',[
+        kpx('تنبيهات نشطة',numH(N(activeAl.length)),`منها حرجة: ${N(activeAl.filter(a=>a.priority==='crit').length)}`,activeAl.some(a=>a.priority==='crit')?'tone-violation':'tone-success'),
+        kpx('ملاحظات مرصودة',numH(N(insights.length)),''),
+        kpx('إجراءات مقترحة',numH(N(actions.length)),''),
+        kpx('إجراءات عالية الأولوية',numH(N(hiAct)),'حرجة أو مرتفعة','tone-under-action')])); }
+
     return pages;
   }
 
   /* ---------- تبويبات التقرير ---------- */
   const TAB_DEFS = [
     {k:'mgmt',   t:'تقرير الإدارة',   m:['الغرض والنطاق','الأهداف مقابل الفعلي','الملخص التنفيذي','ملخص المؤشرات الرئيسية']},
-    {k:'branch', t:'أداء الفروع',     m:['التحليل التفصيلي','الفروع المتسببة في الشكاوى']},
-    {k:'comp',   t:'التعويضات',       m:['الجهة المتحملة للتعويض','مراجعة التعويض','الاتجاه الشهري']},
-    {k:'reason', t:'الأسباب والراسلون', m:['الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى']},
-    {k:'owner',  t:'مسؤولو الشكاوى',  m:['أداء مسؤولي الشكاوى']},
-    {k:'action', t:'النتائج والتوصيات', m:['النتائج والملاحظات','التوصيات وخطة الإجراءات','الختام ومنهجية الإعداد','لا توجد بيانات']}
+    {k:'branch', t:'أداء الفروع',     m:['الهدف والمؤشرات — الفروع','التحليل التفصيلي','الفروع المتسببة في الشكاوى']},
+    {k:'comp',   t:'التعويضات',       m:['الهدف والمؤشرات — التعويضات','الجهة المتحملة للتعويض','مراجعة التعويض','الاتجاه الشهري']},
+    {k:'reason', t:'الأسباب والراسلون', m:['الهدف والمؤشرات — الأسباب والراسلون','الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى']},
+    {k:'owner',  t:'مسؤولو الشكاوى',  m:['الهدف والمؤشرات — مسؤولو الشكاوى','أداء مسؤولي الشكاوى']},
+    {k:'action', t:'النتائج والتوصيات', m:['الهدف والمؤشرات — النتائج والتوصيات','النتائج والملاحظات','التوصيات وخطة الإجراءات','الختام ومنهجية الإعداد','لا توجد بيانات']}
   ];
   function assignGroups(ov){
     let last = 'mgmt';
@@ -6006,7 +6057,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     // ترتيب الصفحات بحيث تتجاور صفحات كل تبويب (مع الحفاظ على الترتيب الأصلي داخل التبويب)
     const stage = ov.querySelector('.rp-stage'), all = [...ov.querySelectorAll('.rp-page')];
     const rank = k => { const i = TAB_DEFS.findIndex(d=>d.k===k); return i<0?99:i; };
-    all.map((p,i)=>({p,i})).sort((a,b)=> rank(a.p.dataset.grp)-rank(b.p.dataset.grp) || a.i-b.i).forEach(x=> stage.appendChild(x.p));
+    all.map((p,i)=>({p,i})).sort((a,b)=> rank(a.p.dataset.grp)-rank(b.p.dataset.grp) || (b.p.classList.contains('rp-intro')-a.p.classList.contains('rp-intro')) || a.i-b.i).forEach(x=> stage.appendChild(x.p));
   }
   function setupTabs(ov){
     const bar = ov.querySelector('.rp-toolbar'); if(!bar || ov.querySelector('.rp-tabs')) return;
