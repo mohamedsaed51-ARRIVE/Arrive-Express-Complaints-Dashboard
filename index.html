@@ -2236,7 +2236,7 @@ const STATUS_MAP = {
   'تم قبول التعويض': {cls:'accepted', label:'مقبول'},
   'تم رفض التعويض': {cls:'rejected', label:'مرفوض'},
   'جارى التحقيق': {cls:'pending', label:'قيد التحقيق'},
-  'التعويض مسبقا': {cls:'accepted', label:'معوّض سابقًا'},
+  'التعويض مسبقا': {cls:'neutral', label:'معوّض سابقًا'},
   'غير محدد': {cls:'neutral', label:'غير محدد'}
 };
 
@@ -2921,9 +2921,9 @@ function animateNumber(el, toValue, opts={}){
 // البديل 'review' = «نتيجه مراجعة التعويض» (To be paid = مقبول، refused = مرفوض، تم التعويض مسبقا = سابق).
 // لا يُغيَّر المصدر إلا بعد اعتماده من الإدارة بناءً على مطابقة العمودين (arriveProfileData().decisionBySource).
 let COMPENSATION_DECISION_SOURCE = 'status';
-// «التعويض مسبقا» يُحتسب مقبولًا كما في STATUS_MAP الأصلي (cls:'accepted'). اجعلها false لاستبعاده من المقام والبسط
-// حتى يُعتمد حكمه (قاعدة عمل لم تُعتمد بعد).
-let PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED = true;
+// «التعويض مسبقا» لا يُحتسب مقبولًا (قرار الإدارة): يُستبعد من البسط والمقام معًا ولا يُحتسب مرفوضًا.
+// للرجوع للقاعدة القديمة اجعلها true.
+let PRIOR_COMPENSATION_COUNTS_AS_ACCEPTED = false;
 function statusDecisionOf(d){
   const s = d && d.status ? d.status : '';
   if(s.includes('رفض')) return 'rejected';          // الأولوية للرفض إن احتوى النص الكلمتين (يظهر في decisionConflicts)
