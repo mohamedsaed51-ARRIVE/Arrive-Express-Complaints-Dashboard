@@ -1840,7 +1840,7 @@ body.report-open{overflow:hidden}
 
   <div class="section-heading">
     <h2><span class="tag">مؤشر</span> مؤشر الصحة التنفيذي</h2>
-    <span class="section-sub">درجة موزونة (0-100) من معدل الإغلاق، الالتزام بـ SLA، زمن الحل، نسبة الشكاوى المعلّقة، تكلفة التعويضات، ونمو الشكاوى</span>
+    <span class="section-sub">درجة موزونة (0-100) من معدل الإغلاق، الالتزام بـ SLA، زمن الحل، نسبة الشكاوى المعلّقة، تكلفة التعويضات، ونمو الشكاوى — الأوزان مقترحة وغير معتمدة رسميًا، والدرجة مؤشر تلخيصي لا يغني عن الشكاوى الحرجة</span>
   </div>
   <section class="health-score-panel" id="healthScorePanel"></section>
 
@@ -2370,6 +2370,10 @@ function sumCompensation(rows){
 // مهلة SLA تنفيذ التعويض المعتمدة: يومان من تاريخ نتيجة التحقيق.
 const COMP_SLA_TARGET_DAYS = 2;
 const RES_SLA_TARGET_DAYS = 4;
+// أهداف المؤشرات المستخدمة في الكروت وفي جدول «الأهداف مقابل الفعلي» بالتقرير (مصدر واحد).
+const ACCEPT_TARGET_PCT = 75;        // نسبة قبول التعويض من الحالات المحسومة (≥)
+const PENDING_TARGET_PCT = 20;       // نسبة الشكاوى المفتوحة من الإجمالي (≤)
+const SLA_COMPLIANCE_MIN_PCT = 70;   // حد الالتزام بـ SLA المستخدم في تلوين اللوحة (≥)
 function computeCompensationSlaCompliance(rows, target=COMP_SLA_TARGET_DAYS){
   const vals = (rows||[]).map(d=>d.sla_compensation_days).filter(v=> typeof v==='number' && isFinite(v));
   const ok = vals.filter(v=> v<=target).length;
@@ -3361,7 +3365,7 @@ function computeAlerts(rows){
   alerts.push({
     priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى تجاوزت مدة الحل المستهدفة (4 أيام)',
-    count: slaBreach.length,
+    count: slaBreach.length, rows: slaBreach,
     onClick: ()=> setExtraFilter(d=> typeof d.sla_resolution_days==='number' && d.sla_resolution_days>4, 'شكاوى تجاوزت SLA')
   });
 
@@ -3400,7 +3404,7 @@ function computeAlerts(rows){
   alerts.push({
     priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى بدون نتيجة تحقيق مسجّلة',
-    count: noInvestigation.length,
+    count: noInvestigation.length, rows: noInvestigation,
     onClick: ()=> setExtraFilter(d=> !d.investigation_result || !d.investigation_result.trim(), 'بدون تحقيق')
   });
 
@@ -3426,7 +3430,7 @@ function computeAlerts(rows){
   alerts.push({
     priority:'crit', emoji:'<i class="fa-solid fa-circle-exclamation" style="color:var(--status-violation)"></i>', label:'حرج',
     desc:'شكاوى قيد التحقيق منذ أكثر من 5 أيام',
-    count: pendingLong.length,
+    count: pendingLong.length, rows: pendingLong,
     onClick: ()=> setExtraFilter(d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق')) && d.date_added && daysBetween(REF_DATE,new Date(d.date_added))>5, 'قيد التحقيق > 5 أيام')
   });
 
@@ -3651,7 +3655,10 @@ function renderExecutiveSnapshot(rows){
   const h = computeHealthScore(rows);
   const m = computeCoreExecutiveMetrics(rows);
   const alerts = computeAlerts(rows);
-  const criticalAlerts = alerts.filter(a=> a.priority==='crit' && a.count>0).reduce((s,a)=>s+a.count,0);
+  // عدد الشكاوى الحرجة بدون تكرار (الشكوى الواحدة قد تظهر في أكثر من تنبيه، فلا نجمع أعداد التنبيهات)
+  const criticalSet = new Set();
+  alerts.filter(a=> a.priority==='crit' && a.rows).forEach(a=> a.rows.forEach(r=> criticalSet.add(r)));
+  const criticalAlerts = criticalSet.size;
   const handlers = computeHandlerPerformance(rows).filter(x=>x.count>0);
   const best = handlers.length ? handlers.slice().sort((a,b)=>b.score-a.score)[0] : null;
   const worst = handlers.length ? handlers.slice().sort((a,b)=>a.score-b.score)[0] : null;
@@ -3659,7 +3666,7 @@ function renderExecutiveSnapshot(rows){
   const r = 33, circ = 2*Math.PI*r;
   const offset = h ? circ - (h.score/100)*circ : circ;
   const _ic = (n,c)=>`<i class="fa-solid fa-${n}" style="color:${c}" aria-hidden="true"></i>`;
-  const todayStatus = !h ? '—' : (h.band==='excellent'||h.band==='good') ? `${_ic('circle-check','var(--status-success)')} الأداء ضمن الحدود المستهدفة` : (h.band==='attention' ? `${_ic('triangle-exclamation','var(--status-under-action)')} يتطلب متابعة` : `${_ic('circle-exclamation','#FCA5A5')} يتطلب تدخلاً عاجلاً`);
+  const todayStatus = !h ? '—' : (h.band==='excellent'||h.band==='good') ? (criticalAlerts>0 ? `${_ic('triangle-exclamation','var(--status-under-action)')} الدرجة العامة جيدة، وتوجد شكاوى حرجة تحتاج متابعة` : `${_ic('circle-check','var(--status-success)')} الأداء ضمن الحدود المستهدفة`) : (h.band==='attention' ? `${_ic('triangle-exclamation','var(--status-under-action)')} يتطلب متابعة` : `${_ic('circle-exclamation','#FCA5A5')} يتطلب تدخلاً عاجلاً`);
 
   panel.innerHTML = `
     <div class="snap-score-ring">
@@ -3675,7 +3682,7 @@ function renderExecutiveSnapshot(rows){
     </div>
     <div class="snap-divider"></div>
     <div class="snap-stats">
-      <div class="snap-stat"><div class="sl">تنبيهات حرجة</div><div class="sv ${criticalAlerts>0?'crit':''}">${criticalAlerts}</div></div>
+      <div class="snap-stat"><div class="sl">شكاوى حرجة (بدون تكرار)</div><div class="sv ${criticalAlerts>0?'crit':''}">${criticalAlerts}</div></div>
       <div class="snap-stat"><div class="sl">أفضل معالج</div><div class="sv">${best ? best.owner : '—'}</div></div>
       <div class="snap-stat"><div class="sl">أضعف معالج</div><div class="sv">${worst ? worst.owner : '—'}</div></div>
       <div class="snap-stat"><div class="sl">الشكاوى المفتوحة</div><div class="sv">${m.openExt}</div></div>
@@ -4397,7 +4404,7 @@ function renderKpiEnhancements(rows){
   `;
 
   // Accept rate
-  const acceptTarget = 75;
+  const acceptTarget = ACCEPT_TARGET_PCT;
   const acceptCurr = acceptRateOf(rows);
   const acceptSeries = lastNDatesSeries(rows, 14, arr=>{ const v=acceptRateOf(arr); return v===null?0:v; });
   const acceptAch = acceptCurr===null ? 0 : Math.round((acceptCurr/acceptTarget)*100);
@@ -4409,7 +4416,7 @@ function renderKpiEnhancements(rows){
   `;
 
   // Pending / open share (lower is better)
-  const pendTarget = 20;
+  const pendTarget = PENDING_TARGET_PCT;
   const pendCurr = pendingPctOf(rows);
   const pendSeries = lastNDatesSeries(rows, 14, arr=> arr.filter(isOpen).length);
   const pendAch = pendCurr===null ? 100 : Math.round(Math.min(100, (pendTarget/Math.max(pendCurr,0.001))*100));
@@ -4428,7 +4435,7 @@ function renderKpiEnhancements(rows){
   const slaEl = document.getElementById('kpiSlaEnh');
   if(slaEl) slaEl.innerHTML = `
     <div class="stub-enh-row"><span class="stub-target">الهدف: الحل خلال <b>${slaTarget}</b> أيام</span>${trendBadge(resComplOf(currHalf), resComplOf(prevHalf), false)}</div>
-    ${achieveBar(slaCurr===null?0:Math.round(slaCurr), slaCurr!==null && slaCurr>=70)}
+    ${achieveBar(slaCurr===null?0:Math.round(slaCurr), slaCurr!==null && slaCurr>=SLA_COMPLIANCE_MIN_PCT)}
     ${sparklineSvg(slaSeries, 'var(--gold)')}
     <div class="stub-formula">يُحسب: تاريخ نتيجة التحقيق − تاريخ إضافة الشكوى</div>
   `;
@@ -4441,7 +4448,7 @@ function renderKpiEnhancements(rows){
   const compSlaEl = document.getElementById('kpiCompSlaEnh');
   if(compSlaEl) compSlaEl.innerHTML = `
     <div class="stub-enh-row"><span class="stub-target">الهدف: خلال <b>${compSlaTarget}</b> يوم من النتيجة</span>${trendBadge(compComplOf(currHalf), compComplOf(prevHalf), false)}</div>
-    ${achieveBar(compSlaCurr===null?0:Math.round(compSlaCurr), compSlaCurr!==null && compSlaCurr>=70)}
+    ${achieveBar(compSlaCurr===null?0:Math.round(compSlaCurr), compSlaCurr!==null && compSlaCurr>=SLA_COMPLIANCE_MIN_PCT)}
     ${sparklineSvg(compSlaSeries, 'var(--gold)')}
     <div class="stub-formula">يُحسب: تاريخ التعويض − تاريخ نتيجة التحقيق</div>
   `;
@@ -5702,6 +5709,57 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         </dl>
       </div>
       <div class="rp-cover-foot">مصدر البيانات: لوحة متابعة الشكاوى · جميع الأرقام محسوبة من السجلات المعروضة ضمن عوامل التصفية أعلاه</div>`,{cover:true}));
+
+    /* 1b) الغرض والنطاق */
+    const decidedN = rows.filter(d=>compDecisionOf(d)).length;
+    const undefN = rows.filter(d=>d.status==='غير محدد').length;
+    const noInvN = rows.filter(d=>typeof d.sla_resolution_days!=='number').length;
+    const qNotes = [];
+    if(undefN) qNotes.push(`<li>${N(undefN)} سجل بحالة «غير محدد»: يُحتسب ضمن «المغلقة» وفق التعريف المعتمد في قسم المنهجية، ويُستبعد من الحالات المحسومة (قبول/رفض).</li>`);
+    if(noInvN) qNotes.push(`<li>${N(noInvN)} سجل بلا تاريخ نتيجة تحقيق صالح: لا يدخل في حساب الالتزام بمهلة الحل.</li>`);
+    pages.push(page(head('الغرض والنطاق',ctx)+`
+      <h3>الغرض من التقرير</h3>
+      <p>عرض موقف الشكاوى والتعويضات ضمن النطاق المحدد أدناه، وقياس الأداء مقابل الأهداف المستخدمة في اللوحة، وتحديد البنود التي تحتاج إلى قرار أو إجراء من الإدارة.</p>
+      <h3>أهداف التقرير</h3>
+      <ul>
+        <li>بيان حالة الشكاوى (المفتوحة والمغلقة) ونسبة قبول التعويض من الحالات المحسومة.</li>
+        <li>قياس الالتزام بمهلة حل الشكوى: ${RES_SLA_TARGET_DAYS} أيام من تاريخ الإضافة حتى تاريخ نتيجة التحقيق.</li>
+        <li>قياس الالتزام بمهلة تنفيذ التعويض: ${COMP_SLA_TARGET_DAYS} يوم من تاريخ نتيجة التحقيق حتى تاريخ التعويض.</li>
+        <li>رصد الفروع والمسؤولين والأسباب الأكثر تأثيرًا، وربط التوصيات بالأرقام.</li>
+      </ul>
+      <h3>نطاق التقرير</h3>
+      ${tableWrap([{t:'البند',w:'48mm'},{t:'القيمة'}],
+        `<tr><td>الفترة المشمولة</td><td class="num">${per?`${per.from} → ${per.to}`:MISSING}</td></tr>`+
+        `<tr><td>عدد السجلات</td><td class="num">${N(rows.length)}</td></tr>`+
+        `<tr><td>الحالات المحسومة (قبول/رفض)</td><td class="num">${N(decidedN)} من ${N(rows.length)}</td></tr>`+
+        `<tr><td>عوامل التصفية</td><td>${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات)'}</td></tr>`+
+        `<tr><td>مصدر البيانات</td><td>الجدول الحي المرتبط باللوحة، آخر تحديث: <span class="num">${esc(refresh)}</span></td></tr>`)}
+      <h3>ملاحظات على جودة البيانات</h3>
+      ${qNotes.length?`<ul>${qNotes.join('')}</ul>`:'<p class="rp-note">لا توجد ملاحظات على جودة البيانات ضمن النطاق الحالي.</p>'}`+foot()));
+
+    /* 1c) الأهداف مقابل الفعلي */
+    const accN = rows.filter(d=>compDecisionOf(d)==='accepted').length;
+    const accV = decidedN ? (accN/decidedN)*100 : null;
+    const openV = m.total ? (m.open/m.total)*100 : null;
+    const resC2 = computeResolutionSlaCompliance(rows);
+    const compC2 = computeCompensationSlaCompliance(rows);
+    const stat = (v, ok) => v==null ? 'لا توجد بيانات كافية' : (ok ? '<b style="color:var(--status-success-fg)">محقق</b>' : '<b style="color:var(--status-violation-fg)">غير محقق</b>');
+    const dpts = (v,t) => v==null ? '—' : `<span dir="ltr">${(v-t)>0?'+':(v-t)<0?'−':''}${Math.abs(v-t).toFixed(1)} نقطة</span>`;
+    const goalRows =
+      `<tr><td>نسبة قبول التعويض</td><td>${ACCEPT_TARGET_PCT}% أو أكثر</td><td class="num">${accV==null?'—':N1(accV)+'%'}${decidedN?` (${N(accN)} من ${N(decidedN)})`:''}</td><td class="num">${dpts(accV,ACCEPT_TARGET_PCT)}</td><td>${stat(accV, accV!=null&&accV>=ACCEPT_TARGET_PCT)}</td></tr>`+
+      `<tr><td>نسبة الشكاوى المفتوحة</td><td>أقل من ${PENDING_TARGET_PCT}%</td><td class="num">${openV==null?'—':N1(openV)+'%'}${m.total?` (${N(m.open)} من ${N(m.total)})`:''}</td><td class="num">${dpts(openV,PENDING_TARGET_PCT)}</td><td>${stat(openV, openV!=null&&openV<=PENDING_TARGET_PCT)}</td></tr>`+
+      `<tr><td>الالتزام بمهلة حل الشكوى (${RES_SLA_TARGET_DAYS} أيام)</td><td>${SLA_COMPLIANCE_MIN_PCT}% أو أكثر</td><td class="num">${resC2.pct==null?'—':N1(resC2.pct)+'%'}${resC2.count?` من ${N(resC2.count)} حالة · متوسط ${m.avgResolution==null?'—':N1(m.avgResolution)} يوم`:''}</td><td class="num">${dpts(resC2.pct,SLA_COMPLIANCE_MIN_PCT)}</td><td>${stat(resC2.pct, resC2.pct!=null&&resC2.pct>=SLA_COMPLIANCE_MIN_PCT)}</td></tr>`+
+      `<tr><td>الالتزام بمهلة تنفيذ التعويض (${COMP_SLA_TARGET_DAYS} يوم)</td><td>${SLA_COMPLIANCE_MIN_PCT}% أو أكثر</td><td class="num">${compC2.pct==null?'—':N1(compC2.pct)+'%'}${compC2.count?` من ${N(compC2.count)} حالة · متوسط ${m.avgCompensationSla==null?'—':N1(m.avgCompensationSla)} يوم`:''}</td><td class="num">${dpts(compC2.pct,SLA_COMPLIANCE_MIN_PCT)}</td><td>${stat(compC2.pct, compC2.pct!=null&&compC2.pct>=SLA_COMPLIANCE_MIN_PCT)}</td></tr>`;
+    pages.push(page(head('الأهداف مقابل الفعلي',ctx)+`
+      <p class="rp-note">المقارنة محسوبة على السجلات المشمولة بعوامل التصفية الحالية (${N(rows.length)} سجل).</p>
+      ${tableWrap([{t:'المؤشر'},{t:'الهدف',w:'34mm'},{t:'الفعلي',w:'62mm'},{t:'الفرق عن الهدف',num:true,w:'28mm'},{t:'الحالة',w:'30mm'}],goalRows)}
+      <h3>ملاحظات</h3>
+      <ul>
+        <li>نسبة القبول = المقبول ÷ (المقبول + المرفوض). الحالات قيد التحقيق وغير المحددة وحالة «التعويض مسبقا» لا تدخل في المقام.</li>
+        <li>نسبة المفتوحة = الشكاوى بحالة «جارى» أو «التحقيق» ÷ إجمالي السجلات.</li>
+        <li>الالتزام بمهلة SLA = الحالات المنجزة خلال المهلة ÷ الحالات التي لها التاريخان الصالحان.</li>
+        <li>الأهداف المعروضة (${ACCEPT_TARGET_PCT}% و${PENDING_TARGET_PCT}% و${SLA_COMPLIANCE_MIN_PCT}%) هي القيم المستخدمة حاليًا في اللوحة.</li>
+      </ul>`+foot()));
 
     /* 2) الملخص التنفيذي */
     const hs = health ? `<div class="rp-health">
