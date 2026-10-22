@@ -1466,6 +1466,12 @@ body.report-open{overflow:hidden}
 .rp-tb-title{font-weight:var(--fw-bold);display:flex;gap:var(--space-2);align-items:center}
 .rp-tb-actions{display:flex;gap:var(--space-2)}
 .rp-stage{display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px 12px 48px}
+.rp-toolbar{flex-wrap:wrap}
+.rp-tabs{flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;padding-top:6px}
+.rp-tab{font:inherit;font-size:13px;font-weight:var(--fw-semibold);color:#fff;background:transparent;border:1px solid rgba(255,255,255,.45);border-radius:999px;padding:6px 16px;cursor:pointer;transition:background .15s}
+.rp-tab:hover{background:rgba(255,255,255,.16)}
+.rp-tab.active{background:#fff;color:var(--arrive-blue);border-color:#fff}
+.rp-page.rp-hide{display:none}
 .rp-page{position:relative;box-sizing:border-box;width:210mm;height:297mm;background:#fff;color:var(--arrive-navy);box-shadow:0 4px 18px rgba(15,23,42,.14);padding:14mm 14mm 18mm;overflow:hidden;font-size:11px;line-height:1.7;display:flex;flex-direction:column}
 .rp-page .num{direction:ltr;unicode-bidi:isolate;font-family:var(--font-numeric);font-variant-numeric:tabular-nums}
 .rp-head{display:flex;align-items:center;gap:var(--space-4);padding-bottom:8px;border-bottom:2px solid var(--arrive-blue)}
@@ -1539,6 +1545,7 @@ body.report-open{overflow:hidden}
   .rp-stage{display:block;padding:0}
   .rp-page{box-shadow:none;margin:0;break-after:page;zoom:1}
   .rp-page:last-child{break-after:auto}
+  .rp-page.rp-hide{display:flex!important}
   .rp-page,.rp-page *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 .rp-page>*{flex:none}
@@ -5978,6 +5985,91 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     return pages;
   }
 
+  /* ---------- تبويبات التقرير ---------- */
+  const TAB_DEFS = [
+    {k:'mgmt',   t:'تقرير الإدارة',   m:['الغرض والنطاق','الأهداف مقابل الفعلي','الملخص التنفيذي','ملخص المؤشرات الرئيسية']},
+    {k:'branch', t:'أداء الفروع',     m:['التحليل التفصيلي','الفروع المتسببة في الشكاوى']},
+    {k:'comp',   t:'التعويضات',       m:['الجهة المتحملة للتعويض','مراجعة التعويض','الاتجاه الشهري']},
+    {k:'reason', t:'الأسباب والراسلون', m:['الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى']},
+    {k:'owner',  t:'مسؤولو الشكاوى',  m:['أداء مسؤولي الشكاوى']},
+    {k:'action', t:'النتائج والتوصيات', m:['النتائج والملاحظات','التوصيات وخطة الإجراءات','الختام ومنهجية الإعداد','لا توجد بيانات']}
+  ];
+  function assignGroups(ov){
+    let last = 'mgmt';
+    ov.querySelectorAll('.rp-page').forEach(p=>{
+      if(p.classList.contains('cover')){ p.dataset.grp = 'mgmt'; return; }
+      const t = ((p.querySelector('.rp-section h2')||{}).textContent||'').trim().replace(/\s*\(\d+\/\d+\)$/,'');
+      const d = TAB_DEFS.find(x=> x.m.some(m=> t === m || t.startsWith(m)));
+      last = d ? d.k : last;
+      p.dataset.grp = last;
+    });
+    // ترتيب الصفحات بحيث تتجاور صفحات كل تبويب (مع الحفاظ على الترتيب الأصلي داخل التبويب)
+    const stage = ov.querySelector('.rp-stage'), all = [...ov.querySelectorAll('.rp-page')];
+    const rank = k => { const i = TAB_DEFS.findIndex(d=>d.k===k); return i<0?99:i; };
+    all.map((p,i)=>({p,i})).sort((a,b)=> rank(a.p.dataset.grp)-rank(b.p.dataset.grp) || a.i-b.i).forEach(x=> stage.appendChild(x.p));
+  }
+  function setupTabs(ov){
+    const bar = ov.querySelector('.rp-toolbar'); if(!bar || ov.querySelector('.rp-tabs')) return;
+    const present = TAB_DEFS.filter(d=> ov.querySelector(`.rp-page[data-grp="${d.k}"]`));
+    if(present.length < 2) return;
+    const wrap = document.createElement('div'); wrap.className = 'rp-tabs'; wrap.setAttribute('role','tablist');
+    present.forEach((d,i)=>{
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'rp-tab' + (i===0?' active':''); b.textContent = d.t; b.dataset.tab = d.k; b.setAttribute('role','tab');
+      b.onclick = ()=> showTab(ov, d.k);
+      wrap.appendChild(b);
+    });
+    bar.appendChild(wrap);
+    showTab(ov, present[0].k);
+  }
+  function showTab(ov, key){
+    ov.querySelectorAll('.rp-page').forEach(p=> p.classList.toggle('rp-hide', p.dataset.grp !== key));
+    ov.querySelectorAll('.rp-tab').forEach(b=> b.classList.toggle('active', b.dataset.tab === key));
+    ov.scrollTop = 0;
+  }
+
+  /* ---------- دمج الأقسام القصيرة ---------- */
+  // يملأ الصفحة بوحدات كاملة (عنوان + جدول/فقرة) دون تقسيم أي جدول، وما لا يتسع ينتقل لصفحة جديدة بعنوان «تابع».
+  function repack(ov){
+    const stage = ov.querySelector('.rp-stage'); if(!stage) return;
+    const isHead = e => e.classList.contains('rp-section') || e.tagName === 'H3';
+    let cur = null;
+    [...stage.querySelectorAll('.rp-page')].forEach(p=>{
+      if(p.classList.contains('cover')){ cur = null; return; }
+      if(!cur || cur.dataset.grp !== p.dataset.grp){ cur = p; return; }
+      const head = p.querySelector(':scope > .rp-head'), ownFoot = p.querySelector(':scope > .rp-foot'), curFoot = cur.querySelector(':scope > .rp-foot');
+      const nodes = [...p.children].filter(e=>!e.classList.contains('rp-head') && !e.classList.contains('rp-foot'));
+      if(!head || !ownFoot || !curFoot || !nodes.length){ cur = p; return; }
+      const title = (p.querySelector('.rp-section h2')||{}).textContent || '';
+      const units = []; let acc = [];
+      nodes.forEach(n=>{
+        if(isHead(n) || (acc.length && n.classList.contains('rp-note'))){ acc.push(n); return; }
+        if(!acc.length && n.classList.contains('rp-note') && units.length){ units[units.length-1].push(n); return; }
+        acc.push(n); units.push(acc); acc = [];
+      });
+      if(acc.length) units.push(acc);
+      const fitsNow = ()=>{
+        const last = curFoot.previousElementSibling;
+        const gap = curFoot.getBoundingClientRect().top - last.getBoundingClientRect().bottom;
+        return cur.scrollHeight <= cur.clientHeight + 1 && gap >= 16;
+      };
+      let placed = 0;
+      for(let i=0;i<units.length;i++){
+        units[i].forEach(n=> curFoot.before(n));
+        if(fitsNow()){ placed++; continue; }
+        const ref = units[i+1] ? units[i+1][0] : ownFoot;
+        units[i].forEach(n=> ref.before(n));
+        break;
+      }
+      if(placed === units.length){ p.remove(); return; }
+      if(placed > 0 && title && !p.querySelector('.rp-section')){
+        const d = document.createElement('div'); d.className = 'rp-section';
+        const h = document.createElement('h2'); h.textContent = title + ' (تابع)'; d.appendChild(h);
+        head.after(d);
+      }
+      cur = p;
+    });
+  }
+
   /* ---------- open / close / print ---------- */
   function open(){
     const ov = document.getElementById('reportOverlay'); if(!ov) return;
@@ -5992,9 +6084,18 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
           <button type="button" class="icon-btn" id="rpClose"><i class="fa-solid fa-xmark"></i> إغلاق</button>
         </div></div>
       <div class="rp-stage">${pages.join('')}</div>`;
-    const sheets = ov.querySelectorAll('.rp-page');
-    sheets.forEach((p,i)=>{ const pn = p.querySelector('.rp-pn'); if(pn) pn.textContent = `صفحة ${i+1} من ${sheets.length}`; });
     ov.hidden = false; ov.setAttribute('aria-hidden','false');
+    const numberPages = ()=>{ const sheets = ov.querySelectorAll('.rp-page'); sheets.forEach((p,i)=>{ const pn = p.querySelector('.rp-pn'); if(pn) pn.textContent = `صفحة ${i+1} من ${sheets.length}`; }); };
+    assignGroups(ov);
+    numberPages();
+    // دمج الأقسام القصيرة في صفحة واحدة لإزالة المساحات الفارغة (لا يُقسَّم أي جدول؛ القسم كله ينتقل أو يبقى)
+    const imgs = [...ov.querySelectorAll('.rp-page img')];
+    Promise.all(imgs.map(im=> im.decode ? im.decode().catch(()=>{}) : null)).then(()=>{
+      if(ov.hidden) return;
+      try{ repack(ov); }catch(e){ console.warn('repack failed', e); }
+      numberPages();
+      setupTabs(ov);
+    });
     document.body.classList.add('report-open');
     if(!document.getElementById('rpPageStyle')){ const st=document.createElement('style'); st.id='rpPageStyle'; st.textContent='@page{size:A4 portrait;margin:0}'; document.head.appendChild(st); }
     ov.scrollTop = 0;
