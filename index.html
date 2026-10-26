@@ -10,7 +10,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js"></script>
 <!-- ARRIVE Design System: tokens (single colour source) -> UI components -> report pages -->
 <style>
 /* =====================================================================
@@ -6831,12 +6830,21 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     thanks(`تقرير مقارنة الشكاوى والتعويضات — ${names.join(' · ')}`);
   }
 
+  /* تحميل المكتبة عند أول استخدام: الملف المحلي أولًا ثم مصادر احتياطية */
+  const LIB_URLS = ['pptxgen.bundle.js', 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', 'https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', 'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.js'];
+  const loadScript = src => new Promise(res=>{ const el = document.createElement('script'); el.src = src; el.onload = ()=>res(typeof PptxGenJS!=='undefined'); el.onerror = ()=>{ el.remove(); res(false); }; document.head.appendChild(el); });
+  async function ensureLib(){
+    if(typeof PptxGenJS!=='undefined') return true;
+    for(const u of LIB_URLS){ if(await loadScript(u)) return true; }
+    return false;
+  }
+
   /* ---------- تشغيل ---------- */
   async function generate(){
-    if(typeof PptxGenJS === 'undefined'){ alert('تعذّر تحميل مكتبة إنشاء العروض التقديمية. تأكد من الاتصال بالإنترنت ثم أعد المحاولة.'); return; }
     const btn = document.getElementById('headerDeck'); const old = btn ? btn.innerHTML : '';
     if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الإعداد…'; }
     try{
+      if(!(await ensureLib())){ alert('تعذّر تحميل مكتبة إنشاء العروض التقديمية (pptxgen). تأكد من رفع الملف pptxgen.bundle.js مع اللوحة أو من الاتصال بالإنترنت ثم أعد المحاولة.'); return; }
       pptx = new PptxGenJS();
       pptx.layout = 'LAYOUT_WIDE'; pptx.rtlMode = true;
       pptx.title = 'تقرير متابعة الشكاوى والتعويضات'; pptx.company = 'ARRIVE'; pptx.author = 'إدارة المراجعة التشغيلية';
@@ -6849,7 +6857,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     finally{ if(btn){ btn.disabled = false; btn.innerHTML = old; } }
   }
   document.getElementById('headerDeck')?.addEventListener('click', generate);
-  window.ArriveDeck = { generate, _build: ()=>{ pptx = new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.rtlMode = true; const cmp = (typeof compareModeActive!=='undefined' && compareModeActive); if(cmp) buildCompare(); else buildSingle(); return pptx; } };
+  window.ArriveDeck = { generate, ensureLib, _build: ()=>{ pptx = new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.rtlMode = true; const cmp = (typeof compareModeActive!=='undefined' && compareModeActive); if(cmp) buildCompare(); else buildSingle(); return pptx; } };
 })();
 </script>
 
