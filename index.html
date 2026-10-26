@@ -5987,6 +5987,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     { const accTotal = rows.filter(d=>compDecisionOf(d)==='accepted').length, decidedTotal = accTotal + rows.filter(d=>compDecisionOf(d)==='rejected').length, openTotal = rows.filter(isOpenRow).length;
       pages.push(introPg('الهدف والمؤشرات — التعويضات','بيان من يتحمل تكلفة التعويض، ومتابعة حالات القبول والمفتوح والالتزام بمهلة التحقيق، وتتبع الاتجاه شهريًا.',[
         kpx('عدد الشحنات',numH(N(totalRows)),'إجمالي سجلات الشكاوى المعروضة'),
+        kpx('شحنات تم التعويض عنها',`${numH(N(compRows.length))}<small> · ${pctOf(compRows.length,totalRows)}</small>`,`من إجمالي ${N(totalRows)} شحنة`,'tone-brand'),
+        kpx('مبلغ التعويض',`${numH(N(Math.round(totalCompAll)))}<small> ج.م</small>`,compRows.length?`متوسط ${N(Math.round(totalCompAll/compRows.length))} ج.م للحالة`:'','tone-under-action'),
         kpx('عدد المقبول',numH(N(accTotal)),`${pctOf(accTotal,decidedTotal)} من الحالات المحسومة`,'tone-success'),
         ...(openTotal?[kpx('عدد المفتوح',numH(N(openTotal)),`${pctOf(openTotal,totalRows)} من السجلات`,'tone-under-action')]:[]),
         kpx('الالتزام بمهلة التحقيق',numH(resC2.pct==null?'—':N1(resC2.pct)+'%'),resC2.count?`${N(resC2.ok)} من ${N(resC2.count)} حالة · المهلة ${RES_SLA_TARGET_DAYS} أيام`:`المهلة ${RES_SLA_TARGET_DAYS} أيام`)])); }
@@ -6025,7 +6027,10 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     const rowsL = getFilteredForPanel('L'), rowsR = getFilteredForPanel('R');
     const pages = [];
     const lblOf = suf => { const t = ((document.getElementById('cBadgeValue_'+suf)||{}).textContent||'').trim(); return t || 'كل السجلات ضمن الفلاتر العامة'; };
-    const nameL = 'اللوحة الأولى', nameR = 'اللوحة الثانية', descL = lblOf('L'), descR = lblOf('R');
+    const shortOf = suf => { const v = getActiveCompareFields().map(key=>{ const sel = document.getElementById(fieldSelectId(suf, key)); return (sel && sel.value && sel.selectedOptions[0]) ? sel.selectedOptions[0].textContent.trim() : null; }).filter(Boolean).join(' · '); return v || 'الكل'; };
+    let nameL = shortOf('L'), nameR = shortOf('R');
+    if(nameL === nameR){ nameL += ' (1)'; nameR += ' (2)'; }
+    const descL = lblOf('L'), descR = lblOf('R');
     const chips = filterChips();
     const refresh = (document.getElementById('headerLastUpdate')||{}).textContent || MISSING;
     const today = new Date().toISOString().slice(0,10);
@@ -6066,26 +6071,46 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     const accL = acc(rowsL), accR = acc(rowsR), rejL = rej(rowsL), rejR = rej(rowsR);
     const accRate = (a,r) => (a+r) ? a/(a+r)*100 : null;
     const slaL = computeResolutionSlaCompliance(rowsL), slaR = computeResolutionSlaCompliance(rowsR);
+    const compN = rows => rows.filter(isCompensationCountable).length;
+    const tL = rowsL.length, tR = rowsR.length, decL = accL+rejL, decR = accR+rejR, opL = rowsL.filter(isOpenRow).length, opR = rowsR.filter(isOpenRow).length;
+    const cpL = compN(rowsL), cpR = compN(rowsR), amL = comp(rowsL), amR = comp(rowsR);
+    const pc = (n,t) => t ? N1(n/t*100)+'%' : '—';
+    // [المؤشر, قيمة 1, قيمة 2, تنسيق, نسبة؟, الأقل أفضل؟, مقام 1, مقام 2, وصف المقام]
     const k = [
-      ['عدد الشكاوى', rowsL.length, rowsR.length, fmt0, false, true],
-      ['المفتوحة', rowsL.filter(isOpenRow).length, rowsR.filter(isOpenRow).length, fmt0, false, true],
-      ['مقبول', accL, accR, fmt0, false, false],
-      ['مرفوض', rejL, rejR, fmt0, false, true],
-      ['نسبة قبول التعويض (من المحسوم)', accRate(accL,rejL), accRate(accR,rejR), v=>v==null?'—':N1(v)+'%', true, false],
-      ['الالتزام بمهلة التحقيق ('+RES_SLA_TARGET_DAYS+' أيام)', slaL.pct, slaR.pct, v=>v==null?'—':N1(v)+'%', true, false],
-      ['متوسط زمن الحل (يوم)', mL.avgResolution, mR.avgResolution, v=>v==null?'—':N1(v), false, true],
-      ['إجمالي التعويضات (ج.م)', comp(rowsL), comp(rowsR), fmt0, false, true],
-      ['متوسط التعويض (ج.م)', mL.avgComp, mR.avgComp, fmt0, false, true]
+      ['عدد الشكاوى', tL, tR, fmt0, false, true, null, null, ''],
+      ['المفتوحة', opL, opR, fmt0, false, true, tL, tR, 'من الشكاوى'],
+      ['مقبول', accL, accR, fmt0, false, false, decL, decR, 'من المحسوم'],
+      ['مرفوض', rejL, rejR, fmt0, false, true, decL, decR, 'من المحسوم'],
+      ['شحنات تم التعويض عنها', cpL, cpR, fmt0, false, true, tL, tR, 'من الشكاوى'],
+      ['مبلغ التعويض (ج.م)', amL, amR, fmt0, false, true, null, null, ''],
+      ['متوسط التعويض (ج.م)', mL.avgComp, mR.avgComp, fmt0, false, true, null, null, ''],
+      ['الالتزام بمهلة التحقيق ('+RES_SLA_TARGET_DAYS+' أيام)', slaL.pct, slaR.pct, v=>v==null?'—':N1(v)+'%', true, false, null, null, ''],
+      ['متوسط زمن الحل (يوم)', mL.avgResolution, mR.avgResolution, v=>v==null?'—':N1(v), false, true, null, null, '']
     ];
-    const kRows = k.map(([l,a,b,f,rate,lower])=>{
+    const withPct = (f,v,n,t) => `${f(v)}${t!=null?` <span class="rp-note">(${pc(n===undefined?v:v,t)})</span>`:''}`;
+    const kRows = k.map(([l,a,b,f,rate,lower,bA,bB])=>{
       const d = (a==null||b==null) ? 0 : b-a;
       const tone = d===0 ? 'neutral' : ((lower ? d<0 : d>0) ? 'accepted' : 'rejected');
       const txt = d===0 ? 'بدون تغيّر' : ((lower ? d<0 : d>0) ? 'أفضل' : 'أسوأ');
-      return `<tr><td>${l}</td><td class="num">${f(a)}</td><td class="num">${f(b)}</td><td class="num">${diffCell(a,b,rate)}</td><td class="num">${rate?'—':pctChg(a,b)}</td><td>${(a==null||b==null)?'—':`<span class="badge ${tone}">${txt}</span>`}</td></tr>`;
+      return `<tr><td>${l}</td><td class="num">${withPct(f,a,a,bA)}</td><td class="num">${withPct(f,b,b,bB)}</td><td class="num">${diffCell(a,b,rate)}</td><td class="num">${rate?'—':pctChg(a,b)}</td><td>${(a==null||b==null)?'—':`<span class="badge ${tone}">${txt}</span>`}</td></tr>`;
     }).join('');
+    const duo = (l, a, b, f, bA, bB, tone) => `<div class="rp-kpi ${tone||''}"><div class="rp-kpi-l">${l}</div>
+      <div style="font-size:12px;margin-top:4px"><b>${esc(nameL)}</b>: <b class="num" style="font-size:16px">${f(a)}</b>${bA!=null?` <span class="rp-note">(${pc(a,bA)})</span>`:''}</div>
+      <div style="font-size:12px;margin-top:2px"><b>${esc(nameR)}</b>: <b class="num" style="font-size:16px">${f(b)}</b>${bB!=null?` <span class="rp-note">(${pc(b,bB)})</span>`:''}</div></div>`;
+    const pf = v=>v==null?'—':N1(v)+'%';
+    const cards = [
+      duo('عدد الشكاوى', tL, tR, fmt0, null, null, 'tone-brand'),
+      duo('مقبول (من المحسوم)', accL, accR, fmt0, decL, decR, 'tone-success'),
+      duo('المفتوح (من الشكاوى)', opL, opR, fmt0, tL, tR, 'tone-under-action'),
+      duo('شحنات تم التعويض عنها', cpL, cpR, fmt0, tL, tR, 'tone-brand'),
+      duo('مبلغ التعويض (ج.م)', amL, amR, fmt0, null, null, 'tone-under-action'),
+      duo('الالتزام بمهلة التحقيق', slaL.pct, slaR.pct, pf, null, null, '')
+    ].join('');
     pages.push(page(head('مقارنة المؤشرات الرئيسية',ctx)+
-      tableWrap([{t:'المؤشر'},{t:nameL,num:true,w:'26mm'},{t:nameR,num:true,w:'26mm'},{t:'الفرق',num:true,w:'24mm'},{t:'التغيّر %',num:true,w:'22mm'},{t:'التقييم',w:'24mm'}],kRows)+
-      `<p class="rp-note">الفرق = ${nameR} − ${nameL}. فروق النسب بالنقاط المئوية، وباقي المؤشرات بالقيمة المطلقة والنسبة المئوية للتغيّر. «أفضل/أسوأ» حسب اتجاه المؤشر (الأقل أفضل في الشكاوى والمفتوح والمرفوض وزمن الحل والتعويض؛ الأعلى أفضل في المقبول والالتزام).</p>`+foot()));
+      `<h3>أهم الأرقام</h3><div class="rp-kpis" style="grid-template-columns:repeat(3,1fr)">${cards}</div>`+
+      `<h3>جدول المؤشرات</h3>`+
+      tableWrap([{t:'المؤشر'},{t:esc(nameL),num:true,w:'30mm'},{t:esc(nameR),num:true,w:'30mm'},{t:'الفرق',num:true,w:'20mm'},{t:'التغيّر %',num:true,w:'20mm'},{t:'التقييم',w:'22mm'}],kRows,'rp-compact')+
+      `<p class="rp-note">الفرق = ${esc(nameR)} − ${esc(nameL)}. النسبة بين الأقواس = نسبة الرقم من أساسه في اللوحة نفسها (المقبول والمرفوض من الحالات المحسومة، والمفتوح والشحنات المعوَّض عنها من إجمالي الشكاوى). فروق النسب بالنقاط المئوية، وباقي المؤشرات بالقيمة المطلقة ونسبة التغيّر. «أفضل/أسوأ» حسب اتجاه المؤشر.</p>`+foot()));
 
     // 2) جداول المقارنة حسب البُعد
     const cmpTable = (title, keyFn, limit, extra) => {
@@ -6095,12 +6120,14 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       const shown = limit ? keys.slice(0,limit) : keys;
       const tl = rowsL.length, tr = rowsR.length;
       const cnt = (n,t) => `${N(n)} <span class="rp-note">(${pctOf2(n,t)})</span>`;
-      const body = shown.map(x=>`<tr><td>${esc(x.key)}</td><td class="num">${cnt(x.l.length,tl)}</td><td class="num">${cnt(x.r.length,tr)}</td><td class="num">${diffCell(x.l.length,x.r.length)}</td><td class="num">${fmt0(comp(x.l))}</td><td class="num">${fmt0(comp(x.r))}</td></tr>`).join('');
+      const cm = (v,t) => `${fmt0(v)} <span class="rp-note">(${t?N1(v/t*100)+'%':'—'})</span>`;
+      const aL = comp(rowsL), aR = comp(rowsR);
+      const body = shown.map(x=>`<tr><td>${esc(x.key)}</td><td class="num">${cnt(x.l.length,tl)}</td><td class="num">${cnt(x.r.length,tr)}</td><td class="num">${diffCell(x.l.length,x.r.length)}</td><td class="num">${cm(comp(x.l),aL)}</td><td class="num">${cm(comp(x.r),aR)}</td></tr>`).join('');
       const note = (limit && keys.length>limit) ? `<p class="rp-note">معروض أعلى ${N(limit)} من ${N(keys.length)} بندًا.</p>` : '';
-      return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى — الأولى',num:true,w:'28mm'},{t:'الشكاوى — الثانية',num:true,w:'28mm'},{t:'الفرق',num:true,w:'16mm'},{t:'التعويض (ج.م) — الأولى',num:true,w:'24mm'},{t:'التعويض (ج.م) — الثانية',num:true,w:'24mm'}],body,'rp-compact')+note;
+      return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى<br>'+esc(nameL),num:true,w:'28mm'},{t:'الشكاوى<br>'+esc(nameR),num:true,w:'28mm'},{t:'الفرق',num:true,w:'16mm'},{t:'التعويض (ج.م)<br>'+esc(nameL),num:true,w:'26mm'},{t:'التعويض (ج.م)<br>'+esc(nameR),num:true,w:'26mm'}],body,'rp-compact')+note;
     };
     const pctOf2 = (a,b) => b ? N1(a/b*100)+'%' : '—';
-    const sub = `<p class="rp-note">% = نسبة البند من إجمالي شكاوى اللوحة نفسها. الفرق = ${nameR} − ${nameL}.</p>`;
+    const sub = `<p class="rp-note">النسبة بين الأقواس = نسبة البند من إجمالي شكاوى (أو تعويضات) اللوحة نفسها. الفرق = ${nameR} − ${nameL}.</p>`;
     pages.push(page(head('مقارنة الفروع',ctx)+cmpTable('الفروع المتسببة في الشكاوى',d=>lbl(d.branch),14)+sub+foot()));
     pages.push(page(head('مقارنة التعويضات',ctx)+cmpTable('الجهة المتحملة للتعويض',d=>lbl(d.compensation_bearer),10)+cmpTable('حالة الشكوى',d=>lbl(d.status),8)+sub+foot()));
     pages.push(page(head('مقارنة الأسباب والأنواع',ctx)+cmpTable('نوع الشكوى',d=>lbl(d.type),8)+cmpTable('تصنيف المشكلة',d=>lbl(d.classification),10)+sub+foot()));
