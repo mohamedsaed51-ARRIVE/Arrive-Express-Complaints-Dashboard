@@ -1528,6 +1528,8 @@ body.report-open{overflow:hidden}
 .rp-table tr{break-inside:avoid}
 .rp-table td.strong{font-weight:var(--fw-bold)}
 .rp-compact td,.rp-compact th{padding:4px 8px}
+.rp-tight{table-layout:fixed}
+.rp-tight td,.rp-tight th{padding:4px 4px;font-size:9.5px;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
 .rp-findings td,.rp-recs td{font-size:10px}
 .rp-table .badge{font-size:9.5px;padding:2px 8px}
 .rp-fig{margin:0 0 10px;border:1px solid var(--border-default);border-radius:var(--radius-md);padding:8px 10px}
@@ -6176,6 +6178,75 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       duo('مبلغ التعويض (ج.م)', amP, fmt0, null, 'tone-under-action'),
       duo('الالتزام بمهلة التحقيق', slaP.map(x=>x.pct), pf, null, '')
     ].join('');
+    // الغرض والنطاق
+    const perP = rowsP.map(perOf);
+    pages.push(page(head('الغرض والنطاق',ctx)+`
+      <h3>الغرض من التقرير</h3>
+      <p>مقارنة أداء الشكاوى والتعويضات بين ${N(n)} مجموعات محددة باختيارات وضع المقارنة، وقياس كل مجموعة مقابل الأهداف المستخدمة في اللوحة، وإبراز الفروقات التي تحتاج إلى قرار أو متابعة من الإدارة.</p>
+      <h3>أهداف التقرير</h3>
+      <ul>
+        <li>مقارنة حجم الشكاوى والمفتوح منها ونسبة قبول التعويض بين المجموعات.</li>
+        <li>مقارنة الشحنات المعوَّض عنها ومبلغ التعويض والجهة المتحملة.</li>
+        <li>قياس الالتزام بمهلة التحقيق (${RES_SLA_TARGET_DAYS} أيام) ومهلة تنفيذ التعويض (${COMP_SLA_TARGET_DAYS} يوم) لكل مجموعة.</li>
+        <li>رصد الفروع والأسباب والراسلين والمسؤولين الأكثر اختلافًا بين المجموعات.</li>
+      </ul>
+      <h3>نطاق التقرير</h3>
+      ${tableWrap([{t:'المجموعة'},{t:'الاختيار'},{t:'عدد السجلات',num:true,w:'24mm'},{t:'الحالات المحسومة',num:true,w:'28mm'},{t:'الفترة',w:'44mm'}],
+        sufs.map((x,i)=>`<tr><td>${esc(names[i])}</td><td>${esc(descs[i])}</td><td class="num">${N(tot[i])}</td><td class="num">${N(decP[i])}</td><td class="num">${perP[i]}</td></tr>`).join(''),'rp-compact')}
+      ${tableWrap([{t:'البند',w:'48mm'},{t:'القيمة'}],
+        `<tr><td>عوامل التصفية العامة</td><td>${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات)'}</td></tr>`+
+        `<tr><td>مصدر البيانات</td><td>الجدول الحي المرتبط باللوحة، آخر تحديث: <span class="num">${esc(refresh)}</span></td></tr>`,'rp-compact')}`+foot()));
+
+    // الأهداف مقابل الفعلي لكل مجموعة
+    const compSlaP = rowsP.map(r=>computeCompensationSlaCompliance(r));
+    const accVP = accP.map((a,i)=>decP[i] ? a/decP[i]*100 : null);
+    const openVP = opP.map((o,i)=>tot[i] ? o/tot[i]*100 : null);
+    const goalCell = (v, ok, extra) => v==null ? '—' : `<b class="num">${N1(v)}%</b>${extra?` <span class="rp-note">${extra}</span>`:''} · ${ok?'<b style="color:var(--status-success-fg)">محقق</b>':'<b style="color:var(--status-violation-fg)">غير محقق</b>'}`;
+    const goalRowsC = [
+      ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`, accVP.map((v,i)=>goalCell(v, v!=null&&v>=ACCEPT_TARGET_PCT, `(${N(accP[i])} من ${N(decP[i])})`))],
+      ['نسبة الشكاوى المفتوحة', `أقل من ${PENDING_TARGET_PCT}%`, openVP.map((v,i)=>goalCell(v, v!=null&&v<=PENDING_TARGET_PCT, `(${N(opP[i])} من ${N(tot[i])})`))],
+      [`الالتزام بمهلة التحقيق (${RES_SLA_TARGET_DAYS} أيام)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, slaP.map(x=>goalCell(x.pct, x.pct!=null&&x.pct>=SLA_COMPLIANCE_MIN_PCT, x.count?`(${N(x.ok)} من ${N(x.count)})`:''))],
+      [`الالتزام بمهلة تنفيذ التعويض (${COMP_SLA_TARGET_DAYS} يوم)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, compSlaP.map(x=>goalCell(x.pct, x.pct!=null&&x.pct>=SLA_COMPLIANCE_MIN_PCT, x.count?`(${N(x.ok)} من ${N(x.count)})`:''))]
+    ].map(([l,t,cells])=>`<tr><td>${l}</td><td>${t}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+    pages.push(page(head('الأهداف مقابل الفعلي',ctx)+`
+      <p class="rp-note">لكل مجموعة نسبتها الفعلية مقابل الهدف، والنسبة بين الأقواس تفصيل الرقم.</p>
+      ${tableWrap([{t:'المؤشر'},{t:'الهدف',w:'28mm'}].concat(names.map(x=>({t:esc(x)}))),goalRowsC,'rp-compact')}
+      <h3>ملاحظات</h3>
+      <ul>
+        <li>نسبة القبول = المقبول ÷ (المقبول + المرفوض). الحالات قيد التحقيق وغير المحددة وحالة «التعويض مسبقا» لا تدخل في المقام.</li>
+        <li>نسبة المفتوحة = الشكاوى بحالة «جارى» أو «التحقيق» ÷ إجمالي سجلات المجموعة.</li>
+        <li>الالتزام بمهلة SLA = الحالات المنجزة خلال المهلة ÷ الحالات التي لها التاريخان الصالحان.</li>
+        <li>الأهداف المعروضة (${ACCEPT_TARGET_PCT}% و${PENDING_TARGET_PCT}% و${SLA_COMPLIANCE_MIN_PCT}%) هي القيم المستخدمة حاليًا في اللوحة.</li>
+      </ul>`+foot()));
+
+    // صفحات «الهدف والمؤشرات» لكل تبويب
+    const topKey = (rows, keyFn) => { const e=[...groupBy(rows.filter(d=>{ const v=lbl(keyFn(d)); return v!=='غير محدد' && v!=='غير مذكور بالمصدر'; }), d=>lbl(keyFn(d))).entries()].sort((a,b)=>b[1].length-a[1].length); return e.length ? {k:e[0][0], n:e[0][1].length} : null; };
+    const txt = (t) => v => v==null ? '—' : esc(v);
+    const topTxt = (arr, i) => arr[i] ? `${arr[i].k} (${N(arr[i].n)})` : null;
+    const intro = (title, goal, cards) => page(head(title,ctx)+`<p style="margin:2px 0 12px;font-size:12px"><b>الهدف:</b> ${goal}</p><div class="rp-kpis" style="grid-template-columns:repeat(2,1fr)">${cards.join('')}</div>`+foot(),{intro:true});
+    const brTop = rowsP.map(r=>topKey(r,d=>d.branch));
+    pages.push(intro('الهدف والمؤشرات — الفروع','مقارنة الفروع المتسببة في الشكاوى والتعويضات بين المجموعات لتوجيه المتابعة والمعالجة.',[
+      duo('عدد الفروع المتسببة', rowsP.map(r=>new Set(r.map(d=>lbl(d.branch)).filter(v=>v!=='غير محدد'&&v!=='غير مذكور بالمصدر')).size), fmt0, null, 'tone-brand'),
+      duo('أعلى فرع شكاوى', brTop.map((_,i)=>topTxt(brTop,i)), txt(), null, 'tone-under-action'),
+      duo('شكاوى بلا فرع مذكور', rowsP.map(r=>r.filter(d=>{ const v=lbl(d.branch); return v==='غير محدد'||v==='غير مذكور بالمصدر'; }).length), fmt0, tot, '')]));
+    pages.push(intro('الهدف والمؤشرات — التعويضات','مقارنة عدد الحالات المقبولة والمفتوحة والشحنات المعوَّض عنها ومبلغ التعويض والالتزام بمهلة التحقيق بين المجموعات.',[
+      duo('عدد الشحنات', tot, fmt0, null, 'tone-brand'),
+      duo('شحنات تم التعويض عنها', cpP, fmt0, tot, 'tone-brand'),
+      duo('مبلغ التعويض (ج.م)', amP, fmt0, null, 'tone-under-action'),
+      duo('عدد المقبول (من المحسوم)', accP, fmt0, decP, 'tone-success'),
+      duo('عدد المفتوح', opP, fmt0, tot, 'tone-under-action'),
+      duo('الالتزام بمهلة التحقيق', slaP.map(x=>x.pct), pf, null, '')]));
+    const clTop = rowsP.map(r=>topKey(r,d=>d.classification)), tyTop = rowsP.map(r=>topKey(r,d=>d.type));
+    pages.push(intro('الهدف والمؤشرات — الأسباب والراسلون','مقارنة أكثر الأسباب والأنواع تكرارًا وعدد الراسلين بين المجموعات.',[
+      duo('أكثر تصنيف مشكلة', clTop.map((_,i)=>topTxt(clTop,i)), txt(), null, 'tone-under-action'),
+      duo('أكثر نوع شكوى', tyTop.map((_,i)=>topTxt(tyTop,i)), txt(), null, ''),
+      duo('عدد الراسلين', rowsP.map(r=>new Set(r.map(d=>String(d.complainant||'').trim()).filter(Boolean)).size), fmt0, null, 'tone-brand')]));
+    const owTop = rowsP.map(r=>topKey(r,d=>d.owner));
+    pages.push(intro('الهدف والمؤشرات — مسؤولو الشكاوى','مقارنة حجم العمل لدى مسؤولي الشكاوى بين المجموعات.',[
+      duo('عدد مسؤولي الشكاوى', rowsP.map(r=>new Set(r.map(d=>lbl(d.owner)).filter(v=>v!=='غير محدد')).size), fmt0, null, 'tone-brand'),
+      duo('أعلى حمل لمسؤول واحد', owTop.map((_,i)=>topTxt(owTop,i)), txt(), null, 'tone-under-action'),
+      duo('متوسط الشكاوى لكل مسؤول', mP.map(m=>m.avgPerHandler), v=>v==null?'—':N1(v), null, '')]));
+
     pages.push(page(head('مقارنة المؤشرات الرئيسية',ctx)+
       `<h3>أهم الأرقام</h3><div class="rp-kpis" style="grid-template-columns:repeat(3,1fr)">${cards}</div>`+
       `<h3>جدول المؤشرات</h3>`+
@@ -6192,8 +6263,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       const cm = (v,t) => `${fmt0(v)} <span class="rp-note">(${t?N1(v/t*100)+'%':'—'})</span>`;
       const body = shown.map(x=>`<tr><td>${esc(x.key)}</td>${x.g.map((r,i)=>`<td class="num">${cnt(r.length,tot[i])}</td>`).join('')}<td class="num">${diffCell(x.g[first].length,x.g[last].length)}</td>${x.g.map((r,i)=>`<td class="num">${cm(comp(r),amP[i])}</td>`).join('')}</tr>`).join('');
       const note = (limit && keys.length>limit) ? `<p class="rp-note">معروض أعلى ${N(limit)} من ${N(keys.length)} بندًا.</p>` : '';
-      const cols = [{t:'البند'}].concat(names.map(x=>({t:'الشكاوى<br>'+esc(x),num:true,w:'23mm'}))).concat([{t:'الفرق',num:true,w:'14mm'}]).concat(names.map(x=>({t:'التعويض (ج.م)<br>'+esc(x),num:true,w:'22mm'})));
-      return `<h3>${title}</h3>`+tableWrap(cols,body,'rp-compact')+note;
+      const cols = [{t:'البند'}].concat(names.map(x=>({t:'الشكاوى<br>'+esc(x),num:true,w:'20mm'}))).concat([{t:'الفرق',num:true,w:'11mm'}]).concat(names.map(x=>({t:'التعويض<br>'+esc(x),num:true,w:'20mm'})));
+      return `<h3>${title}</h3>`+tableWrap(cols,body,'rp-compact rp-tight')+note;
     };
     const sub = `<p class="rp-note">النسبة بين الأقواس = نسبة البند من إجمالي شكاوى (أو تعويضات) اللوحة نفسها. ${chgNote}</p>`;
     pages.push(page(head('مقارنة الفروع',ctx)+cmpTable('الفروع المتسببة في الشكاوى',d=>lbl(d.branch),14)+sub+foot()));
