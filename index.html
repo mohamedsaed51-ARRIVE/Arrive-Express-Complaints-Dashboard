@@ -921,7 +921,7 @@
 
   .compare-mode-section.hidden{ display:none; }
 
-  .compare-mode-section{ padding:30px 40px 60px; max-width:1600px; margin:0 auto; }
+  .compare-mode-section{ padding:30px 40px 60px; max-width:1900px; margin:0 auto; }
 
   .compare-heading{ margin-bottom:16px; }
 
@@ -1003,6 +1003,7 @@
 
   .cmv.right .cmv-tag::before{ content:"● "; color:var(--gold); }
 
+  .cmv.mid .cmv-tag::before{ content:"● "; color:#F59E0B; }
   .cmv-num{ font-family:var(--font-numeric); direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); }
 
   .compare-metric-diff{
@@ -1017,9 +1018,9 @@
   .compare-metric-diff.flat{ color:var(--ink-faint); }
 
 
-  .compare-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  .compare-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; align-items:start; }
 
-  @media (max-width:1150px){ .compare-grid{ grid-template-columns:1fr; }
+  @media (max-width:1500px){ .compare-grid{ grid-template-columns:1fr; }
  }
 
 
@@ -1035,6 +1036,7 @@
   }
 
   .compare-panel-badge.left{ background:var(--navy); }
+  .compare-panel-badge.mid{ background:var(--status-under-action, #F59E0B); color:#fff; }
 
   .compare-panel-badge.right{ background:var(--gold); }
 
@@ -1079,7 +1081,7 @@
  }
 
 
-  .compare-kpi-row{ grid-template-columns:repeat(5, 1fr); margin-bottom:14px; }
+  .compare-kpi-row{ grid-template-columns:repeat(3, 1fr); margin-bottom:14px; }
 
   @media (max-width:900px){ .compare-kpi-row{ grid-template-columns:repeat(2, 1fr); }
  }
@@ -1358,12 +1360,13 @@ footer.enterprise-footer{background:var(--arrive-navy);color:rgba(255,255,255,.8
 .footer-divider{width:1px;height:12px;background:rgba(255,255,255,.25)}
 
 /* ---------- Compare mode touch-ups ---------- */
-.compare-kpi-row{grid-template-columns:repeat(5,1fr)}
+.compare-kpi-row{grid-template-columns:repeat(3,1fr)}
 .compare-kpi-row .stub-ic{display:none}
 .compare-kpi-row .stub-value{font-size:22px}
 .compare-kpi-row .stub{padding:12px 14px}
 .compare-panel-badge.left{background:var(--arrive-blue);color:#fff}
 .compare-panel-badge.right{background:var(--arrive-teal);color:var(--arrive-navy)}
+.compare-panel-badge.mid{background:var(--status-under-action, #F59E0B);color:#fff}
 .cmv.left .cmv-tag::before{color:var(--arrive-blue)}
 .cmv.right .cmv-tag::before{color:var(--arrive-teal-600)}
 .compare-by-check:has(input:checked){background:var(--arrive-blue);border-color:var(--arrive-blue);color:#fff}
@@ -1951,8 +1954,8 @@ body.report-open{overflow:hidden}
 
   <div class="compare-toolbar">
     <div class="compare-toolbar-actions">
-      <button class="qa-btn" id="btnSyncFilters" type="button"><i class="fa-solid fa-angles-right qa-icon"></i> مزامنة القيم (يسار ← يمين)</button>
-      <button class="qa-btn" id="btnSwapFilters" type="button"><i class="fa-solid fa-right-left qa-icon"></i> تبديل اللوحتين</button>
+      <button class="qa-btn" id="btnSyncFilters" type="button"><i class="fa-solid fa-angles-right qa-icon"></i> مزامنة القيم (الأولى ← الباقي)</button>
+      <button class="qa-btn" id="btnSwapFilters" type="button"><i class="fa-solid fa-right-left qa-icon"></i> تبديل الأولى والثالثة</button>
       <button class="qa-btn" id="btnCloseCompare" type="button"><i class="fa-solid fa-xmark qa-icon"></i> إغلاق وضع المقارنة</button>
     </div>
   </div>
@@ -1962,8 +1965,8 @@ body.report-open{overflow:hidden}
   <div class="compare-grid">
     <div class="compare-panel" data-panel="L">
       <div class="compare-panel-head">
-        <span class="compare-panel-badge left">اللوحة الأولى (يسار)<em class="compare-badge-value" id="cBadgeValue_L"></em></span>
-        <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة اليسرى"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
+        <span class="compare-panel-badge left">اللوحة الأولى<em class="compare-badge-value" id="cBadgeValue_L"></em></span>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_L" type="button" title="تصدير بيانات اللوحة الأولى"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="compare-filter-fields" id="compareFilterFields_L"></div>
@@ -2029,10 +2032,79 @@ body.report-open{overflow:hidden}
       </section>
     </div>
 
+    <div class="compare-panel" data-panel="M">
+      <div class="compare-panel-head">
+        <span class="compare-panel-badge mid">اللوحة الثانية<em class="compare-badge-value" id="cBadgeValue_M"></em></span>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_M" type="button" title="تصدير بيانات اللوحة الثانية"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
+      </div>
+      <div class="compare-filter-bar">
+        <div class="compare-filter-fields" id="compareFilterFields_M"></div>
+        <div class="compare-result-count"><b id="cResultCount_M">0</b> نتيجة</div>
+      </div>
+
+      <div class="exec-core-grid compare-exec-grid" id="execCoreGrid_M"></div>
+
+      <section class="kpi-row compare-kpi-row">
+        <div class="stub">
+          <div class="stub-label">إجمالي الشكاوى</div>
+          <div class="stub-value num" id="kpiTotal_M">0</div>
+          <div class="stub-sub" id="kpiTotalSub_M">—</div>
+        </div>
+        <div class="stub accent-accepted">
+          <div class="stub-label">نسبة قبول التعويض</div>
+          <div class="stub-value num" id="kpiAcceptRate_M">0</div>
+          <div class="stub-pct num" id="kpiAcceptPct_M">—</div>
+          <div class="stub-sub" id="kpiAcceptSub_M">—</div>
+        </div>
+        <div class="stub accent-rejected">
+          <div class="stub-label">تعويضات مرفوضة</div>
+          <div class="stub-value num" id="kpiRejected_M">0</div>
+          <div class="stub-pct num" id="kpiRejectedPct_M">—</div>
+          <div class="stub-sub" id="kpiRejectedSub_M">—</div>
+        </div>
+        <div class="stub accent-pending">
+          <div class="stub-label">قيد التحقيق</div>
+          <div class="stub-value num" id="kpiPending_M">0</div>
+          <div class="stub-sub" id="kpiPendingSub_M">—</div>
+        </div>
+        <div class="stub accent-gold">
+          <div class="stub-label">متوسط زمن الحل (يوم)</div>
+          <div class="stub-value num" id="kpiSla_M">0</div>
+          <div class="stub-sub" id="kpiSlaSub_M">—</div>
+        </div>
+      </section>
+
+      <section class="panel-grid thirds">
+        <div class="panel">
+          <h3>الشكاوى حسب الفرع</h3>
+          <div class="panel-sub">أعلى 10 فروع من حيث عدد الشكاوى</div>
+          <div class="chart-wrap tall"><canvas id="chartBranch_M"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>نوع الشكوى</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <div class="chart-wrap tall"><canvas id="chartType_M"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>تصنيف المشكلة</h3>
+          <div class="panel-sub">أكثر 8 أسباب تكرارًا</div>
+          <div class="chart-wrap tall"><canvas id="chartClassification_M"></canvas></div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <div class="panel">
+          <h3>التعويض حسب الجهة المتحملة</h3>
+          <div class="panel-sub">إجمالي مبلغ التعويض (ج.م) وعدد الحالات لكل وظيفة متحملة</div>
+          <div class="chart-wrap"><canvas id="chartBearer_M"></canvas></div>
+        </div>
+      </section>
+    </div>
+
     <div class="compare-panel" data-panel="R">
       <div class="compare-panel-head">
-        <span class="compare-panel-badge right">اللوحة الثانية (يمين)<em class="compare-badge-value" id="cBadgeValue_R"></em></span>
-        <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة اليمنى"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
+        <span class="compare-panel-badge right">اللوحة الثالثة<em class="compare-badge-value" id="cBadgeValue_R"></em></span>
+        <button class="qa-btn compare-panel-export" id="btnExportPanel_R" type="button" title="تصدير بيانات اللوحة الثالثة"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button>
       </div>
       <div class="compare-filter-bar">
         <div class="compare-filter-fields" id="compareFilterFields_R"></div>
@@ -5072,7 +5144,8 @@ async function loadDashboardData(opts){
 
 let compareModeActive = false;
 let compareChartsInitialized = false;
-const compareCharts = { L:{}, R:{} };
+const COMPARE_PANELS = ['L','M','R'];   // اللوحة الأولى / الثانية / الثالثة
+const compareCharts = { L:{}, M:{}, R:{} };
 
 function buildCompareChartSet(suf){
   const set = {};
@@ -5131,6 +5204,7 @@ function buildCompareChartSet(suf){
 function initCompareCharts(){
   if(compareChartsInitialized) return;
   compareCharts.L = buildCompareChartSet('L');
+  compareCharts.M = buildCompareChartSet('M');
   compareCharts.R = buildCompareChartSet('R');
   compareChartsInitialized = true;
 }
@@ -5320,10 +5394,10 @@ function buildPanelValueSelects(suf){
       select.value = prevValues[key];
     }else if(suf === 'L' && options[0]){
       select.value = options[0].value;
-    }else if(suf === 'R' && options[1]){
-      select.value = options[1].value;
-    }else if(suf === 'R' && options[0]){
-      select.value = options[0].value;
+    }else if(suf === 'M' && (options[1] || options[0])){
+      select.value = (options[1] || options[0]).value;
+    }else if(suf === 'R' && (options[2] || options[1] || options[0])){
+      select.value = (options[2] || options[1] || options[0]).value;
     }
 
     select.addEventListener('change', renderComparePanels);
@@ -5334,13 +5408,12 @@ function buildPanelValueSelects(suf){
 }
 
 function refreshCompareValueOptions(){
-  buildPanelValueSelects('L');
-  buildPanelValueSelects('R');
+  COMPARE_PANELS.forEach(buildPanelValueSelects);
 }
 
 function updateCompareBadges(){
   const activeFields = getActiveCompareFields();
-  ['L','R'].forEach(suf=>{
+  COMPARE_PANELS.forEach(suf=>{
     const badge = document.getElementById('cBadgeValue_'+suf);
     if(!badge) return;
     const parts = activeFields.map(key=>{
@@ -5363,7 +5436,7 @@ function exportPanelCsv(suf){
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `compare_${suf === 'L' ? 'left' : 'right'}_${getActiveCompareFields().join('-')}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = `compare_${suf === 'L' ? 'first' : suf === 'M' ? 'second' : 'third'}_${getActiveCompareFields().join('-')}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -5380,37 +5453,34 @@ function computeCompareSummaryMetrics(rows){
   return { total, acceptRate, avgSla, compSum };
 }
 
-function renderCompareSummary(rowsL, rowsR){
+function renderCompareSummary(rowsByPanel){
   const bar = document.getElementById('compareSummaryBar');
   if(!bar) return;
-  const mL = computeCompareSummaryMetrics(rowsL);
-  const mR = computeCompareSummaryMetrics(rowsR);
+  const ms = rowsByPanel.map(computeCompareSummaryMetrics);
+  const tags = [['left','الأولى'],['mid','الثانية'],['right','الثالثة']];
   const metrics = [
     { key:'total', label:'إجمالي الشكاوى', fmt:v=>Math.round(v).toLocaleString('en-US'), lowerIsBetter:true },
     { key:'acceptRate', label:'نسبة قبول التعويض', fmt:v=>`${Math.round(v)}%`, lowerIsBetter:false },
     { key:'avgSla', label:'متوسط زمن الحل (يوم)', fmt:v=>v.toFixed(1), lowerIsBetter:true },
     { key:'compSum', label:'إجمالي التعويضات (ج.م)', fmt:v=>Math.round(v).toLocaleString('en-US'), lowerIsBetter:true },
   ];
-  bar.innerHTML = metrics.map(m=>{
-    const l = mL[m.key], r = mR[m.key];
+  const diffLine = (m, from, to, tag) => {
+    const l = ms[from][m.key], r = ms[to][m.key];
     const diff = r - l;
     const diffPct = l !== 0 ? (diff/l*100) : (r!==0 ? 100 : 0);
     const better = m.lowerIsBetter ? diff < 0 : diff > 0;
     const diffClass = diff===0 ? 'flat' : (better ? 'good' : 'bad');
     const sign = diff>0 ? '+' : (diff<0 ? '-' : '');
-    return `
+    return `<div class="compare-metric-diff ${diffClass}"><span>${tag}: ${sign}${m.fmt(Math.abs(diff))}</span><span class="cmd-pct">${sign}${Math.abs(diffPct).toFixed(1)}%</span></div>`;
+  };
+  bar.innerHTML = metrics.map(m=>`
       <div class="compare-metric-card">
         <div class="compare-metric-label">${m.label}</div>
         <div class="compare-metric-values">
-          <div class="cmv left"><span class="cmv-tag">يسار</span><span class="cmv-num">${m.fmt(l)}</span></div>
-          <div class="cmv right"><span class="cmv-tag">يمين</span><span class="cmv-num">${m.fmt(r)}</span></div>
+          ${ms.map((x,i)=>`<div class="cmv ${tags[i][0]}"><span class="cmv-tag">${tags[i][1]}</span><span class="cmv-num">${m.fmt(x[m.key])}</span></div>`).join('')}
         </div>
-        <div class="compare-metric-diff ${diffClass}">
-          <span>الفرق: ${sign}${m.fmt(Math.abs(diff))}</span>
-          <span class="cmd-pct">${sign}${Math.abs(diffPct).toFixed(1)}%</span>
-        </div>
-      </div>`;
-  }).join('');
+        ${diffLine(m,0,1,'الثانية عن الأولى')}${diffLine(m,1,2,'الثالثة عن الثانية')}
+      </div>`).join('');
 }
 
 function setCompareText(id, val){
@@ -5455,12 +5525,10 @@ function renderComparePanel(suf, rows){
 
 function renderComparePanels(){
   if(!compareModeActive || !compareChartsInitialized) return;
-  const rowsL = getFilteredForPanel('L');
-  const rowsR = getFilteredForPanel('R');
+  const rowsByPanel = COMPARE_PANELS.map(getFilteredForPanel);
   updateCompareBadges();
-  renderComparePanel('L', rowsL);
-  renderComparePanel('R', rowsR);
-  renderCompareSummary(rowsL, rowsR);
+  COMPARE_PANELS.forEach((suf,i)=> renderComparePanel(suf, rowsByPanel[i]));
+  renderCompareSummary(rowsByPanel);
 }
 
 // Called whenever the "Compare By" field changes: rebuilds the Left/Right value
@@ -5517,13 +5585,14 @@ document.getElementById('compareByChecks').addEventListener('change', (e)=>{
 });
 
 document.getElementById('btnExportPanel_L').addEventListener('click', ()=> exportPanelCsv('L'));
+document.getElementById('btnExportPanel_M').addEventListener('click', ()=> exportPanelCsv('M'));
 document.getElementById('btnExportPanel_R').addEventListener('click', ()=> exportPanelCsv('R'));
 
 document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
   getActiveCompareFields().forEach(key=>{
     const l = document.getElementById(fieldSelectId('L', key));
-    const r = document.getElementById(fieldSelectId('R', key));
-    if(l && r) r.value = l.value;
+    if(!l) return;
+    ['M','R'].forEach(suf=>{ const t = document.getElementById(fieldSelectId(suf, key)); if(t) t.value = l.value; });
   });
   renderComparePanels();
 });
@@ -5903,7 +5972,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       pages.push(page(head('الاتجاه الشهري',ctx)+
         `<h3>الشكاوى حسب شهر الإضافة</h3>`+tableWrap([{t:'الشهر'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
           addM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''),'rp-compact')+
-        `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى (وتاريخ التعويض للجدول الثاني)، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات».</p>`+foot()));
+        `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات».</p>`+foot()));
     }
 
     /* 5) أداء مسؤولي الشكاوى */
@@ -5987,6 +6056,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     { const accTotal = rows.filter(d=>compDecisionOf(d)==='accepted').length, decidedTotal = accTotal + rows.filter(d=>compDecisionOf(d)==='rejected').length, openTotal = rows.filter(isOpenRow).length;
       pages.push(introPg('الهدف والمؤشرات — التعويضات','بيان من يتحمل تكلفة التعويض، ومتابعة حالات القبول والمفتوح والالتزام بمهلة التحقيق، وتتبع الاتجاه شهريًا.',[
         kpx('عدد الشحنات',numH(N(totalRows)),'إجمالي سجلات الشكاوى المعروضة'),
+        kpx('شحنات تم التعويض عنها',`${numH(N(compRows.length))}<small> · ${pctOf(compRows.length,totalRows)}</small>`,`من إجمالي ${N(totalRows)} شحنة`,'tone-brand'),
+        kpx('مبلغ التعويض',`${numH(N(Math.round(totalCompAll)))}<small> ج.م</small>`,compRows.length?`متوسط ${N(Math.round(totalCompAll/compRows.length))} ج.م للحالة`:'','tone-under-action'),
         kpx('عدد المقبول',numH(N(accTotal)),`${pctOf(accTotal,decidedTotal)} من الحالات المحسومة`,'tone-success'),
         ...(openTotal?[kpx('عدد المفتوح',numH(N(openTotal)),`${pctOf(openTotal,totalRows)} من السجلات`,'tone-under-action')]:[]),
         kpx('الالتزام بمهلة التحقيق',numH(resC2.pct==null?'—':N1(resC2.pct)+'%'),resC2.count?`${N(resC2.ok)} من ${N(resC2.count)} حالة · المهلة ${RES_SLA_TARGET_DAYS} أيام`:`المهلة ${RES_SLA_TARGET_DAYS} أيام`)])); }
@@ -6020,28 +6091,37 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     return pages;
   }
 
-  /* ---------- تقرير المقارنة (يُستخدم عند تفعيل وضع المقارنة) ---------- */
+  /* ---------- تقرير المقارنة (يُستخدم عند تفعيل وضع المقارنة؛ ثلاث لوحات) ---------- */
   function buildCompare(){
-    const rowsL = getFilteredForPanel('L'), rowsR = getFilteredForPanel('R');
+    const sufs = COMPARE_PANELS.slice();
+    const rowsP = sufs.map(getFilteredForPanel);
+    const n = sufs.length;
     const pages = [];
-    const lblOf = suf => { const t = ((document.getElementById('cBadgeValue_'+suf)||{}).textContent||'').trim(); return t || 'كل السجلات ضمن الفلاتر العامة'; };
-    const nameL = 'اللوحة الأولى', nameR = 'اللوحة الثانية', descL = lblOf('L'), descR = lblOf('R');
+    const descOf = suf => { const t = ((document.getElementById('cBadgeValue_'+suf)||{}).textContent||'').trim(); return t || 'كل السجلات ضمن الفلاتر العامة'; };
+    const shortOf = suf => { const v = getActiveCompareFields().map(key=>{ const sel = document.getElementById(fieldSelectId(suf, key)); return (sel && sel.value && sel.selectedOptions[0]) ? sel.selectedOptions[0].textContent.trim() : null; }).filter(Boolean).join(' · '); return v || 'الكل'; };
+    const names = sufs.map(shortOf);
+    { const seen = {}; names.forEach(x=>{ seen[x] = (seen[x]||0)+1; }); const idx = {}; names.forEach((x,i)=>{ if(seen[x]>1){ idx[x] = (idx[x]||0)+1; names[i] = `${x} (${idx[x]})`; } }); }
+    const descs = sufs.map(descOf);
     const chips = filterChips();
     const refresh = (document.getElementById('headerLastUpdate')||{}).textContent || MISSING;
     const today = new Date().toISOString().slice(0,10);
-    const ctx = { reportTitle:'تقرير مقارنة الشكاوى', periodText:'مقارنة: '+nameL+' مقابل '+nameR };
+    const ctx = { reportTitle:'تقرير مقارنة الشكاوى', periodText:'مقارنة '+n+' لوحات' };
     const perOf = rows => { const p = periodOf(rows); return p ? `${p.from} → ${p.to}` : MISSING; };
     const isOpenRow = d => !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')));
     const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
     const groupBy = (arr, keyFn) => { const mp = new Map(); arr.forEach(d=>{ const k = keyFn(d); if(!mp.has(k)) mp.set(k, []); mp.get(k).push(d); }); return mp; };
     const comp = rows => sumCompensation(rows);
     const fmt0 = v => v==null?'—':N(Math.round(v));
+    const pc = (a,t) => t ? N1(a/t*100)+'%' : '—';
+    const sgn = d => d>0?'+':d<0?'−':'';
     const diffCell = (l, r, rate) => {
       if(l==null || r==null) return '—';
-      const d = r - l, sg = d>0?'+':d<0?'−':'';
-      return `<span dir="ltr">${sg}${rate?Math.abs(d).toFixed(1):N(Math.round(Math.abs(d)))}${rate?' نقطة':''}</span>`;
+      const d = r - l;
+      return `<span dir="ltr">${sgn(d)}${rate?Math.abs(d).toFixed(1):N(Math.round(Math.abs(d)))}${rate?' نقطة':''}</span>`;
     };
-    const pctChg = (l, r) => (l==null||r==null||l===0) ? '—' : `<span dir="ltr">${(r-l)>0?'+':(r-l)<0?'−':''}${Math.abs((r-l)/l*100).toFixed(1)}%</span>`;
+    const pctChg = (l, r) => (l==null||r==null||l===0) ? '—' : `<span dir="ltr">${sgn(r-l)}${Math.abs((r-l)/l*100).toFixed(1)}%</span>`;
+    const first = 0, last = n-1;
+    const chgNote = `الفرق = ${esc(names[last])} − ${esc(names[first])} (آخر لوحة مقابل أول لوحة).`;
 
     pages.push(page(`
       <div class="rp-cover-top"><img class="rp-cover-logo" src="assets/arrive-logo.png" alt="ARRIVE"></div>
@@ -6050,8 +6130,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         <h1>تقرير مقارنة الشكاوى والتعويضات</h1>
         <div class="rp-cover-rule"></div>
         <dl class="rp-cover-meta">
-          <div><dt>${nameL}</dt><dd>${esc(descL)} · <span class="num">${N(rowsL.length)}</span> سجل · <span class="num">${perOf(rowsL)}</span></dd></div>
-          <div><dt>${nameR}</dt><dd>${esc(descR)} · <span class="num">${N(rowsR.length)}</span> سجل · <span class="num">${perOf(rowsR)}</span></dd></div>
+          ${sufs.map((x,i)=>`<div><dt>${esc(names[i])}</dt><dd>${esc(descs[i])} · <span class="num">${N(rowsP[i].length)}</span> سجل · <span class="num">${perOf(rowsP[i])}</span></dd></div>`).join('')}
           <div><dt>عوامل التصفية العامة</dt><dd>${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات)'}</dd></div>
           <div><dt>آخر تحديث للبيانات</dt><dd class="num">${esc(refresh)}</dd></div>
           <div><dt>تاريخ إصدار التقرير</dt><dd class="num">${today}</dd></div>
@@ -6060,47 +6139,63 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       <div class="rp-cover-foot">مصدر البيانات: لوحة متابعة الشكاوى · الأرقام محسوبة من سجلات كل لوحة بعد تطبيق الفلاتر العامة واختيارات المقارنة</div>`,{cover:true}));
 
     // 1) المؤشرات الرئيسية
-    const mL = computeCoreExecutiveMetrics(rowsL), mR = computeCoreExecutiveMetrics(rowsR);
+    const mP = rowsP.map(computeCoreExecutiveMetrics);
     const acc = rows => rows.filter(d=>compDecisionOf(d)==='accepted').length;
     const rej = rows => rows.filter(d=>compDecisionOf(d)==='rejected').length;
-    const accL = acc(rowsL), accR = acc(rowsR), rejL = rej(rowsL), rejR = rej(rowsR);
-    const accRate = (a,r) => (a+r) ? a/(a+r)*100 : null;
-    const slaL = computeResolutionSlaCompliance(rowsL), slaR = computeResolutionSlaCompliance(rowsR);
+    const tot = rowsP.map(r=>r.length), accP = rowsP.map(acc), rejP = rowsP.map(rej), decP = accP.map((a,i)=>a+rejP[i]);
+    const opP = rowsP.map(r=>r.filter(isOpenRow).length);
+    const cpP = rowsP.map(r=>r.filter(isCompensationCountable).length), amP = rowsP.map(comp);
+    const slaP = rowsP.map(r=>computeResolutionSlaCompliance(r));
+    // [المؤشر, القيم, تنسيق, نسبة؟, الأقل أفضل؟, المقامات]
     const k = [
-      ['عدد الشكاوى', rowsL.length, rowsR.length, fmt0, false, true],
-      ['المفتوحة', rowsL.filter(isOpenRow).length, rowsR.filter(isOpenRow).length, fmt0, false, true],
-      ['مقبول', accL, accR, fmt0, false, false],
-      ['مرفوض', rejL, rejR, fmt0, false, true],
-      ['نسبة قبول التعويض (من المحسوم)', accRate(accL,rejL), accRate(accR,rejR), v=>v==null?'—':N1(v)+'%', true, false],
-      ['الالتزام بمهلة التحقيق ('+RES_SLA_TARGET_DAYS+' أيام)', slaL.pct, slaR.pct, v=>v==null?'—':N1(v)+'%', true, false],
-      ['متوسط زمن الحل (يوم)', mL.avgResolution, mR.avgResolution, v=>v==null?'—':N1(v), false, true],
-      ['إجمالي التعويضات (ج.م)', comp(rowsL), comp(rowsR), fmt0, false, true],
-      ['متوسط التعويض (ج.م)', mL.avgComp, mR.avgComp, fmt0, false, true]
+      ['عدد الشكاوى', tot, fmt0, false, true, null],
+      ['المفتوحة', opP, fmt0, false, true, tot],
+      ['مقبول', accP, fmt0, false, false, decP],
+      ['مرفوض', rejP, fmt0, false, true, decP],
+      ['شحنات تم التعويض عنها', cpP, fmt0, false, true, tot],
+      ['مبلغ التعويض (ج.م)', amP, fmt0, false, true, null],
+      ['متوسط التعويض (ج.م)', mP.map(m=>m.avgComp), fmt0, false, true, null],
+      ['الالتزام بمهلة التحقيق ('+RES_SLA_TARGET_DAYS+' أيام)', slaP.map(x=>x.pct), v=>v==null?'—':N1(v)+'%', true, false, null],
+      ['متوسط زمن الحل (يوم)', mP.map(m=>m.avgResolution), v=>v==null?'—':N1(v), false, true, null]
     ];
-    const kRows = k.map(([l,a,b,f,rate,lower])=>{
+    const cellOf = (f,v,t) => `${f(v)}${t!=null?` <span class="rp-note">(${pc(v,t)})</span>`:''}`;
+    const kRows = k.map(([l,vals,f,rate,lower,bases])=>{
+      const a = vals[first], b = vals[last];
       const d = (a==null||b==null) ? 0 : b-a;
       const tone = d===0 ? 'neutral' : ((lower ? d<0 : d>0) ? 'accepted' : 'rejected');
       const txt = d===0 ? 'بدون تغيّر' : ((lower ? d<0 : d>0) ? 'أفضل' : 'أسوأ');
-      return `<tr><td>${l}</td><td class="num">${f(a)}</td><td class="num">${f(b)}</td><td class="num">${diffCell(a,b,rate)}</td><td class="num">${rate?'—':pctChg(a,b)}</td><td>${(a==null||b==null)?'—':`<span class="badge ${tone}">${txt}</span>`}</td></tr>`;
+      return `<tr><td>${l}</td>${vals.map((v,i)=>`<td class="num">${cellOf(f,v,bases?bases[i]:null)}</td>`).join('')}<td class="num">${diffCell(a,b,rate)}</td><td class="num">${rate?'—':pctChg(a,b)}</td><td>${(a==null||b==null)?'—':`<span class="badge ${tone}">${txt}</span>`}</td></tr>`;
     }).join('');
+    const duo = (l, vals, f, bases, tone) => `<div class="rp-kpi ${tone||''}"><div class="rp-kpi-l">${l}</div>${vals.map((v,i)=>`<div style="font-size:11px;margin-top:3px"><b>${esc(names[i])}</b>: <b class="num" style="font-size:15px">${f(v)}</b>${bases?` <span class="rp-note">(${pc(v,bases[i])})</span>`:''}</div>`).join('')}</div>`;
+    const pf = v=>v==null?'—':N1(v)+'%';
+    const cards = [
+      duo('عدد الشكاوى', tot, fmt0, null, 'tone-brand'),
+      duo('مقبول (من المحسوم)', accP, fmt0, decP, 'tone-success'),
+      duo('المفتوح (من الشكاوى)', opP, fmt0, tot, 'tone-under-action'),
+      duo('شحنات تم التعويض عنها', cpP, fmt0, tot, 'tone-brand'),
+      duo('مبلغ التعويض (ج.م)', amP, fmt0, null, 'tone-under-action'),
+      duo('الالتزام بمهلة التحقيق', slaP.map(x=>x.pct), pf, null, '')
+    ].join('');
     pages.push(page(head('مقارنة المؤشرات الرئيسية',ctx)+
-      tableWrap([{t:'المؤشر'},{t:nameL,num:true,w:'26mm'},{t:nameR,num:true,w:'26mm'},{t:'الفرق',num:true,w:'24mm'},{t:'التغيّر %',num:true,w:'22mm'},{t:'التقييم',w:'24mm'}],kRows)+
-      `<p class="rp-note">الفرق = ${nameR} − ${nameL}. فروق النسب بالنقاط المئوية، وباقي المؤشرات بالقيمة المطلقة والنسبة المئوية للتغيّر. «أفضل/أسوأ» حسب اتجاه المؤشر (الأقل أفضل في الشكاوى والمفتوح والمرفوض وزمن الحل والتعويض؛ الأعلى أفضل في المقبول والالتزام).</p>`+foot()));
+      `<h3>أهم الأرقام</h3><div class="rp-kpis" style="grid-template-columns:repeat(3,1fr)">${cards}</div>`+
+      `<h3>جدول المؤشرات</h3>`+
+      tableWrap([{t:'المؤشر'}].concat(names.map(x=>({t:esc(x),num:true,w:'26mm'}))).concat([{t:'الفرق',num:true,w:'17mm'},{t:'التغيّر %',num:true,w:'17mm'},{t:'التقييم',w:'20mm'}]),kRows,'rp-compact')+
+      `<p class="rp-note">${chgNote} النسبة بين الأقواس = نسبة الرقم من أساسه في اللوحة نفسها (المقبول والمرفوض من الحالات المحسومة، والمفتوح والشحنات المعوَّض عنها من إجمالي الشكاوى). فروق النسب بالنقاط المئوية، وباقي المؤشرات بالقيمة المطلقة ونسبة التغيّر. «أفضل/أسوأ» حسب اتجاه المؤشر.</p>`+foot()));
 
     // 2) جداول المقارنة حسب البُعد
-    const cmpTable = (title, keyFn, limit, extra) => {
-      const gL = groupBy(rowsL, keyFn), gR = groupBy(rowsR, keyFn);
-      const keys = [...new Set([...gL.keys(), ...gR.keys()])].map(key=>({key, l:gL.get(key)||[], r:gR.get(key)||[]}))
-        .sort((a,b)=> (b.l.length+b.r.length)-(a.l.length+a.r.length) || String(a.key).localeCompare(String(b.key),'ar'));
+    const cmpTable = (title, keyFn, limit) => {
+      const gs = rowsP.map(r=>groupBy(r, keyFn));
+      const keys = [...new Set(gs.flatMap(g=>[...g.keys()]))].map(key=>({key, g:gs.map(g=>g.get(key)||[])}))
+        .sort((a,b)=> b.g.reduce((t,x)=>t+x.length,0)-a.g.reduce((t,x)=>t+x.length,0) || String(a.key).localeCompare(String(b.key),'ar'));
       const shown = limit ? keys.slice(0,limit) : keys;
-      const tl = rowsL.length, tr = rowsR.length;
-      const cnt = (n,t) => `${N(n)} <span class="rp-note">(${pctOf2(n,t)})</span>`;
-      const body = shown.map(x=>`<tr><td>${esc(x.key)}</td><td class="num">${cnt(x.l.length,tl)}</td><td class="num">${cnt(x.r.length,tr)}</td><td class="num">${diffCell(x.l.length,x.r.length)}</td><td class="num">${fmt0(comp(x.l))}</td><td class="num">${fmt0(comp(x.r))}</td></tr>`).join('');
+      const cnt = (v,t) => `${N(v)} <span class="rp-note">(${pc(v,t)})</span>`;
+      const cm = (v,t) => `${fmt0(v)} <span class="rp-note">(${t?N1(v/t*100)+'%':'—'})</span>`;
+      const body = shown.map(x=>`<tr><td>${esc(x.key)}</td>${x.g.map((r,i)=>`<td class="num">${cnt(r.length,tot[i])}</td>`).join('')}<td class="num">${diffCell(x.g[first].length,x.g[last].length)}</td>${x.g.map((r,i)=>`<td class="num">${cm(comp(r),amP[i])}</td>`).join('')}</tr>`).join('');
       const note = (limit && keys.length>limit) ? `<p class="rp-note">معروض أعلى ${N(limit)} من ${N(keys.length)} بندًا.</p>` : '';
-      return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى — الأولى',num:true,w:'28mm'},{t:'الشكاوى — الثانية',num:true,w:'28mm'},{t:'الفرق',num:true,w:'16mm'},{t:'التعويض (ج.م) — الأولى',num:true,w:'24mm'},{t:'التعويض (ج.م) — الثانية',num:true,w:'24mm'}],body,'rp-compact')+note;
+      const cols = [{t:'البند'}].concat(names.map(x=>({t:'الشكاوى<br>'+esc(x),num:true,w:'23mm'}))).concat([{t:'الفرق',num:true,w:'14mm'}]).concat(names.map(x=>({t:'التعويض (ج.م)<br>'+esc(x),num:true,w:'22mm'})));
+      return `<h3>${title}</h3>`+tableWrap(cols,body,'rp-compact')+note;
     };
-    const pctOf2 = (a,b) => b ? N1(a/b*100)+'%' : '—';
-    const sub = `<p class="rp-note">% = نسبة البند من إجمالي شكاوى اللوحة نفسها. الفرق = ${nameR} − ${nameL}.</p>`;
+    const sub = `<p class="rp-note">النسبة بين الأقواس = نسبة البند من إجمالي شكاوى (أو تعويضات) اللوحة نفسها. ${chgNote}</p>`;
     pages.push(page(head('مقارنة الفروع',ctx)+cmpTable('الفروع المتسببة في الشكاوى',d=>lbl(d.branch),14)+sub+foot()));
     pages.push(page(head('مقارنة التعويضات',ctx)+cmpTable('الجهة المتحملة للتعويض',d=>lbl(d.compensation_bearer),10)+cmpTable('حالة الشكوى',d=>lbl(d.status),8)+sub+foot()));
     pages.push(page(head('مقارنة الأسباب والأنواع',ctx)+cmpTable('نوع الشكوى',d=>lbl(d.type),8)+cmpTable('تصنيف المشكلة',d=>lbl(d.classification),10)+sub+foot()));
@@ -6113,11 +6208,10 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     // 3) المنهجية
     pages.push(page(head('منهجية المقارنة',ctx)+`
       <div class="rp-close"><h3>أساس الإعداد</h3><ul>
-        <li>${nameL}: ${esc(descL)} — <b class="num">${N(rowsL.length)}</b> سجل.</li>
-        <li>${nameR}: ${esc(descR)} — <b class="num">${N(rowsR.length)}</b> سجل.</li>
-        <li>عوامل التصفية العامة المطبقة على اللوحتين: ${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات).'}</li>
+        ${sufs.map((x,i)=>`<li>${esc(names[i])}: ${esc(descs[i])} — <b class="num">${N(rowsP[i].length)}</b> سجل.</li>`).join('')}
+        <li>عوامل التصفية العامة المطبقة على اللوحات: ${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات).'}</li>
         <li>الشكوى «مفتوحة» إذا كانت حالتها «جارى» أو «التحقيق»؛ الالتزام بمهلة التحقيق = نسبة الشكاوى المنجزة خلال ${RES_SLA_TARGET_DAYS} أيام ÷ الحالات ذات التاريخين الصالحين.</li>
-        <li>قد تتداخل سجلات اللوحتين إذا لم تكن الاختيارات متنافية؛ لذلك لا يُجمع رقما اللوحتين.</li>
+        <li>قد تتداخل سجلات اللوحات إذا لم تكن الاختيارات متنافية؛ لذلك لا تُجمع أرقام اللوحات.</li>
       </ul>
       <div class="rp-sign"><div><span>إعداد</span><i></i></div><div><span>مراجعة</span><i></i></div><div><span>اعتماد</span><i></i></div></div>
       <div class="rp-end">نهاية التقرير</div></div>`+foot()));
