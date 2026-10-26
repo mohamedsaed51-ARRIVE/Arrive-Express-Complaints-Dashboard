@@ -5891,35 +5891,19 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     if(sG.length){
       const topS = sG.slice(0,10), topShare = topS.reduce((t,r)=>t+r.s.n,0);
       pages.push(page(head('الراسلون الأكثر شكاوى',ctx)+
-        tableWrap([{t:'الراسل'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
-          topS.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
-        `<p class="rp-note">أعلى ${N(topS.length)} راسلين من ${N(sG.length)} راسلًا؛ يمثلون ${pctOf(topShare,totalRows)} من إجمالي السجلات. الراسل من عمود «الشاكي».</p>`+foot()));
-    }
-
-    // 4b-5) مراجعة التعويض
-    const revG = [...groupBy(rows, d=>lbl(d.compensation_review_result)).entries()].map(([k,g])=>({k,n:g.length,sum:sumCompensation(g)})).sort((a,b)=>b.n-a.n);
-    const cfG = [...groupBy(rows, d=>lbl(d.confirm_review)).entries()].map(([k,g])=>({k,n:g.length})).sort((a,b)=>b.n-a.n);
-    let both=0, agree=0, disagree=0, onlyStatus=0, onlyReview=0, neither=0;
-    rows.forEach(d=>{ const s=statusDecisionOf(d), r=reviewDecisionOf(d); if(s&&r){ both++; s===r?agree++:disagree++; } else if(s) onlyStatus++; else if(r) onlyReview++; else neither++; });
-    if(totalRows){
-      pages.push(page(head('مراجعة التعويض',ctx)+
-        `<h3>نتيجة مراجعة التعويض</h3>`+tableWrap([{t:'النتيجة'},{t:'عدد السجلات',num:true},{t:'النسبة',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],revG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${pctOf(r.n,totalRows)}</td><td class="num">${compCell(r.sum)}</td></tr>`).join(''),'rp-compact')+
-        `<h3>التأكيد على المراجعة</h3>`+tableWrap([{t:'القيمة'},{t:'عدد السجلات',num:true},{t:'النسبة',num:true}],cfG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${pctOf(r.n,totalRows)}</td></tr>`).join(''),'rp-compact')+
-        `<h3>مطابقة قرار الحالة مع نتيجة المراجعة</h3>`+tableWrap([{t:'الحالة',},{t:'عدد السجلات',num:true}],
-          `<tr><td>القراران محسومان ومتطابقان</td><td class="num">${N(agree)}</td></tr><tr><td>القراران محسومان ومختلفان</td><td class="num">${N(disagree)}</td></tr><tr><td>محسوم في الحالة فقط (بلا نتيجة مراجعة محسومة)</td><td class="num">${N(onlyStatus)}</td></tr><tr><td>محسوم في المراجعة فقط</td><td class="num">${N(onlyReview)}</td></tr><tr><td>غير محسوم في أي منهما</td><td class="num">${N(neither)}</td></tr>`,'rp-compact')+
-        `<p class="rp-note">القرار المحسوم = مقبول أو مرفوض. مصدر القرار المعتمد في اللوحة هو عمود الحالة؛ نتيجة المراجعة تُعرض للمطابقة فقط، و«التعويض مسبقا» غير محسوم في الاثنين.${both?` نسبة التطابق بين المحسومين: ${pctOf(agree,both)}.`:''}</p>`+foot()));
+        tableWrap([{t:'الراسل'},{t:'الشكاوى',num:true},{t:'% من الشكاوى المسجلة',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
+          topS.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
+        `<p class="rp-note">أعلى ${N(topS.length)} راسلين من ${N(sG.length)} راسلًا؛ يمثلون ${pctOf(topShare,totalRows)} من إجمالي السجلات. الراسل من عمود «الشاكي». «% من الشكاوى المسجلة» = شكاوى الراسل ÷ إجمالي ${N(totalRows)} شكوى مسجلة ضمن الفترة والفلاتر المعروضة.</p>`+foot()));
     }
 
     // 4b-6) الاتجاه الشهري
     const ym = v => (v && /^\d{4}-\d{2}/.test(String(v))) ? String(v).slice(0,7) : null;
     const addM = [...groupBy(rows, d=>ym(d.date_added)||'بدون تاريخ').entries()].map(([k,g])=>({k,s:gstat(g)})).sort((a,b)=>a.k.localeCompare(b.k));
-    const cmpM = [...groupBy(compRows.filter(d=>ym(d.compensation_date)), d=>ym(d.compensation_date)).entries()].map(([k,g])=>({k,n:g.length,sum:sumCompensation(g)})).sort((a,b)=>a.k.localeCompare(b.k));
     if(addM.length){
       pages.push(page(head('الاتجاه الشهري',ctx)+
         `<h3>الشكاوى حسب شهر الإضافة</h3>`+tableWrap([{t:'الشهر'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
           addM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''),'rp-compact')+
-        (cmpM.length?`<h3>التعويضات حسب شهر صرف التعويض</h3>`+tableWrap([{t:'الشهر'},{t:'عدد الحالات',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],cmpM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${compCell(r.sum)}</td></tr>`).join(''),'rp-compact'):'')+
-        `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى (وتاريخ التعويض للجدول الثاني)، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات». الجدول الثاني يشمل الحالات ذات مبلغ وتاريخ تعويض صالحين.</p>`+foot()));
+        `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى (وتاريخ التعويض للجدول الثاني)، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات».</p>`+foot()));
     }
 
     /* 5) أداء مسؤولي الشكاوى */
@@ -6000,12 +5984,12 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         kpx('شكاوى بلا فرع مذكور',numH(N(noBr)),`${pctOf(noBr,totalRows)} من السجلات`,noBr?'tone-violation':'tone-success')])); }
 
     // التعويضات
-    { const bt=[...groupBy(compRows,d=>lbl(d.compensation_bearer)).entries()].map(([k,g])=>({k,s:sumCompensation(g)})).sort((a,b)=>b.s-a.s);
-      pages.push(introPg('الهدف والمؤشرات — التعويضات','بيان من يتحمل تكلفة التعويض، ومراجعة اتساق قرارات التعويض مع نتائج المراجعة، وتتبع الاتجاه شهريًا.',[
-        kpx('إجمالي التعويضات',`${numH(N(Math.round(totalCompAll)))}<small> ج.م</small>`,''),
-        kpx('حالات التعويض',numH(N(compRows.length)),`من ${N(totalRows)} سجل`),
-        kpx('أعلى جهة متحملة',bt.length?esc(bt[0].k):'—',bt.length?`${pctOf(bt[0].s,totalCompAll)} من الإجمالي`:'','tone-under-action'),
-        kpx('تطابق الحالة مع المراجعة',both?numH(pctOf(agree,both)):'—',both?`${N(agree)} من ${N(both)} حالة محسومة في الاثنين`:'لا توجد حالات محسومة في الاثنين')])); }
+    { const accTotal = rows.filter(d=>compDecisionOf(d)==='accepted').length, decidedTotal = accTotal + rows.filter(d=>compDecisionOf(d)==='rejected').length, openTotal = rows.filter(isOpenRow).length;
+      pages.push(introPg('الهدف والمؤشرات — التعويضات','بيان من يتحمل تكلفة التعويض، ومتابعة حالات القبول والمفتوح والالتزام بمهلة التحقيق، وتتبع الاتجاه شهريًا.',[
+        kpx('عدد الشحنات',numH(N(totalRows)),'إجمالي سجلات الشكاوى المعروضة'),
+        kpx('عدد المقبول',numH(N(accTotal)),`${pctOf(accTotal,decidedTotal)} من الحالات المحسومة`,'tone-success'),
+        ...(openTotal?[kpx('عدد المفتوح',numH(N(openTotal)),`${pctOf(openTotal,totalRows)} من السجلات`,'tone-under-action')]:[]),
+        kpx('الالتزام بمهلة التحقيق',numH(resC2.pct==null?'—':N1(resC2.pct)+'%'),resC2.count?`${N(resC2.ok)} من ${N(resC2.count)} حالة · المهلة ${RES_SLA_TARGET_DAYS} أيام`:`المهلة ${RES_SLA_TARGET_DAYS} أيام`)])); }
 
     // الأسباب والراسلون
     { const tc=topOf(d=>lbl(d.classification),UNK), tt=topOf(d=>lbl(d.type),UNK), top10=sG.slice(0,10).reduce((t,r)=>t+r.s.n,0);
@@ -6036,13 +6020,117 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     return pages;
   }
 
+  /* ---------- تقرير المقارنة (يُستخدم عند تفعيل وضع المقارنة) ---------- */
+  function buildCompare(){
+    const rowsL = getFilteredForPanel('L'), rowsR = getFilteredForPanel('R');
+    const pages = [];
+    const lblOf = suf => { const t = ((document.getElementById('cBadgeValue_'+suf)||{}).textContent||'').trim(); return t || 'كل السجلات ضمن الفلاتر العامة'; };
+    const nameL = 'اللوحة الأولى', nameR = 'اللوحة الثانية', descL = lblOf('L'), descR = lblOf('R');
+    const chips = filterChips();
+    const refresh = (document.getElementById('headerLastUpdate')||{}).textContent || MISSING;
+    const today = new Date().toISOString().slice(0,10);
+    const ctx = { reportTitle:'تقرير مقارنة الشكاوى', periodText:'مقارنة: '+nameL+' مقابل '+nameR };
+    const perOf = rows => { const p = periodOf(rows); return p ? `${p.from} → ${p.to}` : MISSING; };
+    const isOpenRow = d => !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')));
+    const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
+    const groupBy = (arr, keyFn) => { const mp = new Map(); arr.forEach(d=>{ const k = keyFn(d); if(!mp.has(k)) mp.set(k, []); mp.get(k).push(d); }); return mp; };
+    const comp = rows => sumCompensation(rows);
+    const fmt0 = v => v==null?'—':N(Math.round(v));
+    const diffCell = (l, r, rate) => {
+      if(l==null || r==null) return '—';
+      const d = r - l, sg = d>0?'+':d<0?'−':'';
+      return `<span dir="ltr">${sg}${rate?Math.abs(d).toFixed(1):N(Math.round(Math.abs(d)))}${rate?' نقطة':''}</span>`;
+    };
+    const pctChg = (l, r) => (l==null||r==null||l===0) ? '—' : `<span dir="ltr">${(r-l)>0?'+':(r-l)<0?'−':''}${Math.abs((r-l)/l*100).toFixed(1)}%</span>`;
+
+    pages.push(page(`
+      <div class="rp-cover-top"><img class="rp-cover-logo" src="assets/arrive-logo.png" alt="ARRIVE"></div>
+      <div class="rp-cover-main">
+        <div class="rp-cover-kicker">إدارة المراجعة التشغيلية</div>
+        <h1>تقرير مقارنة الشكاوى والتعويضات</h1>
+        <div class="rp-cover-rule"></div>
+        <dl class="rp-cover-meta">
+          <div><dt>${nameL}</dt><dd>${esc(descL)} · <span class="num">${N(rowsL.length)}</span> سجل · <span class="num">${perOf(rowsL)}</span></dd></div>
+          <div><dt>${nameR}</dt><dd>${esc(descR)} · <span class="num">${N(rowsR.length)}</span> سجل · <span class="num">${perOf(rowsR)}</span></dd></div>
+          <div><dt>عوامل التصفية العامة</dt><dd>${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات)'}</dd></div>
+          <div><dt>آخر تحديث للبيانات</dt><dd class="num">${esc(refresh)}</dd></div>
+          <div><dt>تاريخ إصدار التقرير</dt><dd class="num">${today}</dd></div>
+        </dl>
+      </div>
+      <div class="rp-cover-foot">مصدر البيانات: لوحة متابعة الشكاوى · الأرقام محسوبة من سجلات كل لوحة بعد تطبيق الفلاتر العامة واختيارات المقارنة</div>`,{cover:true}));
+
+    // 1) المؤشرات الرئيسية
+    const mL = computeCoreExecutiveMetrics(rowsL), mR = computeCoreExecutiveMetrics(rowsR);
+    const acc = rows => rows.filter(d=>compDecisionOf(d)==='accepted').length;
+    const rej = rows => rows.filter(d=>compDecisionOf(d)==='rejected').length;
+    const accL = acc(rowsL), accR = acc(rowsR), rejL = rej(rowsL), rejR = rej(rowsR);
+    const accRate = (a,r) => (a+r) ? a/(a+r)*100 : null;
+    const slaL = computeResolutionSlaCompliance(rowsL), slaR = computeResolutionSlaCompliance(rowsR);
+    const k = [
+      ['عدد الشكاوى', rowsL.length, rowsR.length, fmt0, false, true],
+      ['المفتوحة', rowsL.filter(isOpenRow).length, rowsR.filter(isOpenRow).length, fmt0, false, true],
+      ['مقبول', accL, accR, fmt0, false, false],
+      ['مرفوض', rejL, rejR, fmt0, false, true],
+      ['نسبة قبول التعويض (من المحسوم)', accRate(accL,rejL), accRate(accR,rejR), v=>v==null?'—':N1(v)+'%', true, false],
+      ['الالتزام بمهلة التحقيق ('+RES_SLA_TARGET_DAYS+' أيام)', slaL.pct, slaR.pct, v=>v==null?'—':N1(v)+'%', true, false],
+      ['متوسط زمن الحل (يوم)', mL.avgResolution, mR.avgResolution, v=>v==null?'—':N1(v), false, true],
+      ['إجمالي التعويضات (ج.م)', comp(rowsL), comp(rowsR), fmt0, false, true],
+      ['متوسط التعويض (ج.م)', mL.avgComp, mR.avgComp, fmt0, false, true]
+    ];
+    const kRows = k.map(([l,a,b,f,rate,lower])=>{
+      const d = (a==null||b==null) ? 0 : b-a;
+      const tone = d===0 ? 'neutral' : ((lower ? d<0 : d>0) ? 'accepted' : 'rejected');
+      const txt = d===0 ? 'بدون تغيّر' : ((lower ? d<0 : d>0) ? 'أفضل' : 'أسوأ');
+      return `<tr><td>${l}</td><td class="num">${f(a)}</td><td class="num">${f(b)}</td><td class="num">${diffCell(a,b,rate)}</td><td class="num">${rate?'—':pctChg(a,b)}</td><td>${(a==null||b==null)?'—':`<span class="badge ${tone}">${txt}</span>`}</td></tr>`;
+    }).join('');
+    pages.push(page(head('مقارنة المؤشرات الرئيسية',ctx)+
+      tableWrap([{t:'المؤشر'},{t:nameL,num:true,w:'26mm'},{t:nameR,num:true,w:'26mm'},{t:'الفرق',num:true,w:'24mm'},{t:'التغيّر %',num:true,w:'22mm'},{t:'التقييم',w:'24mm'}],kRows)+
+      `<p class="rp-note">الفرق = ${nameR} − ${nameL}. فروق النسب بالنقاط المئوية، وباقي المؤشرات بالقيمة المطلقة والنسبة المئوية للتغيّر. «أفضل/أسوأ» حسب اتجاه المؤشر (الأقل أفضل في الشكاوى والمفتوح والمرفوض وزمن الحل والتعويض؛ الأعلى أفضل في المقبول والالتزام).</p>`+foot()));
+
+    // 2) جداول المقارنة حسب البُعد
+    const cmpTable = (title, keyFn, limit, extra) => {
+      const gL = groupBy(rowsL, keyFn), gR = groupBy(rowsR, keyFn);
+      const keys = [...new Set([...gL.keys(), ...gR.keys()])].map(key=>({key, l:gL.get(key)||[], r:gR.get(key)||[]}))
+        .sort((a,b)=> (b.l.length+b.r.length)-(a.l.length+a.r.length) || String(a.key).localeCompare(String(b.key),'ar'));
+      const shown = limit ? keys.slice(0,limit) : keys;
+      const tl = rowsL.length, tr = rowsR.length;
+      const cnt = (n,t) => `${N(n)} <span class="rp-note">(${pctOf2(n,t)})</span>`;
+      const body = shown.map(x=>`<tr><td>${esc(x.key)}</td><td class="num">${cnt(x.l.length,tl)}</td><td class="num">${cnt(x.r.length,tr)}</td><td class="num">${diffCell(x.l.length,x.r.length)}</td><td class="num">${fmt0(comp(x.l))}</td><td class="num">${fmt0(comp(x.r))}</td></tr>`).join('');
+      const note = (limit && keys.length>limit) ? `<p class="rp-note">معروض أعلى ${N(limit)} من ${N(keys.length)} بندًا.</p>` : '';
+      return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى — الأولى',num:true,w:'28mm'},{t:'الشكاوى — الثانية',num:true,w:'28mm'},{t:'الفرق',num:true,w:'16mm'},{t:'التعويض (ج.م) — الأولى',num:true,w:'24mm'},{t:'التعويض (ج.م) — الثانية',num:true,w:'24mm'}],body,'rp-compact')+note;
+    };
+    const pctOf2 = (a,b) => b ? N1(a/b*100)+'%' : '—';
+    const sub = `<p class="rp-note">% = نسبة البند من إجمالي شكاوى اللوحة نفسها. الفرق = ${nameR} − ${nameL}.</p>`;
+    pages.push(page(head('مقارنة الفروع',ctx)+cmpTable('الفروع المتسببة في الشكاوى',d=>lbl(d.branch),14)+sub+foot()));
+    pages.push(page(head('مقارنة التعويضات',ctx)+cmpTable('الجهة المتحملة للتعويض',d=>lbl(d.compensation_bearer),10)+cmpTable('حالة الشكوى',d=>lbl(d.status),8)+sub+foot()));
+    pages.push(page(head('مقارنة الأسباب والأنواع',ctx)+cmpTable('نوع الشكوى',d=>lbl(d.type),8)+cmpTable('تصنيف المشكلة',d=>lbl(d.classification),10)+sub+foot()));
+    const hasSender = d=>String(d.complainant||'').trim();
+    pages.push(page(head('مقارنة الراسلين',ctx)+cmpTable('الراسلون الأكثر شكاوى',d=>hasSender(d)?String(d.complainant).trim():'غير محدد',12)+sub+foot()));
+    pages.push(page(head('مقارنة مسؤولي الشكاوى',ctx)+cmpTable('مسؤول الشكوى',d=>lbl(d.owner),14)+sub+foot()));
+    const ym = v => (v && /^\d{4}-\d{2}/.test(String(v))) ? String(v).slice(0,7) : 'بدون تاريخ';
+    pages.push(page(head('مقارنة الاتجاه الشهري',ctx)+cmpTable('الشكاوى حسب شهر الإضافة',d=>ym(d.date_added),12)+sub+foot()));
+
+    // 3) المنهجية
+    pages.push(page(head('منهجية المقارنة',ctx)+`
+      <div class="rp-close"><h3>أساس الإعداد</h3><ul>
+        <li>${nameL}: ${esc(descL)} — <b class="num">${N(rowsL.length)}</b> سجل.</li>
+        <li>${nameR}: ${esc(descR)} — <b class="num">${N(rowsR.length)}</b> سجل.</li>
+        <li>عوامل التصفية العامة المطبقة على اللوحتين: ${chips.length?esc(chips.join('، ')):'لا توجد (كل السجلات).'}</li>
+        <li>الشكوى «مفتوحة» إذا كانت حالتها «جارى» أو «التحقيق»؛ الالتزام بمهلة التحقيق = نسبة الشكاوى المنجزة خلال ${RES_SLA_TARGET_DAYS} أيام ÷ الحالات ذات التاريخين الصالحين.</li>
+        <li>قد تتداخل سجلات اللوحتين إذا لم تكن الاختيارات متنافية؛ لذلك لا يُجمع رقما اللوحتين.</li>
+      </ul>
+      <div class="rp-sign"><div><span>إعداد</span><i></i></div><div><span>مراجعة</span><i></i></div><div><span>اعتماد</span><i></i></div></div>
+      <div class="rp-end">نهاية التقرير</div></div>`+foot()));
+    return pages;
+  }
+
   /* ---------- تبويبات التقرير ---------- */
   const TAB_DEFS = [
-    {k:'mgmt',   t:'تقرير الإدارة',   m:['الغرض والنطاق','الأهداف مقابل الفعلي','الملخص التنفيذي','ملخص المؤشرات الرئيسية']},
-    {k:'branch', t:'أداء الفروع',     m:['الهدف والمؤشرات — الفروع','التحليل التفصيلي','الفروع المتسببة في الشكاوى']},
-    {k:'comp',   t:'التعويضات',       m:['الهدف والمؤشرات — التعويضات','الجهة المتحملة للتعويض','مراجعة التعويض','الاتجاه الشهري']},
-    {k:'reason', t:'الأسباب والراسلون', m:['الهدف والمؤشرات — الأسباب والراسلون','الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى']},
-    {k:'owner',  t:'مسؤولو الشكاوى',  m:['الهدف والمؤشرات — مسؤولو الشكاوى','أداء مسؤولي الشكاوى']},
+    {k:'mgmt',   t:'تقرير الإدارة',   m:['الغرض والنطاق','الأهداف مقابل الفعلي','الملخص التنفيذي','ملخص المؤشرات الرئيسية','مقارنة المؤشرات الرئيسية','منهجية المقارنة']},
+    {k:'branch', t:'أداء الفروع',     m:['الهدف والمؤشرات — الفروع','التحليل التفصيلي','الفروع المتسببة في الشكاوى','مقارنة الفروع']},
+    {k:'comp',   t:'التعويضات',       m:['الهدف والمؤشرات — التعويضات','الجهة المتحملة للتعويض','الاتجاه الشهري','مقارنة التعويضات','مقارنة الاتجاه الشهري']},
+    {k:'reason', t:'الأسباب والراسلون', m:['الهدف والمؤشرات — الأسباب والراسلون','الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى','مقارنة الأسباب والأنواع','مقارنة الراسلين']},
+    {k:'owner',  t:'مسؤولو الشكاوى',  m:['الهدف والمؤشرات — مسؤولو الشكاوى','أداء مسؤولي الشكاوى','مقارنة مسؤولي الشكاوى']},
     {k:'action', t:'النتائج والتوصيات', m:['الهدف والمؤشرات — النتائج والتوصيات','النتائج والملاحظات','التوصيات وخطة الإجراءات','الختام ومنهجية الإعداد','لا توجد بيانات']}
   ];
   function assignGroups(ov){
@@ -6127,7 +6215,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     savedTheme = document.documentElement.getAttribute('data-theme');
     document.documentElement.removeAttribute('data-theme');       // التقرير دائمًا بالمظهر الفاتح
     let pages;
-    try{ pages = build(); }catch(e){ console.error(e); pages = [page(`<div class="rp-empty"><p>تعذّر إعداد التقرير. أعد المحاولة بعد تحديث اللوحة.</p></div>`)]; }
+    try{ pages = (typeof compareModeActive!=='undefined' && compareModeActive && typeof getFilteredForPanel==='function') ? buildCompare() : build(); }catch(e){ console.error(e); pages = [page(`<div class="rp-empty"><p>تعذّر إعداد التقرير. أعد المحاولة بعد تحديث اللوحة.</p></div>`)]; }
     ov.innerHTML = `<div class="rp-toolbar">
         <div class="rp-tb-title"><i class="fa-solid fa-file-lines"></i> معاينة التقرير</div>
         <div class="rp-tb-actions">
