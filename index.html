@@ -6607,7 +6607,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
 <script>
 /* ARRIVE — مولّد العرض التقديمي (PowerPoint)
  * يبني عرضًا تقديميًا قابلًا للتعديل (.pptx) من نفس بيانات اللوحة وفلاترها ودوال حسابها؛
- * وفي وضع المقارنة يبني عرض مقارنة بين اللوحات الثلاث. لا مؤشرات جديدة تُحسب خارج دوال اللوحة.
+ * وفي وضع المقارنة يبني عرض مقارنة بين لوحتين أو ثلاث. لا مؤشرات جديدة تُحسب خارج دوال اللوحة.
  */
 (function(){
   'use strict';
@@ -6618,6 +6618,11 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const N = v => (v==null||Number.isNaN(v)) ? '—' : Number(v).toLocaleString('en-US');
   const N1 = v => (v==null||Number.isNaN(v)) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
   const pc = (a,t) => t ? N1(a/t*100)+'%' : '—';
+  // العدد والمعدود في العربية: 1 مفرد، 2 مثنى، 3–10 جمع، 11 فأكثر مفرد منصوب
+  const ar3 = (n, one, two, few, many) => { const v = Math.abs(Math.round(n)); return v===1 ? one : v===2 ? two : (v>=3 && v<=10) ? `${N(v)} ${few}` : `${N(v)} ${many}`; };
+  const cntShk = n => ar3(n,'شكوى واحدة','شكوتان','شكاوى','شكوى');
+  const cntCase = n => ar3(n,'حالة واحدة','حالتان','حالات','حالة');
+  const daysTxt = n => ar3(n,'يوم واحد','يومان','أيام','يومًا');
   const sgn = d => d>0?'+':d<0?'−':'';
   const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
   const UNK = ['غير محدد','غير مذكور بالمصدر'];
@@ -6714,15 +6719,15 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     s = base(`الملخص التنفيذي — ${ctxLabel}`);
     card(s, 9.0, 1.6, 3.45, 1.5, N(S.n), 'إجمالي الشكاوى المسجلة');
     card(s, 5.4, 1.6, 3.45, 1.5, N(Math.round(S.comp)), 'إجمالي مبالغ التعويضات (ج.م)', null, C.orange);
-    card(s, 1.8, 1.6, 3.45, 1.5, S.dec ? N1(S.acc/S.dec*100)+'%' : '—', 'نسبة قبول التعويض من الحالات المحسومة', S.dec ? {text:`${N(S.acc)} شكوى`, color:C.orange} : null);
+    card(s, 1.8, 1.6, 3.45, 1.5, S.dec ? N1(S.acc/S.dec*100)+'%' : '—', 'نسبة قبول التعويض من الحالات المحسومة', S.dec ? {text:cntShk(S.acc), color:C.orange} : null);
     const amt = v => `${N(Math.round(v))} (${pc(v,S.comp)})`;
     const body = [['تم قبول التعويض', N(S.acc), amt(sumCompensation(rows.filter(d=>compDecisionOf(d)==='accepted'))), pc(S.acc,S.n)],
       ['تم رفض التعويض', N(S.rej), amt(sumCompensation(rows.filter(d=>compDecisionOf(d)==='rejected'))), pc(S.rej,S.n)]];
-    if(S.open) body.push(['قيد التحقيق / مفتوحة', N(S.open), amt(sumCompensation(rows.filter(isOpenRow))), pc(S.open,S.n)]);
+    if(S.open) body.push(['قيد التحقيق (مفتوحة)', N(S.open), amt(sumCompensation(rows.filter(isOpenRow))), pc(S.open,S.n)]);
     if(S.other>0) body.push(['حالات أخرى غير محسومة', N(S.other), amt(S.comp - sumCompensation(rows.filter(d=>compDecisionOf(d)==='accepted')) - sumCompensation(rows.filter(d=>compDecisionOf(d)==='rejected')) - sumCompensation(rows.filter(isOpenRow))), pc(S.other,S.n)]);
     body.push(['الإجمالي', N(S.n), amt(S.comp), '100%']);
     table(s, ['الحالة','عدد الشكاوى','مبلغ التعويض (ج.م)','النسبة من الإجمالي'], body, { x:0.9, y:3.35, w:11.54, totalRow:true, rowH:0.36 });
-    insight(s, S.dec ? `قُبل تعويض ${N(S.acc)} شكوى من ${N(S.dec)} حالة محسومة (${N1(S.acc/S.dec*100)}%) بإجمالي تعويضات ${N(Math.round(S.comp))} ج.م، ورُفض ${N(S.rej)} شكوى${S.open?`، وبقيت ${N(S.open)} شكوى مفتوحة`:''}.` : `إجمالي الشكاوى ${N(S.n)} شكوى، ولا توجد حالات محسومة (قبول/رفض) ضمن النطاق الحالي.`, 5.55);
+    insight(s, S.dec ? `قُبل التعويض في ${cntShk(S.acc)} من أصل ${cntCase(S.dec)} محسومة (${N1(S.acc/S.dec*100)}%)، بإجمالي تعويضات ${N(Math.round(S.comp))} ج.م، ورُفض في ${cntShk(S.rej)}${S.open?`، وبقيت ${cntShk(S.open)} مفتوحة`:''}.` : `إجمالي الشكاوى ${cntShk(S.n)}، ولا توجد حالات محسومة (قبول أو رفض) ضمن النطاق الحالي.`, 5.55);
     note(s, 'نسبة القبول = المقبول ÷ (المقبول + المرفوض). النسبة في الجدول من إجمالي الشكاوى. المفتوحة = حالة «جارى» أو «التحقيق».', 6.3);
 
     // 3-4) تطور الشكاوى والتعويضات شهريًا (الشهر المختار + شهران سابقان) ثم مقارنة الشهر المختار بالشهر السابق
@@ -6737,7 +6742,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const mk = [shiftM(curK,-2), shiftM(curK,-1), curK];
       const MS = mk.map(k=>({k, s:stats(mrows(k))}));
       const chg = (a,b) => b ? (a-b)/b*100 : null;
-      const chgTxt = v => v==null ? '—' : `${v>0?'زيادة':v<0?'انخفاض':'بدون تغيّر'} ${N1(Math.abs(v))}%`;
+      const chgTxt = v => v==null ? '—' : (v>0?`زيادة ${N1(v)}%`:v<0?`انخفاض ${N1(Math.abs(v))}%`:'بدون تغيّر');
       const accR = x => x.dec ? x.acc/x.dec*100 : null;
       const emptyMonths = MS.filter(x=>!x.s.n).map(x=>monthName(x.k));
       const emptyNote = emptyMonths.length ? ` لا توجد سجلات في: ${emptyMonths.join('، ')} ضمن الفلاتر الحالية.` : '';
@@ -6755,14 +6760,14 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       table(s, ['المؤشر'].concat(MS.map(x=>monthName(x.k))).concat(['التغيّر عن الشهر السابق']), [
         ['عدد الشكاوى'].concat(MS.map(x=>N(x.s.n))).concat([chgTxt(chg(MS[2].s.n, MS[1].s.n))]),
         ['مبلغ التعويضات (ج.م) — النسبة من إجمالي الأشهر الثلاثة'].concat(MS.map(x=>`${N(Math.round(x.s.comp))} (${pc(x.s.comp,tot3)})`)).concat([chgTxt(chg(MS[2].s.comp, MS[1].s.comp))]),
-        ['عدد المقبول'].concat(MS.map(x=>N(x.s.acc))).concat([dlt(x=>x.s.acc, N)]),
-        ['نسبة قبول التعويض'].concat(MS.map(x=>accR(x.s)==null?'—':N1(accR(x.s))+'%')).concat([(accR(MS[1].s)==null||accR(MS[2].s)==null)?'—':`${sgn(accR(MS[2].s)-accR(MS[1].s))}${N1(Math.abs(accR(MS[2].s)-accR(MS[1].s)))} نقطة`]),
-        ['عدد المفتوح'].concat(MS.map(x=>N(x.s.open))).concat([dlt(x=>x.s.open, N)]),
+        ['عدد الحالات المقبولة'].concat(MS.map(x=>N(x.s.acc))).concat([dlt(x=>x.s.acc, N)]),
+        ['نسبة قبول التعويض'].concat(MS.map(x=>accR(x.s)==null?'—':N1(accR(x.s))+'%')).concat([(accR(MS[1].s)==null||accR(MS[2].s)==null)?'—':`${sgn(accR(MS[2].s)-accR(MS[1].s))}${N1(Math.abs(accR(MS[2].s)-accR(MS[1].s)))} نقطة مئوية`]),
+        ['عدد الحالات المفتوحة'].concat(MS.map(x=>N(x.s.open))).concat([dlt(x=>x.s.open, N)]),
         ['متوسط زمن الحل (يوم)'].concat(MS.map(x=>x.s.avgRes==null?'—':N1(x.s.avgRes))).concat([dlt(x=>x.s.avgRes, N1)]),
-        ['الالتزام بمهلة التحقيق'].concat(MS.map(x=>x.s.res.pct==null?'—':N1(x.s.res.pct)+'%')).concat([(MS[1].s.res.pct==null||MS[2].s.res.pct==null)?'—':`${sgn(MS[2].s.res.pct-MS[1].s.res.pct)}${N1(Math.abs(MS[2].s.res.pct-MS[1].s.res.pct))} نقطة`])
+        ['الالتزام بمهلة التحقيق'].concat(MS.map(x=>x.s.res.pct==null?'—':N1(x.s.res.pct)+'%')).concat([(MS[1].s.res.pct==null||MS[2].s.res.pct==null)?'—':`${sgn(MS[2].s.res.pct-MS[1].s.res.pct)}${N1(Math.abs(MS[2].s.res.pct-MS[1].s.res.pct))} نقطة مئوية`])
       ], { x:0.9, y:3.55, w:11.54, rowH:0.31, fs:10.5, colW:[3.6, 1.9, 1.9, 1.9, 2.24] });
       const hiN = MS.slice().sort((a,b)=>b.s.n-a.s.n)[0], hiC = MS.slice().sort((a,b)=>b.s.comp-a.s.comp)[0];
-      insight(s, `أعلى شهر في عدد الشكاوى ${monthName(hiN.k)} (${N(hiN.s.n)} شكوى)، وأعلى شهر في قيمة التعويضات ${monthName(hiC.k)} (${N(Math.round(hiC.s.comp))} ج.م).`, 6.1, 0.5);
+      insight(s, `أعلى شهر في عدد الشكاوى هو ${monthName(hiN.k)} (${cntShk(hiN.s.n)})، وأعلى شهر في قيمة التعويضات هو ${monthName(hiC.k)} (${N(Math.round(hiC.s.comp))} ج.م).`, 6.1, 0.5);
       note(s, `الشهر حسب تاريخ إضافة الشكوى؛ الشهر المختار والشهران السابقان له بغض النظر عن فلتر الشهر والتاريخ، مع بقية الفلاتر.${emptyNote}`, 6.65);
 
       // 4) الشهر المختار مقابل الشهر السابق
@@ -6770,19 +6775,19 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const cN = chg(cur.s.n, prev.s.n), cC = chg(cur.s.comp, prev.s.comp);
       const tot2 = cur.s.comp + prev.s.comp;
       s = base(`مقارنة ${monthName(cur.k)} مع الشهر السابق ${monthName(prev.k)}`);
-      card(s, 9.0, 1.55, 3.45, 1.5, N(cur.s.n), `شكوى في ${monthName(cur.k)} مقابل ${N(prev.s.n)} في ${monthName(prev.k)}`, {text:chgTxt(cN), color:cN!=null&&cN<=0?C.green:C.red});
-      card(s, 5.4, 1.55, 3.45, 1.5, N(Math.round(cur.s.comp)), `ج.م تعويضات ${monthName(cur.k)} مقابل ${N(Math.round(prev.s.comp))} في ${monthName(prev.k)}`, {text:chgTxt(cC), color:cC!=null&&cC<=0?C.green:C.red}, C.orange);
+      card(s, 9.0, 1.55, 3.45, 1.5, N(cur.s.n), `عدد الشكاوى في ${monthName(cur.k)}، مقابل ${N(prev.s.n)} في ${monthName(prev.k)}`, {text:chgTxt(cN), color:cN!=null&&cN<=0?C.green:C.red});
+      card(s, 5.4, 1.55, 3.45, 1.5, N(Math.round(cur.s.comp)), `إجمالي التعويضات (ج.م) في ${monthName(cur.k)}، مقابل ${N(Math.round(prev.s.comp))} في ${monthName(prev.k)}`, {text:chgTxt(cC), color:cC!=null&&cC<=0?C.green:C.red}, C.orange);
       const rA = accR(cur.s), rB = accR(prev.s);
-      card(s, 1.8, 1.55, 3.45, 1.5, rA==null?'—':N1(rA)+'%', `نسبة قبول التعويض مقابل ${rB==null?'—':N1(rB)+'%'} في ${monthName(prev.k)}`, (rA!=null&&rB!=null)?{text:`${sgn(rA-rB)}${N1(Math.abs(rA-rB))} نقطة`, color:rA>=rB?C.green:C.red}:null);
+      card(s, 1.8, 1.55, 3.45, 1.5, rA==null?'—':N1(rA)+'%', `نسبة قبول التعويض في ${monthName(cur.k)}، مقابل ${rB==null?'—':N1(rB)+'%'} في ${monthName(prev.k)}`, (rA!=null&&rB!=null)?{text:`${sgn(rA-rB)}${N1(Math.abs(rA-rB))} نقطة مئوية`, color:rA>=rB?C.green:C.red}:null);
       table(s, ['المؤشر', monthName(prev.k), monthName(cur.k), 'التغيّر'], [
         ['عدد الشكاوى', N(prev.s.n), N(cur.s.n), chgTxt(cN)],
         ['مبالغ التعويضات (ج.م) — النسبة من إجمالي الشهرين', `${N(Math.round(prev.s.comp))} (${pc(prev.s.comp,tot2)})`, `${N(Math.round(cur.s.comp))} (${pc(cur.s.comp,tot2)})`, chgTxt(cC)],
-        ['عدد المقبول', N(prev.s.acc), N(cur.s.acc), `${sgn(cur.s.acc-prev.s.acc)}${N(Math.abs(cur.s.acc-prev.s.acc))}`],
-        ['عدد المفتوح', N(prev.s.open), N(cur.s.open), `${sgn(cur.s.open-prev.s.open)}${N(Math.abs(cur.s.open-prev.s.open))}`],
+        ['عدد الحالات المقبولة', N(prev.s.acc), N(cur.s.acc), `${sgn(cur.s.acc-prev.s.acc)}${N(Math.abs(cur.s.acc-prev.s.acc))}`],
+        ['عدد الحالات المفتوحة', N(prev.s.open), N(cur.s.open), `${sgn(cur.s.open-prev.s.open)}${N(Math.abs(cur.s.open-prev.s.open))}`],
         ['متوسط زمن الحل (يوم)', prev.s.avgRes==null?'—':N1(prev.s.avgRes), cur.s.avgRes==null?'—':N1(cur.s.avgRes), (prev.s.avgRes==null||cur.s.avgRes==null)?'—':`${sgn(cur.s.avgRes-prev.s.avgRes)}${N1(Math.abs(cur.s.avgRes-prev.s.avgRes))} يوم`]
       ], { x:0.9, y:3.3, w:11.54, rowH:0.36, colW:[4.2, 2.6, 2.6, 2.14] });
       const dirs = (cN!=null && cC!=null && Math.sign(cN)!==Math.sign(cC) && cN!==0 && cC!==0);
-      insight(s, dirs ? 'اتجاه عدد الشكاوى يختلف عن اتجاه مبالغ التعويضات؛ فالتكلفة تتأثر بنوع الحالات وقيمة التعويض وليس بعددها فقط.' : `تغيّر عدد الشكاوى ${chgTxt(cN)} وتغيّرت مبالغ التعويضات ${chgTxt(cC)} مقارنة بالشهر السابق.`, 5.7, 0.62);
+      insight(s, dirs ? 'اتجاه عدد الشكاوى يختلف عن اتجاه مبالغ التعويضات؛ فالتكلفة تتأثر بنوع الحالات وقيمة التعويض وليس بعددها فقط.' : `تغيّر عدد الشكاوى (${chgTxt(cN)}) وتغيّرت مبالغ التعويضات (${chgTxt(cC)}) مقارنة بالشهر السابق.`, 5.7, 0.62);
       note(s, `الشهر حسب تاريخ إضافة الشكوى بغض النظر عن فلتر الشهر والتاريخ، مع بقية الفلاتر.${emptyNote}`, 6.45);
     }
 
@@ -6791,8 +6796,8 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     if(compRows.length){
       const bt = topBy(compRows, d=>d.compensation_bearer, 99).sort((a,b)=>b.comp-a.comp);
       const top = bt.slice(0,3), rest = bt.slice(3);
-      s = base('المسؤوليات المالية: توزيع التعويضات حسب الجهة');
-      top.forEach((b,i)=> card(s, [9.0,5.4,1.8][i], 1.55, 3.45, 1.5, `${N(Math.round(b.comp))} ج`, `${b.k} — ${N(b.n)} حالة`, {text:pc(b.comp,S.comp), color:C.orange}));
+      s = base('المسؤولية المالية: توزيع التعويضات حسب الجهة المتحملة');
+      top.forEach((b,i)=> card(s, [9.0,5.4,1.8][i], 1.55, 3.45, 1.5, `${N(Math.round(b.comp))} ج`, `${b.k} — ${cntCase(b.n)}`, {text:pc(b.comp,S.comp), color:C.orange}));
       const amtB = v => `${N(Math.round(v))} (${pc(v,S.comp)})`;
       const brow = top.map(b=>[b.k, N(b.n), amtB(b.comp), pc(b.comp,S.comp)]);
       if(rest.length) brow.push([`جهات أخرى (${N(rest.length)})`, N(rest.reduce((t,x)=>t+x.n,0)), amtB(rest.reduce((t,x)=>t+x.comp,0)), pc(rest.reduce((t,x)=>t+x.comp,0),S.comp)]);
@@ -6800,7 +6805,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       table(s, ['الجهة المتحملة / الوظيفة','عدد حالات التعويض','مبلغ التعويض (ج.م)','النسبة من الإجمالي'], brow, { x:0.9, y:3.25, w:11.54, totalRow:true, rowH:0.36 });
       const t2 = bt.slice(0,2);
       insight(s, t2.length>1 ? `${t2[0].k} و${t2[1].k} يتحملان ${pc(t2[0].comp+t2[1].comp,S.comp)} من التعويضات بإجمالي ${N(Math.round(t2[0].comp+t2[1].comp))} ج.م.` : `${t2[0].k} تتحمل ${pc(t2[0].comp,S.comp)} من التعويضات.`, 5.85, 0.55);
-      note(s, `الجدول يشمل الحالات ذات مبلغ تعويض مسجّل فقط (${N(compRows.length)} من ${N(S.n)} شكوى). الجهة من عمود «وظيفة المتحمل للتعويض».`, 6.5);
+      note(s, `الجدول يشمل الحالات ذات مبلغ تعويض مسجّل فقط (${N(compRows.length)} من إجمالي ${cntShk(S.n)}). الجهة من عمود «وظيفة المتحمل للتعويض».`, 6.5);
     }
 
     // 6-8) الأسباب والفروع والعملاء
@@ -6812,11 +6817,12 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
       const sum = t.reduce((a,x)=>a+x.n,0);
       insight(s2, insightFn(t, sum), 5.3, 0.62);
-      note(s2, `النسبة من إجمالي ${N(S.n)} شكوى مسجلة ضمن الفترة والفلاتر المعروضة.`, 6.05);
+      note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.`, 6.05);
     };
-    ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>`أعلى ${N(t.length)} أسباب تمثل ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`, true);
-    ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>`أعلى ${N(t.length)} فروع تمثل ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${N(t[0].n)} شكوى (${pc(t[0].n,S.n)}).`, true);
-    ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${N(t[0].n)} شكوى.`, true);
+    const topOf = (n, one, two, pl) => n===1 ? [`أعلى ${one}`,'يمثل'] : n===2 ? [`أعلى ${two}`,'يمثلان'] : [`أعلى ${N(n)} ${pl}`,'تمثل'];
+    ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`; }, true);
+    ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).`; }, true);
+    ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${cntShk(t[0].n)}.`, true);
 
     // 9) الأهداف مقابل الفعلي
     s = base('الأهداف مقابل الفعلي');
@@ -6825,10 +6831,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     table(s, ['المؤشر','الهدف','الفعلي','الحالة'], [
       ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`, accV==null?'—':`${N1(accV)}% (${N(S.acc)} من ${N(S.dec)})`, st(accV, accV!=null&&accV>=ACCEPT_TARGET_PCT)],
       ['نسبة الشكاوى المفتوحة', `أقل من ${PENDING_TARGET_PCT}%`, openV==null?'—':`${N1(openV)}% (${N(S.open)} من ${N(S.n)})`, st(openV, openV!=null&&openV<=PENDING_TARGET_PCT)],
-      [`الالتزام بمهلة التحقيق (${RES_SLA_TARGET_DAYS} أيام)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.res.pct==null?'—':`${N1(S.res.pct)}% (${N(S.res.ok)} من ${N(S.res.count)})`, st(S.res.pct, S.res.pct!=null&&S.res.pct>=SLA_COMPLIANCE_MIN_PCT)],
-      [`الالتزام بمهلة تنفيذ التعويض (${COMP_SLA_TARGET_DAYS} يوم)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.cmpSla.pct==null?'—':`${N1(S.cmpSla.pct)}% (${N(S.cmpSla.ok)} من ${N(S.cmpSla.count)})`, st(S.cmpSla.pct, S.cmpSla.pct!=null&&S.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT)]
+      [`الالتزام بمهلة التحقيق (${daysTxt(RES_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.res.pct==null?'—':`${N1(S.res.pct)}% (${N(S.res.ok)} من ${N(S.res.count)})`, st(S.res.pct, S.res.pct!=null&&S.res.pct>=SLA_COMPLIANCE_MIN_PCT)],
+      [`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.cmpSla.pct==null?'—':`${N1(S.cmpSla.pct)}% (${N(S.cmpSla.ok)} من ${N(S.cmpSla.count)})`, st(S.cmpSla.pct, S.cmpSla.pct!=null&&S.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT)]
     ], { x:0.9, y:1.7, w:11.54, rowH:0.5, colW:[4.0,2.2,3.5,1.84] });
-    note(s, 'الالتزام بالمهلة = الحالات المنجزة خلال المهلة ÷ الحالات التي لها التاريخان الصالحان. الأهداف هي القيم المستخدمة حاليًا في اللوحة.', 4.4);
+    note(s, 'الالتزام بالمهلة = الحالات المنجزة خلال المهلة ÷ الحالات ذات التاريخين الصالحين. الأهداف هي القيم المعتمدة حاليًا في لوحة المتابعة.', 4.4);
     thanks(`تقرير متابعة الشكاوى والتعويضات – ${ctxLabel}`);
   }
 
@@ -6869,22 +6875,22 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const cx = 12.44 - cw - i*(cw+gap);   // من اليمين لليسار، وعرض البطاقات يملأ عرض الشريحة لأي عدد مجموعات (2 أو 3)
       s.addShape(pptx.ShapeType.roundRect, { x:cx, y:1.55, w:cw, h:1.75, rectRadius:0.12, fill:{color:C.light}, line:{color:GROUP_COLORS[i], width:1.5} });
       s.addText(names[i], { x:cx+0.1, y:1.6, w:cw-0.2, h:0.35, fontFace:FONT, fontSize:13, bold:true, color:GROUP_COLORS[i], align:'center', rtlMode:true });
-      s.addText(`${N(x.n)} شكوى`, { x:cx+0.1, y:1.95, w:cw-0.2, h:0.5, fontFace:FONT, fontSize:24, bold:true, color:C.navy, align:'center', rtlMode:true });
+      s.addText(cntShk(x.n), { x:cx+0.1, y:1.95, w:cw-0.2, h:0.5, fontFace:FONT, fontSize:24, bold:true, color:C.navy, align:'center', rtlMode:true });
       s.addText(`تعويضات ${N(Math.round(x.comp))} ج.م`, { x:cx+0.1, y:2.5, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
-      s.addText(`قبول ${x.dec?N1(x.acc/x.dec*100)+'%':'—'} · مفتوحة ${pc(x.open,x.n)}`, { x:cx+0.1, y:2.85, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
+      s.addText(`نسبة القبول ${x.dec?N1(x.acc/x.dec*100)+'%':'—'} · نسبة المفتوحة ${pc(x.open,x.n)}`, { x:cx+0.1, y:2.85, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
     });
     const cell = (v, t) => t!=null ? `${N(v)} (${pc(v,t)})` : N(v);
     const diffN = (a,b) => `${sgn(b-a)}${N(Math.abs(b-a))}`;
     const first = 0, last = n-1;
-    table(s, ['المؤشر'].concat(names).concat(['الفرق (الأخيرة − الأولى)']), [
+    table(s, ['المؤشر'].concat(names).concat([n===2 ? 'الفرق (الثانية − الأولى)' : 'الفرق (الثالثة − الأولى)']), [
       ['عدد الشكاوى'].concat(SP.map(x=>N(x.n))).concat([diffN(SP[first].n,SP[last].n)]),
       ['المفتوحة'].concat(SP.map(x=>cell(x.open,x.n))).concat([diffN(SP[first].open,SP[last].open)]),
-      ['مقبول (من المحسوم)'].concat(SP.map(x=>cell(x.acc,x.dec))).concat([diffN(SP[first].acc,SP[last].acc)]),
-      ['مرفوض (من المحسوم)'].concat(SP.map(x=>cell(x.rej,x.dec))).concat([diffN(SP[first].rej,SP[last].rej)]),
+      ['المقبولة (من المحسومة)'].concat(SP.map(x=>cell(x.acc,x.dec))).concat([diffN(SP[first].acc,SP[last].acc)]),
+      ['المرفوضة (من المحسومة)'].concat(SP.map(x=>cell(x.rej,x.dec))).concat([diffN(SP[first].rej,SP[last].rej)]),
       ['شحنات تم التعويض عنها'].concat(SP.map(x=>cell(x.compN,x.n))).concat([diffN(SP[first].compN,SP[last].compN)]),
       ['مبلغ التعويض (ج.م)'].concat(SP.map(x=>N(Math.round(x.comp)))).concat([diffN(Math.round(SP[first].comp),Math.round(SP[last].comp))])
     ], { x:0.9, y:3.5, w:11.54, rowH:0.36, fs:11, colW:[2.6].concat(SP.map(()=>2.2)).concat([11.54-2.6-2.2*n]) });
-    note(s, 'النسبة بين الأقواس من أساس اللوحة نفسها: المقبول والمرفوض من الحالات المحسومة، والمفتوحة والمعوَّض عنها من إجمالي الشكاوى.', 6.15);
+    note(s, 'النسبة بين القوسين من إجمالي المجموعة نفسها: المقبولة والمرفوضة من الحالات المحسومة، والمفتوحة والمعوَّض عنها من إجمالي الشكاوى.', 6.15);
 
     // الأهداف مقابل الفعلي
     s = base('الأهداف مقابل الفعلي لكل مجموعة');
@@ -6892,10 +6898,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     table(s, ['المؤشر','الهدف'].concat(names), [
       ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`].concat(SP.map(x=>{ const v = x.dec?x.acc/x.dec*100:null; return g(v, v!=null&&v>=ACCEPT_TARGET_PCT, `(${N(x.acc)} من ${N(x.dec)})`); })),
       ['نسبة الشكاوى المفتوحة', `أقل من ${PENDING_TARGET_PCT}%`].concat(SP.map(x=>{ const v = x.n?x.open/x.n*100:null; return g(v, v!=null&&v<=PENDING_TARGET_PCT, `(${N(x.open)} من ${N(x.n)})`); })),
-      [`الالتزام بمهلة التحقيق (${RES_SLA_TARGET_DAYS} أيام)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.res.pct, x.res.pct!=null&&x.res.pct>=SLA_COMPLIANCE_MIN_PCT, x.res.count?`(${N(x.res.ok)} من ${N(x.res.count)})`:''))),
-      [`الالتزام بمهلة تنفيذ التعويض (${COMP_SLA_TARGET_DAYS} يوم)`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.cmpSla.pct, x.cmpSla.pct!=null&&x.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT, x.cmpSla.count?`(${N(x.cmpSla.ok)} من ${N(x.cmpSla.count)})`:'')))
+      [`الالتزام بمهلة التحقيق (${daysTxt(RES_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.res.pct, x.res.pct!=null&&x.res.pct>=SLA_COMPLIANCE_MIN_PCT, x.res.count?`(${N(x.res.ok)} من ${N(x.res.count)})`:''))),
+      [`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.cmpSla.pct, x.cmpSla.pct!=null&&x.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT, x.cmpSla.count?`(${N(x.cmpSla.ok)} من ${N(x.cmpSla.count)})`:'')))
     ], { x:0.9, y:1.7, w:11.54, rowH:0.6, fs:11, colW:[2.8,1.6].concat(SP.map(()=>(11.54-4.4)/n)) });
-    note(s, 'الأهداف هي القيم المستخدمة حاليًا في اللوحة.', 4.9);
+    note(s, 'الأهداف هي القيم المعتمدة حاليًا في لوحة المتابعة.', 4.9);
 
     // مقارنات الأبعاد
     const dim = (title, head1, keyFn, limit, useComp) => {
@@ -6911,7 +6917,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       table(s2, [head1].concat(names), keys.map(k=>[k.k].concat(k.g.map((r,i)=>`${N(r.length)} (${pc(r.length,tot[i])})`))), { x:6.5, y:1.55, w:5.94, rowH:0.5, fs:10.5, colW:[1.8].concat(SP.map(()=>(5.94-1.8)/n)) });
       const lead = keys[0];
       insight(s2, `أعلى بند إجمالًا هو «${lead.k}»: ${names.map((nm,i)=>`${nm} ${N(lead.g[i].length)} (${pc(lead.g[i].length,tot[i])})`).join(' · ')}.`, 5.4, 0.7);
-      note(s2, useComp ? 'تشمل الحالات ذات مبلغ تعويض مسجّل فقط. النسبة من إجمالي حالات التعويض في اللوحة نفسها.' : 'النسبة من إجمالي شكاوى اللوحة نفسها.', 6.25);
+      note(s2, useComp ? 'تشمل الحالات ذات مبلغ التعويض المسجّل فقط. النسبة من إجمالي حالات التعويض في المجموعة نفسها.' : 'النسبة من إجمالي شكاوى المجموعة نفسها.', 6.25);
     };
     dim('مقارنة الجهة المتحملة للتعويض', 'الجهة المتحملة', d=>d.compensation_bearer, 6, true);
     dim('مقارنة أسباب الشكاوى', 'السبب', d=>d.classification, 5, false);
