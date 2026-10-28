@@ -1002,6 +1002,8 @@
   .cmv.left .cmv-tag::before{ content:"● "; color:var(--navy); }
 
   .cmv.right .cmv-tag::before{ content:"● "; color:var(--gold); }
+  .compare-count-switch{ display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--ink-faint); }
+  .compare-count-switch select{ border:1px solid var(--line-strong); border-radius:8px; padding:6px 10px; background:var(--surface); color:var(--navy); font:inherit; font-weight:700; cursor:pointer; }
 
   .cmv.mid .cmv-tag::before{ content:"● "; color:#F59E0B; }
   .cmv-num{ font-family:var(--font-numeric); direction:ltr; unicode-bidi:isolate; font-size:19px; font-weight:700; color:var(--navy-deep); }
@@ -1020,7 +1022,10 @@
 
   .compare-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; align-items:start; }
 
-  @media (max-width:1500px){ .compare-grid{ grid-template-columns:1fr; }
+  .compare-grid.two{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .compare-panel.panel-off{ display:none; }
+
+  @media (max-width:1500px){ .compare-grid, .compare-grid.two{ grid-template-columns:1fr; }
  }
 
 
@@ -1957,8 +1962,11 @@ body.report-open{overflow:hidden}
 
   <div class="compare-toolbar">
     <div class="compare-toolbar-actions">
+      <label class="compare-count-switch" for="compareCount">عدد اللوحات المقارنة
+        <select id="compareCount"><option value="2">لوحتان (2)</option><option value="3" selected>ثلاث لوحات (3)</option></select>
+      </label>
       <button class="qa-btn" id="btnSyncFilters" type="button"><i class="fa-solid fa-angles-right qa-icon"></i> مزامنة القيم (الأولى ← الباقي)</button>
-      <button class="qa-btn" id="btnSwapFilters" type="button"><i class="fa-solid fa-right-left qa-icon"></i> تبديل الأولى والثالثة</button>
+      <button class="qa-btn" id="btnSwapFilters" type="button"><i class="fa-solid fa-right-left qa-icon"></i> <span id="swapLabel">تبديل الأولى والثالثة</span></button>
       <button class="qa-btn" id="btnCloseCompare" type="button"><i class="fa-solid fa-xmark qa-icon"></i> إغلاق وضع المقارنة</button>
     </div>
   </div>
@@ -5180,7 +5188,8 @@ async function loadDashboardData(opts){
 
 let compareModeActive = false;
 let compareChartsInitialized = false;
-const COMPARE_PANELS = ['L','M','R'];   // اللوحة الأولى / الثانية / الثالثة
+const ALL_COMPARE_PANELS = ['L','M','R'];
+let COMPARE_PANELS = ALL_COMPARE_PANELS.slice();   // اللوحات النشطة: الأولى / الثانية (/ الثالثة)
 const compareCharts = { L:{}, M:{}, R:{} };
 
 function buildCompareChartSet(suf){
@@ -5524,7 +5533,7 @@ function renderCompareSummary(rowsByPanel){
         <div class="compare-metric-values">
           ${ms.map((x,i)=>`<div class="cmv ${tags[i][0]}"><span class="cmv-tag">${tags[i][1]}</span><span class="cmv-num">${m.fmt(x[m.key])}</span></div>`).join('')}
         </div>
-        ${diffLine(m,0,1,'الثانية عن الأولى')}${diffLine(m,1,2,'الثالثة عن الثانية')}
+        ${diffLine(m,0,1,'الثانية عن الأولى')}${ms.length>2 ? diffLine(m,1,2,'الثالثة عن الثانية') : ''}
       </div>`).join('');
 }
 
@@ -5629,6 +5638,19 @@ document.getElementById('compareByChecks').addEventListener('change', (e)=>{
   onCompareFieldsChange();
 });
 
+function setComparePanelCount(n){
+  COMPARE_PANELS = ALL_COMPARE_PANELS.slice(0, n);
+  const grid = document.querySelector('.compare-grid');
+  if(grid) grid.classList.toggle('two', n===2);
+  document.querySelectorAll('.compare-panel').forEach(p=> p.classList.toggle('panel-off', !COMPARE_PANELS.includes(p.dataset.panel)));
+  const sw = document.getElementById('swapLabel');
+  if(sw) sw.textContent = n===2 ? 'تبديل الأولى والثانية' : 'تبديل الأولى والثالثة';
+  refreshCompareValueOptions();
+  renderComparePanels();
+  requestAnimationFrame(()=> COMPARE_PANELS.forEach(suf=>{ const c = compareCharts[suf]; if(c) Object.values(c).forEach(ch=>{ try{ ch.resize(); }catch(e){} }); }));
+}
+document.getElementById('compareCount').addEventListener('change', e=> setComparePanelCount(parseInt(e.target.value,10)));
+
 document.getElementById('btnExportPanel_L').addEventListener('click', ()=> exportPanelCsv('L'));
 document.getElementById('btnExportPanel_M').addEventListener('click', ()=> exportPanelCsv('M'));
 document.getElementById('btnExportPanel_R').addEventListener('click', ()=> exportPanelCsv('R'));
@@ -5637,7 +5659,7 @@ document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
   getActiveCompareFields().forEach(key=>{
     const l = document.getElementById(fieldSelectId('L', key));
     if(!l) return;
-    ['M','R'].forEach(suf=>{ const t = document.getElementById(fieldSelectId(suf, key)); if(t) t.value = l.value; });
+    COMPARE_PANELS.slice(1).forEach(suf=>{ const t = document.getElementById(fieldSelectId(suf, key)); if(t) t.value = l.value; });
   });
   renderComparePanels();
 });
@@ -5645,7 +5667,7 @@ document.getElementById('btnSyncFilters').addEventListener('click', ()=>{
 document.getElementById('btnSwapFilters').addEventListener('click', ()=>{
   getActiveCompareFields().forEach(key=>{
     const l = document.getElementById(fieldSelectId('L', key));
-    const r = document.getElementById(fieldSelectId('R', key));
+    const r = document.getElementById(fieldSelectId(COMPARE_PANELS[COMPARE_PANELS.length-1], key));
     if(!l || !r) return;
     const tmp = l.value; l.value = r.value; r.value = tmp;
   });
