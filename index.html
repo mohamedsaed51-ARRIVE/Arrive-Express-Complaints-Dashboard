@@ -2779,7 +2779,7 @@ const barValueLabels = {
     if(!ds || !total) return;
     const ctx = chart.ctx, meta = chart.getDatasetMeta(0);
     ctx.save();
-    ctx.font = '600 11px Cairo, Tahoma, sans-serif';
+    ctx.font = '600 '+(chart.options.valueLabelSize||11)+'px Cairo, Tahoma, sans-serif';
     ctx.fillStyle = cssv('--gray-500') || '#555';
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr';
     meta.data.forEach((bar,i)=>{
@@ -5772,6 +5772,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       const opt = { animation:false, responsive:false, devicePixelRatio:1, indexAxis: live.options.indexAxis||'x',
         plugins:{ legend:{ display: donut || data.datasets.length>1, position:'bottom', labels:{ color:'#334155', font:{family:"'Cairo','Inter',sans-serif", size:22}, boxWidth:22, padding:18 } }, tooltip:{enabled:false} },
         layout:{padding:8} };
+      const lab = !donut && data.datasets[0] && data.datasets[0].total;
+      if(lab){ opt.valueLabelSize = 24; opt.layout.padding = live.options.indexAxis==='y' ? {top:8,bottom:8,left:8,right:210} : {top:44,bottom:8,left:8,right:8}; }
       if(!donut){
         opt.scales = {};
         const src = live.options.scales || {};
@@ -5783,7 +5785,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
             title: (s.title && s.title.text) ? { display:true, text:s.title.text, color:'#475569', font:{family:"'Cairo','Inter',sans-serif", size:20} } : undefined };
         });
       } else { opt.cutout = '58%'; }
-      const c = new Chart(cv, { type, data, options: opt });
+      const c = new Chart(cv, { type, data, options: opt, plugins: lab ? [barValueLabels] : [] });
       const url = cv.toDataURL('image/png');
       c.destroy(); holder.remove();
       return url;
@@ -6012,8 +6014,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     const topTbl = (keyFn, title, limit) => {
       const g = [...groupBy(rows, keyFn).entries()].map(([k,a])=>({k,s:gstat(a)})).sort((a,b)=>b.s.n-a.s.n);
       const shown = g.slice(0,limit), rest = g.slice(limit);
-      const body = shown.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join('') +
-        (rest.length ? `<tr><td>أخرى (${N(rest.length)} بند)</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.n,0))}</td><td class="num">${pctOf(rest.reduce((t,r)=>t+r.s.n,0),totalRows)}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.acc,0))}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.rej,0))}</td><td class="num">${compCell(rest.reduce((t,r)=>t+r.s.comp,0))}</td></tr>` : '');
+      const body = shown.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)} <span class="rp-note">(${pctOf(r.s.comp,totalCompAll)})</span></td></tr>`).join('') +
+        (rest.length ? `<tr><td>أخرى (${N(rest.length)} بند)</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.n,0))}</td><td class="num">${pctOf(rest.reduce((t,r)=>t+r.s.n,0),totalRows)}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.acc,0))}</td><td class="num">${N(rest.reduce((t,r)=>t+r.s.rej,0))}</td><td class="num">${compCell(rest.reduce((t,r)=>t+r.s.comp,0))} <span class="rp-note">(${pctOf(rest.reduce((t,r)=>t+r.s.comp,0),totalCompAll)})</span></td></tr>` : '');
       return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى',num:true},{t:'النسبة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],body,'rp-compact');
     };
     if(totalRows){
@@ -6028,7 +6030,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       const topS = sG.slice(0,10), topShare = topS.reduce((t,r)=>t+r.s.n,0);
       pages.push(page(head('الراسلون الأكثر شكاوى',ctx)+
         tableWrap([{t:'الراسل'},{t:'الشكاوى',num:true},{t:'% من الشكاوى المسجلة',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
-          topS.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
+          topS.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${compCell(r.s.comp)} <span class="rp-note">(${pctOf(r.s.comp,totalCompAll)})</span></td></tr>`).join(''))+
         `<p class="rp-note">أعلى ${N(topS.length)} راسلين من ${N(sG.length)} راسلًا؛ يمثلون ${pctOf(topShare,totalRows)} من إجمالي السجلات. الراسل من عمود «الشاكي». «% من الشكاوى المسجلة» = شكاوى الراسل ÷ إجمالي ${N(totalRows)} شكوى مسجلة ضمن الفترة والفلاتر المعروضة.</p>`+foot()));
     }
 
@@ -6038,7 +6040,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     if(addM.length){
       pages.push(page(head('الاتجاه الشهري',ctx)+
         `<h3>الشكاوى حسب شهر الإضافة</h3>`+tableWrap([{t:'الشهر'},{t:'الشكاوى',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
-          addM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''),'rp-compact')+
+          addM.map(r=>`<tr><td class="num">${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)} <span class="rp-note">(${pctOf(r.s.comp,totalCompAll)})</span></td></tr>`).join(''),'rp-compact')+
         `<p class="rp-note">الشهر محسوب من تاريخ إضافة الشكوى، وهو مستقل عن مقارنة نصفي الفترة في «ملخص المؤشرات».</p>`+foot()));
     }
 
