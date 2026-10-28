@@ -5981,8 +5981,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       const noBearer = compRows.filter(d=>!String(d.compensation_bearer||'').trim()).length;
       pages.push(page(head('الجهة المتحملة للتعويض',ctx)+
         tableWrap([{t:'الجهة المتحملة'},{t:'عدد الحالات',num:true},{t:'إجمالي التعويض (ج.م)',num:true},{t:'النسبة من الإجمالي',num:true},{t:'متوسط التعويض (ج.م)',num:true}],
-          bG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${compCell(r.sum)}</td><td class="num">${pctOf(r.sum,totalCompAll)}</td><td class="num">${compCell(r.sum/r.n)}</td></tr>`).join('')+
-          `<tr class="rp-total"><td><b>الإجمالي</b></td><td class="num"><b>${N(compRows.length)}</b></td><td class="num"><b>${compCell(totalCompAll)}</b></td><td class="num"><b>100.0%</b></td><td class="num"><b>${compCell(totalCompAll/compRows.length)}</b></td></tr>`)+
+          bG.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.n)}</td><td class="num">${compCell(r.sum)} <span class="rp-note">(${pctOf(r.sum,totalCompAll)})</span></td><td class="num">${pctOf(r.sum,totalCompAll)}</td><td class="num">${compCell(r.sum/r.n)}</td></tr>`).join('')+
+          `<tr class="rp-total"><td><b>الإجمالي</b></td><td class="num"><b>${N(compRows.length)}</b></td><td class="num"><b>${compCell(totalCompAll)}</b> <span class="rp-note">(100.0%)</span></td><td class="num"><b>100.0%</b></td><td class="num"><b>${compCell(totalCompAll/compRows.length)}</b></td></tr>`)+
         `<p class="rp-note">الجدول يشمل الحالات التي لها مبلغ تعويض مسجّل فقط (${N(compRows.length)} من ${N(totalRows)} سجل). الجهة من عمود «وظيفة المتحمل للتعويض»${noBearer?`؛ ${N(noBearer)} حالة لها مبلغ بلا جهة متحملة مسجّلة وتظهر تحت «غير محدد»`:''}.</p>`+foot()));
     }
 
