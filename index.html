@@ -2762,12 +2762,35 @@ const palette = {
 
 let chartBranch, chartType, chartClassification, chartBearer;
 
+// Draws "count (pct%)" beside each horizontal bar. The percentage is the
+// branch's share of all complaints in the current filter (dataset.total).
+const barValueLabels = {
+  id:'barValueLabels',
+  afterDatasetsDraw(chart){
+    const ds = chart.data.datasets[0], total = ds && ds.total;
+    if(!ds || !total) return;
+    const ctx = chart.ctx, meta = chart.getDatasetMeta(0);
+    ctx.save();
+    ctx.font = '600 11px Cairo, Tahoma, sans-serif';
+    ctx.fillStyle = cssv('--gray-500') || '#555';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr';
+    meta.data.forEach((bar,i)=>{
+      const v = ds.data[i]; if(v==null) return;
+      const pct = (v/total*100).toFixed(1);
+      ctx.fillText(v+' ('+pct+'%)', bar.x+6, bar.y);
+    });
+    ctx.restore();
+  }
+};
+
 function makeCharts(){
   chartBranch = new Chart(document.getElementById('chartBranch'), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:24 }]},
+    plugins:[barValueLabels],
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ right:90 } },
       plugins:{ legend:{display:false} },
       scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{ autoSkip:false } } }
     }
@@ -3190,6 +3213,7 @@ function updateCharts(rows){
   const branchTop = topN(rows, 'branch', 10);
   chartBranch.data.labels = branchTop.map(x=>x[0]);
   chartBranch.data.datasets[0].data = branchTop.map(x=>x[1]);
+  chartBranch.data.datasets[0].total = rows.filter(d=>d.branch).length;
   chartBranch.update();
 
   // type
@@ -5156,8 +5180,10 @@ function buildCompareChartSet(suf){
   set.branch = new Chart(document.getElementById('chartBranch_'+suf), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.navy, borderRadius:4, maxBarThickness:14 }]},
+    plugins:[barValueLabels],
     options:{
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ right:80 } },
       plugins:{ legend:{display:false} },
       scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
     }
@@ -5217,6 +5243,7 @@ function updateCompareChartSet(set, rows){
   const branchTop = topN(rows, 'branch', 10);
   set.branch.data.labels = branchTop.map(x=>x[0]);
   set.branch.data.datasets[0].data = branchTop.map(x=>x[1]);
+  set.branch.data.datasets[0].total = rows.filter(d=>d.branch).length;
   set.branch.update();
 
   // type
