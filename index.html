@@ -5969,8 +5969,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       chunk(brG,14).forEach((grp,gi,all)=>{
         pages.push(page(head('الفروع المتسببة في الشكاوى'+(all.length>1?` (${gi+1}/${all.length})`:''),ctx)+
           tableWrap([{t:'الفرع'},{t:'الشكاوى',num:true},{t:'النسبة',num:true},{t:'المفتوحة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'الالتزام بمهلة الحل',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],
-            grp.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)}</td></tr>`).join(''))+
-          `<p class="rp-note">الفرع = عمود «الفرع المتسبب». النسبة من إجمالي ${N(totalRows)} سجل. مقبول/مرفوض من قرار الحالة؛ الحالات قيد التحقيق وغير المحددة و«التعويض مسبقا» خارجهما. الالتزام بمهلة الحل = المنجز خلال ${RES_SLA_TARGET_DAYS} أيام ÷ الحالات ذات التاريخين الصالحين. عدد الفروع: ${N(brG.length)}.</p>`+foot()));
+            grp.map(r=>`<tr><td>${esc(r.k)}</td><td class="num">${N(r.s.n)}</td><td class="num">${pctOf(r.s.n,totalRows)}</td><td class="num">${N(r.s.open)}</td><td class="num">${N(r.s.acc)}</td><td class="num">${N(r.s.rej)}</td><td class="num">${slaCell(r.s.sla)}</td><td class="num">${compCell(r.s.comp)} <span class="rp-note">(${pctOf(r.s.comp,totalCompAll)})</span></td></tr>`).join(''))+
+          `<p class="rp-note">الفرع = عمود «الفرع المتسبب». النسبة من إجمالي ${N(totalRows)} سجل. مقبول/مرفوض من قرار الحالة؛ الحالات قيد التحقيق وغير المحددة و«التعويض مسبقا» خارجهما. الالتزام بمهلة الحل = المنجز خلال ${RES_SLA_TARGET_DAYS} أيام ÷ الحالات ذات التاريخين الصالحين. نسبة التعويض = تعويض الفرع ÷ إجمالي التعويضات (${compCell(totalCompAll)} ج.م). عدد الفروع: ${N(brG.length)}.</p>`+foot()));
       });
     }
 
