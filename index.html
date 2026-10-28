@@ -2777,7 +2777,8 @@ const barValueLabels = {
     meta.data.forEach((bar,i)=>{
       const v = ds.data[i]; if(v==null) return;
       const pct = (v/total*100).toFixed(1);
-      ctx.fillText(v+' ('+pct+'%)', bar.x+6, bar.y);
+      if(chart.options.indexAxis==='y') ctx.fillText(v+' ('+pct+'%)', bar.x+6, bar.y);
+      else { ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(v+' ('+pct+'%)', bar.x, bar.y-4); }
     });
     ctx.restore();
   }
@@ -2799,7 +2800,9 @@ function makeCharts(){
   chartType = new Chart(document.getElementById('chartType'), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:26 }]},
+    plugins:[barValueLabels],
     options:{
+      layout:{ padding:{ top:18 } },
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
       scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:26, minRotation:0, font:{size:10.5} } }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
@@ -2809,7 +2812,9 @@ function makeCharts(){
   chartClassification = new Chart(document.getElementById('chartClassification'), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.accepted, borderRadius:4, maxBarThickness:16 }]},
+    plugins:[barValueLabels],
     options:{
+      layout:{ padding:{ right:90 } },
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
       scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false} } }
@@ -3196,6 +3201,8 @@ function render(){
 
 function uniqueVals(rows, key){ return [...new Set(rows.map(r=>r[key]).filter(Boolean))]; }
 
+function keyTotal(rows, key){ return rows.filter(d=>d[key] && !(key==='type' && d[key].length>60)).length; }
+
 function topN(rows, key, n, filterFn){
   const counts = {};
   rows.forEach(d=>{
@@ -3224,12 +3231,14 @@ function updateCharts(rows){
   // needed so a chart click can set the fType filter to the exact value it
   // actually stores (fType's options keep the full "شكوى تخص …" prefix).
   chartType.rawLabels = typeTop.map(x=>x[0]);
+  chartType.data.datasets[0].total = keyTotal(rows,'type');
   chartType.update();
 
   // classification
   const classTop = topN(rows, 'classification', 8);
   chartClassification.data.labels = classTop.map(x=>x[0]);
   chartClassification.data.datasets[0].data = classTop.map(x=>x[1]);
+  chartClassification.data.datasets[0].total = keyTotal(rows,'classification');
   chartClassification.update();
 
   // compensation by bearer (amount + count)
@@ -5192,7 +5201,9 @@ function buildCompareChartSet(suf){
   set.type = new Chart(document.getElementById('chartType_'+suf), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.gold, borderRadius:4, maxBarThickness:22 }]},
+    plugins:[barValueLabels],
     options:{
+      layout:{ padding:{ top:18 } },
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
       scales:{ x:{ grid:{display:false}, ticks:{ autoSkip:false, maxRotation:30, minRotation:0, font:{size:9.5} } }, y:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} } }
@@ -5202,7 +5213,9 @@ function buildCompareChartSet(suf){
   set.classification = new Chart(document.getElementById('chartClassification_'+suf), {
     type:'bar',
     data:{ labels:[], datasets:[{ data:[], backgroundColor:palette.accepted, borderRadius:4, maxBarThickness:14 }]},
+    plugins:[barValueLabels],
     options:{
+      layout:{ padding:{ right:80 } },
       indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false} },
       scales:{ x:{ beginAtZero:true, grid:{color:palette.grid}, ticks:{precision:0} }, y:{ grid:{display:false}, ticks:{font:{size:10.5}} } }
@@ -5250,12 +5263,14 @@ function updateCompareChartSet(set, rows){
   const typeTop = topN(rows, 'type', 8);
   set.type.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
   set.type.data.datasets[0].data = typeTop.map(x=>x[1]);
+  set.type.data.datasets[0].total = keyTotal(rows,'type');
   set.type.update();
 
   // classification
   const classTop = topN(rows, 'classification', 8);
   set.classification.data.labels = classTop.map(x=>x[0]);
   set.classification.data.datasets[0].data = classTop.map(x=>x[1]);
+  set.classification.data.datasets[0].total = keyTotal(rows,'classification');
   set.classification.update();
 
   // compensation by bearer (amount + count)
