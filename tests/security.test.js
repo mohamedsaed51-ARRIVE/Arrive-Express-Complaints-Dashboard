@@ -14,6 +14,7 @@ const FIELDS = ['owner', 'admin', 'complainant', 'policy', 'content', 'type', 'b
   const b = await chromium.launch({ args: ['--no-sandbox'] });
   const pg = await b.newPage({ viewport: { width: 1440, height: 900 } });
   const errs = []; pg.on('pageerror', (e) => errs.push(String(e).slice(0, 120)));
+  const logs = []; pg.on('console', (m) => logs.push(m.text()));
   await pg.route('**/*', (r) => { const u = r.request().url();
     if (u.includes('Chart.js')) return r.fulfill({ status: 200, contentType: 'text/javascript', body: STUB });
     return u.startsWith('file:') ? r.continue() : r.abort(); });
@@ -40,6 +41,9 @@ const FIELDS = ['owner', 'admin', 'complainant', 'policy', 'content', 'type', 'b
   await pg.evaluate(() => { try { window.ArriveReport && window.ArriveReport.open(); } catch (e) {} });
   await pg.waitForTimeout(2500);
   await pg.evaluate(() => { document.querySelectorAll('[onfocus],[autofocus]').forEach((e) => e.focus && e.focus()); });
+  check('تسجيل التشخيص: لا [TRACE] في Console افتراضيًا', !logs.some((t) => t.includes('[TRACE]')), logs.filter((t) => t.includes('[TRACE]')).slice(0, 2));
+  const reportOk = await pg.evaluate(() => { try { const h = document.body.innerHTML; return /rp-cover|rp-page/.test(h); } catch (e) { return false; } });
+  check('التقرير يُبنى بعد استبدال eval (يحوي صفحات التقرير)', reportOk);
   const n = await pg.evaluate('window.__xss||0');
   check('XSS: لا تنفيذ لأي حمولة (15 حقلًا × وسم/attribute — جدول، نوافذ، تقرير، فلاتر)', n === 0, n);
   check('XSS: لا img[onerror] ولا onfocus في DOM', (await pg.evaluate("document.querySelectorAll('img[onerror],[onfocus]').length")) === 0);
