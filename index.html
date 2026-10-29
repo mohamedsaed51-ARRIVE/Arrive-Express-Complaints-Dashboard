@@ -2308,6 +2308,16 @@ const DEMO_DATA = [
 // typed as a number, or a date column comes back as a native Date object
 // after JSON serialization) — every downstream .trim()/.includes() call
 // assumes a string, so this boundary is the one place that must never throw.
+// ---- أمان: ترميز/تعقيم ----
+// 1) الحقول النصية القصيرة (أسماء/فئات) تُعقَّم عند الدخول في buildData: < > " ' تُستبدل بمشابهاتها.
+// 2) النصوص الحرة (FREE_TEXT_FIELDS) تُحفظ كما هي وتُرمَّز عند عرضها بـ escH.
+const FREE_TEXT_FIELDS = new Set(['content','notes','investigation_result']);
+const SAFEC = {'<':'\u2039','>':'\u203a','"':'\u2033',"'":'\u2019'};
+function safeTxt(v){ return String(v).replace(/[<>"']/g, c=>SAFEC[c]); }
+// تصدير CSV: خلية نصية تبدأ بـ = + - @ Tab CR تُسبق بـ ' (Formula Injection)؛ الأرقام الحقيقية لا تُمس
+function csvCell(v){ let t = String(v??''); if(typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = "'" + t; return `"${t.replace(/"/g,'""')}"`; }
+function escN(v){ return v == null ? v : escH(v); } // يحافظ على null/undefined لتظهر '—' كما كانت
+function escH(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function safeStr(v){
   if(v === null || v === undefined) return '';
   if(v instanceof Date) return v.toISOString();
@@ -2383,6 +2393,7 @@ function buildData(raw){
       investigation_result: (d.investigation_result !== null && d.investigation_result !== undefined && d.investigation_result !== '') ? safeStr(d.investigation_result).trim() : null,
     };
   });
+  mapped.forEach(m=>{ for(const k in m){ if(typeof m[k]==='string' && !FREE_TEXT_FIELDS.has(k)) m[k]=safeTxt(m[k]); } });
   // Guard against duplicate/stray rows coming back from the source (Google Sheet
   // / Apps Script API): a legitimate complaint always has a "رقم الشكوى" (id).
   // Rows with no id (e.g. a trailing subtotal/summary row accidentally included
@@ -2494,7 +2505,7 @@ function computeAvgCompensationSla(rows){
 // with a searchable Autocomplete-style dropdown: type-to-filter, checkbox options,
 // selected values shown as removable chips, and Select All / Clear All actions.
 const multiSelectRegistry = {};
-function escapeHtmlAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+function escapeHtmlAttr(s){ return escH(s); }
 
 function mountMultiSelect(id, opts={}){
   const sel = document.getElementById(id);
@@ -2567,7 +2578,7 @@ function mountMultiSelect(id, opts={}){
     const MAX_CHIPS = 2;
     let html = '';
     selected.slice(0, MAX_CHIPS).forEach(o=>{
-      html += `<span class="ms-chip" data-val="${escapeHtmlAttr(o.value)}"><span>${o.textContent}</span><button type="button" title="إزالة"><i class="fa-solid fa-xmark"></i></button></span>`;
+      html += `<span class="ms-chip" data-val="${escapeHtmlAttr(o.value)}"><span>${escH(o.textContent)}</span><button type="button" title="إزالة"><i class="fa-solid fa-xmark"></i></button></span>`;
     });
     if(selected.length > MAX_CHIPS) html += `<span class="ms-chip-more">+${selected.length - MAX_CHIPS}</span>`;
     chipsBox.innerHTML = html;
@@ -3295,7 +3306,7 @@ function updateTable(rows){
       <td>${d.complainant ?? ''}</td>
       <td>${(d.type||'').replace('شكوى تخص ','')}</td>
       <td>${d.branch ?? ''}</td>
-      <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
+      <td class="content-cell" title="${escH(d.content||'')}">${escH(d.content ?? '')}</td>
       <td>${statusBadge(d.status)}</td>
       <td class="amount-cell">${isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
     </tr>
@@ -3342,14 +3353,14 @@ function openModal(d){
       ${field('نوع الشكوى', (d.type||'').replace('شكوى تخص ',''))}
       ${field('تصنيف المشكلة', d.classification)}
       ${field('رقم البوليصة', d.policy)}
-      ${fieldFull('محتوى الشكوى', d.content)}
-      ${field('نتيجة التحقيق', d.investigation_result)}
+      ${fieldFull('محتوى الشكوى', escN(d.content))}
+      ${field('نتيجة التحقيق', escN(d.investigation_result))}
       ${field('الحالة', statusBadge(d.status))}
       ${field('مبلغ التعويض', isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US')+' ج.م' : '—')}
       ${field('يتحمل التعويض', d.compensation_bearer)}
       ${field('شهر التعويض', d.compensation_month)}
       ${field('SLA تنفيذ التعويض (يوم)', typeof d.sla_compensation_days==='number' ? d.sla_compensation_days : '—')}
-      ${fieldFull('ملاحظات', d.notes)}
+      ${fieldFull('ملاحظات', escN(d.notes))}
     </div>
   `;
   document.getElementById('overlay').classList.add('open');
@@ -4615,7 +4626,7 @@ document.getElementById('qaExport').addEventListener('click', ()=>{
   const rows = getFiltered();
   const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
   const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
-  const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const escCsv = csvCell;
   const lines = [headerLabels.map(escCsv).join(',')];
   rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
   const csv = '\uFEFF' + lines.join('\r\n');
@@ -4753,7 +4764,7 @@ function renderTablePage(){
       <td>${d.complainant ?? ''}</td>
       <td>${(d.type||'').replace('شكوى تخص ','')}</td>
       <td>${d.branch ?? ''}</td>
-      <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
+      <td class="content-cell" title="${escH(d.content||'')}">${escH(d.content ?? '')}</td>
       <td>${statusBadge(d.status)}</td>
       <td class="amount-cell">${isCompensationCountable(d) ? d.compensation_amount.toLocaleString('en-US') : '—'}</td>
     </tr>
@@ -5485,7 +5496,7 @@ function exportPanelCsv(suf){
   const rows = getFilteredForPanel(suf);
   const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
   const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
-  const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const escCsv = csvCell;
   const lines = [headerLabels.map(escCsv).join(',')];
   rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
   const csv = '\uFEFF' + lines.join('\r\n');
