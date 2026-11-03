@@ -6623,7 +6623,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const cntShk = n => ar3(n,'شكوى واحدة','شكوتان','شكاوى','شكوى');
   const cntCase = n => ar3(n,'حالة واحدة','حالتان','حالات','حالة');
   const daysTxt = n => ar3(n,'يوم واحد','يومان','أيام','يومًا');
-  const sgn = d => d>0?'+':d<0?'−':'';
+  const sgn = d => d>0?'\u200E+':d<0?'\u200E−':'';   // علامة اتجاه حتى لا ينعكس موضع الإشارة داخل النص العربي
   const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
   const UNK = ['غير محدد','غير مذكور بالمصدر'];
   const isOpenRow = d => !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')));
@@ -6648,10 +6648,12 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     const ds = rows.map(d=>d.date_added).filter(Boolean).sort();
     if(!ds.length) return 'غير محدد بالمصدر';
     const a = ym(ds[0]), b = ym(ds[ds.length-1]);
-    return a===b ? `شهر ${monthName(a)}` : `من ${ds[0]} إلى ${ds[ds.length-1]}`;
+    return a===b ? `شهر ${monthName(a)}` : `من \u200E${ds[0]}\u200E إلى \u200E${ds[ds.length-1]}\u200E`;   // علامات اتجاه لتثبيت ترتيب التاريخين في النص العربي
   };
+  // تصحيح إملائي لعرض مسميات المصدر في العرض التقديمي فقط (لا يغيّر البيانات)
+  const fixAr = v => String(v).replace(/(^|\s)الشركه(?=\s|$)/g, '$1الشركة');
   function topBy(rows, keyFn, limit, skipUnknown){
-    let g = [...groupBy(rows, d=>lbl(keyFn(d))).entries()].map(([k,a])=>({k, n:a.length, comp:sumCompensation(a), rows:a}));
+    let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>({k, n:a.length, comp:sumCompensation(a), rows:a}));
     if(skipUnknown) g = g.filter(x=>!UNK.includes(x.k));
     return g.sort((a,b)=>b.n-a.n || b.comp-a.comp).slice(0,limit);
   }
@@ -6795,17 +6797,19 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     const compRows = rows.filter(isCompensationCountable);
     if(compRows.length){
       const bt = topBy(compRows, d=>d.compensation_bearer, 99).sort((a,b)=>b.comp-a.comp);
-      const top = bt.slice(0,3), rest = bt.slice(3);
+      const TOPN = 5;
+      const top = bt.slice(0,TOPN), rest = bt.slice(TOPN);
       s = base('المسؤولية المالية: توزيع التعويضات حسب الجهة المتحملة');
-      top.forEach((b,i)=> card(s, [9.0,5.4,1.8][i], 1.55, 3.45, 1.5, `${N(Math.round(b.comp))} ج`, `${b.k} — ${cntCase(b.n)}`, {text:pc(b.comp,S.comp), color:C.orange}));
+      const cw = 2.18, cg = 0.16;   // 5 بطاقات بعرض الجدول (11.54) من اليمين لليسار
+      top.forEach((b,i)=> card(s, 0.9 + (TOPN-1-i)*(cw+cg), 1.5, cw, 1.5, `${N(Math.round(b.comp))} ج`, `${b.k} — ${cntCase(b.n)}`, {text:pc(b.comp,S.comp), color:C.orange}));
       const amtB = v => `${N(Math.round(v))} (${pc(v,S.comp)})`;
       const brow = top.map(b=>[b.k, N(b.n), amtB(b.comp), pc(b.comp,S.comp)]);
       if(rest.length) brow.push([`جهات أخرى (${N(rest.length)})`, N(rest.reduce((t,x)=>t+x.n,0)), amtB(rest.reduce((t,x)=>t+x.comp,0)), pc(rest.reduce((t,x)=>t+x.comp,0),S.comp)]);
       brow.push(['الإجمالي', N(compRows.length), amtB(S.comp), '100%']);
-      table(s, ['الجهة المتحملة / الوظيفة','عدد حالات التعويض','مبلغ التعويض (ج.م)','النسبة من الإجمالي'], brow, { x:0.9, y:3.25, w:11.54, totalRow:true, rowH:0.36 });
+      table(s, ['الجهة المتحملة / الوظيفة','عدد حالات التعويض','مبلغ التعويض (ج.م)','النسبة من الإجمالي'], brow, { x:0.9, y:3.2, w:11.54, totalRow:true, rowH:0.34, fs:11 });
       const t2 = bt.slice(0,2);
-      insight(s, t2.length>1 ? `${t2[0].k} و${t2[1].k} يتحملان ${pc(t2[0].comp+t2[1].comp,S.comp)} من التعويضات بإجمالي ${N(Math.round(t2[0].comp+t2[1].comp))} ج.م.` : `${t2[0].k} تتحمل ${pc(t2[0].comp,S.comp)} من التعويضات.`, 5.85, 0.55);
-      note(s, `الجدول يشمل الحالات ذات مبلغ تعويض مسجّل فقط (${N(compRows.length)} من إجمالي ${cntShk(S.n)}). الجهة من عمود «وظيفة المتحمل للتعويض».`, 6.5);
+      insight(s, t2.length>1 ? `${t2[0].k} و${t2[1].k} يتحملان ${pc(t2[0].comp+t2[1].comp,S.comp)} من التعويضات بإجمالي ${N(Math.round(t2[0].comp+t2[1].comp))} ج.م.` : `${t2[0].k} تتحمل ${pc(t2[0].comp,S.comp)} من التعويضات.`, 6.1, 0.48);
+      note(s, `الجدول يشمل الحالات ذات مبلغ تعويض مسجّل فقط (${N(compRows.length)} من إجمالي ${cntShk(S.n)}). الجهة من عمود «وظيفة المتحمل للتعويض».`, 6.65);
     }
 
     // 6-8) الأسباب والفروع والعملاء
@@ -6906,7 +6910,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     // مقارنات الأبعاد
     const dim = (title, head1, keyFn, limit, useComp) => {
       const src = r => useComp ? r.filter(isCompensationCountable) : r;
-      const gs = rowsP.map(r=>groupBy(src(r), d=>lbl(keyFn(d))));
+      const gs = rowsP.map(r=>groupBy(src(r), d=>fixAr(lbl(keyFn(d)))));
       const keys = [...new Set(gs.flatMap(x=>[...x.keys()]))].filter(k=>!UNK.includes(k) || useComp)
         .map(k=>({k, g:gs.map(x=>x.get(k)||[])}))
         .sort((a,b)=> b.g.reduce((t,x)=>t+x.length,0)-a.g.reduce((t,x)=>t+x.length,0)).slice(0,limit);
