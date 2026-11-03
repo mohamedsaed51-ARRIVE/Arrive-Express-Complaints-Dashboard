@@ -1584,7 +1584,7 @@ body.report-open{overflow:hidden}
     </div>
     <div class="header-actions">
       <button class="icon-btn primary-on-blue" id="headerReport" type="button" title="إصدار تقرير إداري"><i class="fa-solid fa-file-lines"></i> إصدار تقرير</button>
-      <button class="icon-btn primary-on-blue" id="headerDeck" type="button" title="إنشاء عرض تقديمي (PowerPoint) من البيانات الحالية"><i class="fa-solid fa-file-powerpoint"></i> عرض تقديمي</button>
+      <button class="icon-btn primary-on-blue" id="headerDeck" type="button" title="إنشاء عرض تقديمي (PowerPoint) — اختر النوع"><i class="fa-solid fa-file-powerpoint"></i> عرض تقديمي</button>
       <button class="icon-btn" id="headerCompareToggle" type="button" title="وضع المقارنة"><i class="fa-solid fa-right-left"></i> <span id="headerCompareLabel">وضع المقارنة</span></button>
       <button class="icon-btn" id="headerExport" type="button" title="تصدير البيانات"><i class="fa-solid fa-download"></i> تصدير</button>
       <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات"><i class="fa-solid fa-gear"></i> إعدادات</button>
@@ -6700,24 +6700,155 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   }
 
   /* ---------- عرض عادي (حسب الفلاتر الحالية) ---------- */
-  function buildSingle(){
+  /* ---------- أنواع العروض ---------- */
+  const DECK_PLANS = {
+    full:      { label:'عرض شامل', desc:'كل الأقسام: الملخص والاتجاه الشهري والجهة المتحملة والأسباب والفروع والعملاء والمهل والمتابعة الأسبوعية وجودة البيانات والقرارات المقترحة', slides:['cover','exec','monthly3','monthcmp','bearer','reasons','reasonsCost','branches','branchPerf','customers','custTable','slaBranch','oldestOpen','weekly','targets','dataQuality','decisions','thanks'] },
+    exec:      { label:'تنفيذي مختصر', desc:'للإدارة العليا: أهم الأرقام، الأهداف مقابل الفعلي، الجهة المتحملة، والقرارات المقترحة', slides:['cover','exec','targets','bearer','decisions','thanks'] },
+    monthly:   { label:'اجتماع شهري', desc:'الشهر مقابل السابق، الاتجاه خلال 3 أشهر، الأسباب والفروع، والقرارات المقترحة', slides:['cover','exec','monthly3','monthcmp','reasons','branches','targets','decisions','thanks'] },
+    branches:  { label:'أداء الفروع', desc:'ترتيب الفروع ومؤشرات كل فرع والالتزام بالمهل', slides:['cover','branches','branchPerf','slaBranch','thanks'] },
+    financial: { label:'المسؤولية المالية', desc:'من يتحمل التعويضات، وأسباب الشكاوى الأعلى تكلفة', slides:['cover','exec','bearer','reasonsCost','thanks'] },
+    customers: { label:'العملاء', desc:'أعلى العملاء تقديمًا للشكاوى، وقرارات القبول والرفض لكل عميل', slides:['cover','customers','custTable','thanks'] },
+    sla:       { label:'جودة الخدمة والمهل', desc:'الالتزام بمهلتي التحقيق والتعويض، وأقدم الشكاوى المفتوحة', slides:['cover','targets','slaBranch','oldestOpen','thanks'] },
+    weekly:    { label:'متابعة أسبوعية', desc:'شريحتان: الأسبوع الحالي مقابل السابق، وأقدم الشكاوى المفتوحة', slides:['weekly','oldestOpen'] }
+  };
+  const LRM = '‎';
+  const dTxt = v => `${LRM}${v}${LRM}`;
+  const localDay = (d) => { const x = d||new Date(); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; };
+  const dayNum = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m ? Date.UTC(+m[1], +m[2]-1, +m[3])/86400000 : null; };
+  const groupStats = (rows, keyFn, skipUnk) => { let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>Object.assign({k}, stats(a))); if(skipUnk) g = g.filter(x=>!UNK.includes(x.k)); return g; };
+  const ratePct = (a,b) => b ? N1(a/b*100)+'%' : '—';
+
+  const EXTRA = {
+    reasonsCost(rows, S){
+      const g = groupStats(rows, d=>d.classification, true).filter(x=>x.comp>0).sort((a,b)=>b.comp-a.comp).slice(0,6);
+      if(!g.length) return;
+      const s = base('أسباب الشكاوى الأعلى تكلفة');
+      barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:5.3, h:3.5, dir:'bar', colors:[C.orange] });
+      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—']), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.9,1.74,1.3] });
+      insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).`, 5.3, 0.62);
+      note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ.', 6.05);
+    },
+    branchPerf(rows, S){
+      const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
+      if(!g.length) return;
+      const s = base('مؤشرات أداء الفروع');
+      table(s, ['الفرع','عدد الشكاوى','مبلغ التعويض (ج.م)','نسبة قبول التعويض','الحالات المفتوحة','الالتزام بمهلة التحقيق'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.dec ? `${N1(x.acc/x.dec*100)}%` : '—', `${N(x.open)} (${pc(x.open,x.n)})`, x.res.pct==null ? '—' : `${N1(x.res.pct)}%`]), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:11, colW:[2.4,1.5,2.4,1.7,1.8,1.74] });
+      const top = g.slice().sort((a,b)=>b.comp-a.comp)[0];
+      insight(s, top.comp>0 ? `أعلى فرع في مبلغ التعويضات هو «${top.k}» بمبلغ ${N(Math.round(top.comp))} ج.م (${pc(top.comp,S.comp)} من الإجمالي).` : 'لا توجد مبالغ تعويض مسجّلة للفروع المعروضة.', 5.75, 0.55);
+      note(s, `أعلى ${N(g.length)} فروع في عدد الشكاوى. نسبة القبول من الحالات المحسومة (قبول + رفض)، والمفتوحة من إجمالي شكاوى الفرع.`, 6.45);
+    },
+    custTable(rows, S){
+      const g = groupStats(rows, d=>String(d.complainant||'').trim(), true).sort((a,b)=>b.n-a.n).slice(0,8);
+      if(!g.length) return;
+      const s = base('العملاء: قرارات القبول والرفض');
+      table(s, ['العميل','عدد الشكاوى','مبلغ التعويض (ج.م)','المقبولة','المرفوضة','نسبة القبول'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, N(x.acc), N(x.rej), x.dec ? `${N1(x.acc/x.dec*100)}%` : '—']), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:10.5, colW:[3.4,1.4,2.4,1.3,1.3,1.74] });
+      insight(s, `أعلى ${N(g.length)} عملاء يمثلون ${pc(g.reduce((t,x)=>t+x.n,0), S.n)} من إجمالي الشكاوى.`, 5.75, 0.55);
+      note(s, 'نسبة القبول من الحالات المحسومة (قبول + رفض) لكل عميل.', 6.45);
+    },
+    slaBranch(rows, S){
+      const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
+      if(!g.length) return;
+      const s = base('الالتزام بالمهل حسب الفرع');
+      const cp = x => x.pct==null ? '—' : `${N1(x.pct)}% (${N(x.ok)} من ${N(x.count)})`;
+      table(s, ['الفرع','عدد الشكاوى',`الالتزام بمهلة التحقيق (${daysTxt(RES_SLA_TARGET_DAYS)})`,`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`,'متوسط زمن الحل (يوم)'], g.map(x=>[x.k, N(x.n), cp(x.res), cp(x.cmpSla), x.avgRes==null ? '—' : N1(x.avgRes)]), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:10.5, colW:[2.2,1.3,3.1,3.1,1.84] });
+      const lo = g.filter(x=>x.res.pct!=null).sort((a,b)=>a.res.pct-b.res.pct)[0];
+      insight(s, lo ? `أقل التزامًا بمهلة التحقيق بين الفروع المعروضة: «${lo.k}» بنسبة ${N1(lo.res.pct)}% (المطلوب ${SLA_COMPLIANCE_MIN_PCT}% أو أكثر).` : 'لا توجد بيانات كافية لحساب الالتزام بمهلة التحقيق.', 5.75, 0.55);
+      note(s, 'الالتزام = الحالات المنجزة خلال المهلة ÷ الحالات ذات التاريخين الصالحين. أعلى 8 فروع في عدد الشكاوى.', 6.45);
+    },
+    oldestOpen(rows, S){
+      const today = localDay(), tn = dayNum(today);
+      const op = rows.filter(isOpenRow).map(d=>({d, age: dayNum(d.date_added)==null ? null : tn-dayNum(d.date_added)})).filter(x=>x.age!=null && x.age>=0).sort((a,b)=>b.age-a.age);
+      if(!op.length) return;
+      const s = base('أقدم الشكاوى المفتوحة');
+      const late = op.filter(x=>x.age>RES_SLA_TARGET_DAYS).length;
+      card(s, 9.0, 1.5, 3.45, 1.3, N(S.open), 'إجمالي الشكاوى المفتوحة');
+      card(s, 5.4, 1.5, 3.45, 1.3, N(late), `مفتوحة منذ أكثر من ${daysTxt(RES_SLA_TARGET_DAYS)}`, null, C.red);
+      card(s, 1.8, 1.5, 3.45, 1.3, `${N(op[0].age)} يومًا`, 'عمر أقدم شكوى مفتوحة', null, C.orange);
+      table(s, ['م','العميل','الفرع','تاريخ الإضافة','الحالة','العمر (يوم)'], op.slice(0,7).map((x,i)=>[String(i+1), fixAr(lbl(x.d.complainant)), fixAr(lbl(x.d.branch)), dTxt(x.d.date_added), lbl(x.d.status), N(x.age)]), { x:0.9, y:3.0, w:11.54, rowH:0.38, fs:10.5, colW:[0.5,3.4,2.0,1.8,2.3,1.54] });
+      note(s, `العمر = تاريخ اليوم (${dTxt(today)}) − تاريخ إضافة الشكوى بالأيام، والشكوى المضافة اليوم عمرها صفر. المفتوحة = حالة «جارى» أو «التحقيق». أقدم ${N(Math.min(7,op.length))} شكاوى.`, 6.35);
+    },
+    weekly(rows, S, baseAll){
+      const today = localDay(), tn = dayNum(today);
+      const inR = (d,a,b) => { const n = dayNum(d.date_added); return n!=null && n>=tn-a && n<=tn-b; };
+      const cur = stats(baseAll.filter(d=>inR(d,6,0))), prv = stats(baseAll.filter(d=>inR(d,13,7)));
+      const dd = x => `${dTxt(localDay(new Date(Date.now()-x*86400000)))}`;
+      const s = base('المتابعة الأسبوعية');
+      const diff = (a,b) => `${sgn(a-b)}${N(Math.abs(a-b))}`;
+      card(s, 9.0, 1.5, 3.45, 1.4, N(cur.n), `شكاوى الأسبوع الحالي (${N(prv.n)} في الأسبوع السابق)`, {text:diff(cur.n,prv.n), color: cur.n<=prv.n ? C.green : C.red});
+      card(s, 5.4, 1.5, 3.45, 1.4, N(Math.round(cur.comp)), `تعويضات الأسبوع الحالي (ج.م)`, {text:diff(Math.round(cur.comp),Math.round(prv.comp)), color:C.orange}, C.orange);
+      card(s, 1.8, 1.5, 3.45, 1.4, N(baseAll.filter(isOpenRow).length), 'إجمالي الشكاوى المفتوحة حاليًا');
+      table(s, ['المؤشر','الأسبوع السابق','الأسبوع الحالي','التغيّر'], [
+        ['عدد الشكاوى', N(prv.n), N(cur.n), diff(cur.n,prv.n)],
+        ['مبلغ التعويضات (ج.م)', N(Math.round(prv.comp)), N(Math.round(cur.comp)), diff(Math.round(cur.comp),Math.round(prv.comp))],
+        ['الحالات المقبولة', N(prv.acc), N(cur.acc), diff(cur.acc,prv.acc)],
+        ['الحالات المفتوحة (من شكاوى الأسبوع)', N(prv.open), N(cur.open), diff(cur.open,prv.open)]
+      ], { x:0.9, y:3.2, w:11.54, rowH:0.42, colW:[4.6,2.4,2.4,2.14] });
+      note(s, `الأسبوع الحالي: ${dd(6)} إلى ${dd(0)}، والسابق: ${dd(13)} إلى ${dd(7)}. حسب تاريخ إضافة الشكوى وبغض النظر عن فلتر الشهر والتاريخ، مع بقية الفلاتر.${(cur.n+prv.n)===0 ? ' لا توجد سجلات في هذين الأسبوعين ضمن الفلاتر الحالية.' : ''}`, 5.6);
+    },
+    dataQuality(rows, S){
+      const n = rows.length;
+      const items = [
+        ['شكاوى بدون تاريخ إضافة صالح', rows.filter(d=>dayNum(d.date_added)==null).length],
+        ['شكاوى مقبولة التعويض بدون مبلغ مسجّل', rows.filter(d=>compDecisionOf(d)==='accepted' && !isCompensationCountable(d)).length],
+        ['حالات تعويض بدون جهة متحملة محددة', rows.filter(d=>isCompensationCountable(d) && UNK.includes(lbl(d.compensation_bearer))).length],
+        ['شكاوى بدون فرع محدد', rows.filter(d=>UNK.includes(lbl(d.branch))).length],
+        ['شكاوى بدون تصنيف سبب', rows.filter(d=>UNK.includes(lbl(d.classification))).length],
+        ['شكاوى بدون تاريخ نتيجة تحقيق', rows.filter(d=>!isOpenRow(d) && dayNum(d.investigation_result_date)==null).length]
+      ];
+      const s = base('جودة البيانات');
+      table(s, ['البند','العدد','النسبة من إجمالي الشكاوى'], items.map(x=>[x[0], N(x[1]), pc(x[1], n)]), { x:0.9, y:1.6, w:11.54, rowH:0.45, colW:[6.6,2.2,2.74] });
+      const worst = items.slice().sort((a,b)=>b[1]-a[1])[0];
+      insight(s, worst[1]===0 ? 'لا توجد ملاحظات على اكتمال الحقول المفحوصة ضمن النطاق الحالي.' : `أكثر ملاحظة تكرارًا: «${worst[0]}» (${cntShk(worst[1])}، ${pc(worst[1],n)}).`, 5.0, 0.6);
+      note(s, `الفحص على ${cntShk(n)} ضمن الفلاتر الحالية. وجود ملاحظة لا يعني خطأ بالضرورة، لكنه يؤثر على دقة المؤشرات المرتبطة بها.`, 5.75);
+    },
+    decisions(rows, S, ctx){
+      const accV = S.dec ? S.acc/S.dec*100 : null, openV = S.n ? S.open/S.n*100 : null;
+      const out = [];
+      if(accV!=null && accV<ACCEPT_TARGET_PCT) out.push([`نسبة قبول التعويض ${N1(accV)}% أقل من الهدف (${ACCEPT_TARGET_PCT}%)`, 'مراجعة حالات الرفض وسياسات القبول مع الفروع المعنية']);
+      if(openV!=null && openV>PENDING_TARGET_PCT) out.push([`نسبة الشكاوى المفتوحة ${N1(openV)}% أعلى من الهدف (${PENDING_TARGET_PCT}%)`, 'وضع خطة لإغلاق الحالات المفتوحة الأقدم وتحديد أولوياتها']);
+      if(S.res.pct!=null && S.res.pct<SLA_COMPLIANCE_MIN_PCT) out.push([`الالتزام بمهلة التحقيق ${N1(S.res.pct)}% (المطلوب ${SLA_COMPLIANCE_MIN_PCT}% أو أكثر)`, 'متابعة أسباب تأخر التحقيق على مستوى الفروع']);
+      if(S.cmpSla.pct!=null && S.cmpSla.pct<SLA_COMPLIANCE_MIN_PCT) out.push([`الالتزام بمهلة تنفيذ التعويض ${N1(S.cmpSla.pct)}% (المطلوب ${SLA_COMPLIANCE_MIN_PCT}% أو أكثر)`, 'مراجعة خطوات صرف التعويض بعد نتيجة التحقيق']);
+      const bt = topBy(rows.filter(isCompensationCountable), d=>d.compensation_bearer, 1, true)[0];
+      const bt2 = bt ? groupStats(rows.filter(isCompensationCountable), d=>d.compensation_bearer, true).sort((a,b)=>b.comp-a.comp)[0] : null;
+      if(bt2 && S.comp>0) out.push([`«${bt2.k}» تتحمل ${pc(bt2.comp,S.comp)} من مبلغ التعويضات`, `مراجعة الاتفاقيات أو إجراءات العمل المتعلقة بـ«${bt2.k}» لتقليل تركّز المسؤولية المالية`]);
+      const br = topBy(rows, d=>d.branch, 1, true)[0];
+      if(br) out.push([`«${br.k}» أعلى فرع في عدد الشكاوى (${pc(br.n,S.n)})`, `مراجعة الشكاوى المتكررة في «${br.k}» ووضع إجراء تصحيحي`]);
+      const rs = topBy(rows, d=>d.classification, 1, true)[0];
+      if(rs) out.push([`«${rs.k}» أكثر أسباب الشكاوى تكرارًا (${pc(rs.n,S.n)})`, `تحليل السبب الجذري لـ«${rs.k}» ومعالجته مع الجهة المعنية`]);
+      const list = out.slice(0,5);
+      if(!list.length) return;
+      const s = base('قرارات وإجراءات مقترحة للإدارة');
+      table(s, ['م','الملاحظة من البيانات','الإجراء المقترح','المسؤول','الموعد'], list.map((x,i)=>[String(i+1), x[0], x[1], 'يُحدَّد في الاجتماع', 'يُحدَّد في الاجتماع']), { x:0.9, y:1.6, w:11.54, rowH:0.72, fs:10.5, colW:[0.5,3.9,4.2,1.5,1.44] });
+      note(s, 'مقترحات مبنية على مؤشرات هذا العرض، وليست قرارات معتمدة. تُحدَّد الجهة المسؤولة وتاريخ التنفيذ خلال الاجتماع.', Math.min(6.4, 1.6 + 0.72*(list.length+1) + 0.2));
+    }
+  };
+
+  function buildSingle(kind){
     const rows = getFiltered();
     const S = stats(rows);
     ctxLabel = periodLabel(rows);
     const chips = chipsText();
     const refresh = (document.getElementById('headerLastUpdate')||{}).textContent || 'غير محدد بالمصدر';
+    const plan = DECK_PLANS[kind] || DECK_PLANS.full;
+    const has = id => plan.slides.includes(id);
+    const baseAll = getFiltered({ignoreTime:true});
 
     // 1) الغلاف
-    let s = pptx.addSlide(); s.background = { color:C.white };
+    let s;
+    if(has('cover')){
+    s = pptx.addSlide(); s.background = { color:C.white };
     s.addShape(pptx.ShapeType.rect, { x:0, y:0, w:13.333, h:0.08, fill:{color:C.teal}, line:{color:C.teal} });
     s.addImage({ data:LOGO, x:4.85, y:1.3, w:3.63, h:1.06 });
     s.addText('تقرير متابعة الشكاوى والتعويضات', { x:1.17, y:2.9, w:11, h:0.85, fontFace:FONT, fontSize:34, bold:true, color:C.navy, align:'center', rtlMode:true });
-    s.addText(`تحليل الأداء وإحصائيات الشكاوى والتعويضات — ${ctxLabel}`, { x:1.5, y:3.95, w:10.3, h:0.45, fontFace:FONT, fontSize:18, color:C.teal, align:'center', rtlMode:true });
+    s.addText(kind && kind!=='full' ? `${plan.label} — ${ctxLabel}` : `تحليل الأداء وإحصائيات الشكاوى والتعويضات — ${ctxLabel}`, { x:1.5, y:3.95, w:10.3, h:0.45, fontFace:FONT, fontSize:18, color:C.teal, align:'center', rtlMode:true });
     s.addText('مقدم إلى: الإدارة التنفيذية – ARRIVE   |   مقدم من: إدارة المراجعة التشغيلية', { x:1.5, y:4.55, w:10.3, h:0.35, fontFace:FONT, fontSize:13, color:C.grey, align:'center', rtlMode:true });
     s.addText(`عدد السجلات: ${N(S.n)}   |   عوامل التصفية: ${chips.length?chips.join('، '):'لا توجد (كل السجلات)'}   |   آخر تحديث للبيانات: ${refresh}`, { x:0.9, y:5.2, w:11.5, h:0.5, fontFace:FONT, fontSize:11, color:C.grey, align:'center', rtlMode:true });
     s.addText(`ARRIVE  |  إدارة المراجعة التشغيلية  |  ${ctxLabel}`, { x:0.5, y:7.0, w:12.33, h:0.3, fontFace:FONT, fontSize:11, color:C.grey, align:'center', rtlMode:true });
 
+    }
+
     // 2) الملخص التنفيذي
+    if(has('exec')){
     s = base(`الملخص التنفيذي — ${ctxLabel}`);
     card(s, 9.0, 1.6, 3.45, 1.5, N(S.n), 'إجمالي الشكاوى المسجلة');
     card(s, 5.4, 1.6, 3.45, 1.5, N(Math.round(S.comp)), 'إجمالي مبالغ التعويضات (ج.م)', null, C.orange);
@@ -6732,9 +6863,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     insight(s, S.dec ? `قُبل التعويض في ${cntShk(S.acc)} من أصل ${cntCase(S.dec)} محسومة (${N1(S.acc/S.dec*100)}%)، بإجمالي تعويضات ${N(Math.round(S.comp))} ج.م، ورُفض في ${cntShk(S.rej)}${S.open?`، وبقيت ${cntShk(S.open)} مفتوحة`:''}.` : `إجمالي الشكاوى ${cntShk(S.n)}، ولا توجد حالات محسومة (قبول أو رفض) ضمن النطاق الحالي.`, 5.55);
     note(s, 'نسبة القبول = المقبول ÷ (المقبول + المرفوض). النسبة في الجدول من إجمالي الشكاوى. المفتوحة = حالة «جارى» أو «التحقيق».', 6.3);
 
+    }
+
     // 3-4) تطور الشكاوى والتعويضات شهريًا (الشهر المختار + شهران سابقان) ثم مقارنة الشهر المختار بالشهر السابق
     // الأساس: كل الفلاتر عدا الشهر والتاريخ، حتى تتوفر الأشهر السابقة للشهر المختار.
-    const baseAll = getFiltered({ignoreTime:true});
     const shiftM = (k,d) => { let [y,m] = k.split('-').map(Number); m += d; while(m<1){ m += 12; y--; } while(m>12){ m -= 12; y++; } return y+'-'+String(m).padStart(2,'0'); };
     let curK = (getSelValues('fMonth').slice().sort().pop()) || null;
     if(!curK){ const dt = document.getElementById('fDateTo').value || document.getElementById('fDateFrom').value; if(ym(dt)) curK = ym(dt); }
@@ -6750,6 +6882,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const emptyNote = emptyMonths.length ? ` لا توجد سجلات في: ${emptyMonths.join('، ')} ضمن الفلاتر الحالية.` : '';
 
       // 3) ثلاثة أشهر
+      if(has('monthly3')){
       const tot3 = MS.reduce((t,x)=>t+x.s.comp,0);
       s = base(`تطور الشكاوى والتعويضات شهريًا — ${monthName(curK)} ومقارنته بالشهرين السابقين`);
       s.addShape(pptx.ShapeType.roundRect, { x:0.9, y:1.5, w:5.65, h:1.95, rectRadius:0.1, fill:{color:C.light}, line:{color:'CFE3EE', width:0.75} });
@@ -6772,7 +6905,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       insight(s, `أعلى شهر في عدد الشكاوى هو ${monthName(hiN.k)} (${cntShk(hiN.s.n)})، وأعلى شهر في قيمة التعويضات هو ${monthName(hiC.k)} (${N(Math.round(hiC.s.comp))} ج.م).`, 6.1, 0.5);
       note(s, `الشهر حسب تاريخ إضافة الشكوى؛ الشهر المختار والشهران السابقان له بغض النظر عن فلتر الشهر والتاريخ، مع بقية الفلاتر.${emptyNote}`, 6.65);
 
+      }
+
       // 4) الشهر المختار مقابل الشهر السابق
+      if(has('monthcmp')){
       const cur = MS[2], prev = MS[1];
       const cN = chg(cur.s.n, prev.s.n), cC = chg(cur.s.comp, prev.s.comp);
       const tot2 = cur.s.comp + prev.s.comp;
@@ -6791,11 +6927,12 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const dirs = (cN!=null && cC!=null && Math.sign(cN)!==Math.sign(cC) && cN!==0 && cC!==0);
       insight(s, dirs ? 'اتجاه عدد الشكاوى يختلف عن اتجاه مبالغ التعويضات؛ فالتكلفة تتأثر بنوع الحالات وقيمة التعويض وليس بعددها فقط.' : `تغيّر عدد الشكاوى (${chgTxt(cN)}) وتغيّرت مبالغ التعويضات (${chgTxt(cC)}) مقارنة بالشهر السابق.`, 5.7, 0.62);
       note(s, `الشهر حسب تاريخ إضافة الشكوى بغض النظر عن فلتر الشهر والتاريخ، مع بقية الفلاتر.${emptyNote}`, 6.45);
+      }
     }
 
     // 5) الجهة المتحملة
     const compRows = rows.filter(isCompensationCountable);
-    if(compRows.length){
+    if(has('bearer') && compRows.length){
       const bt = topBy(compRows, d=>d.compensation_bearer, 99).sort((a,b)=>b.comp-a.comp);
       const TOPN = 5;
       const top = bt.slice(0,TOPN), rest = bt.slice(TOPN);
@@ -6824,11 +6961,19 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.`, 6.05);
     };
     const topOf = (n, one, two, pl) => n===1 ? [`أعلى ${one}`,'يمثل'] : n===2 ? [`أعلى ${two}`,'يمثلان'] : [`أعلى ${N(n)} ${pl}`,'تمثل'];
-    ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`; }, true);
-    ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).`; }, true);
-    ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${cntShk(t[0].n)}.`, true);
+    if(has('reasons')) ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`; }, true);
+    if(has('reasonsCost')) EXTRA.reasonsCost(rows, S);
+    if(has('branches')) ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).`; }, true);
+    if(has('branchPerf')) EXTRA.branchPerf(rows, S);
+    if(has('customers')) ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${cntShk(t[0].n)}.`, true);
+
+    if(has('custTable')) EXTRA.custTable(rows, S);
+    if(has('slaBranch')) EXTRA.slaBranch(rows, S);
+    if(has('oldestOpen')) EXTRA.oldestOpen(rows, S);
+    if(has('weekly')) EXTRA.weekly(rows, S, baseAll);
 
     // 9) الأهداف مقابل الفعلي
+    if(has('targets')){
     s = base('الأهداف مقابل الفعلي');
     const accV = S.dec ? S.acc/S.dec*100 : null, openV = S.n ? S.open/S.n*100 : null;
     const st = (v, ok) => v==null ? 'لا توجد بيانات كافية' : (ok ? 'محقق' : 'غير محقق');
@@ -6839,7 +6984,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       [`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.cmpSla.pct==null?'—':`${N1(S.cmpSla.pct)}% (${N(S.cmpSla.ok)} من ${N(S.cmpSla.count)})`, st(S.cmpSla.pct, S.cmpSla.pct!=null&&S.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT)]
     ], { x:0.9, y:1.7, w:11.54, rowH:0.5, colW:[4.0,2.2,3.5,1.84] });
     note(s, 'الالتزام بالمهلة = الحالات المنجزة خلال المهلة ÷ الحالات ذات التاريخين الصالحين. الأهداف هي القيم المعتمدة حاليًا في لوحة المتابعة.', 4.4);
-    thanks(`تقرير متابعة الشكاوى والتعويضات – ${ctxLabel}`);
+    }
+    if(has('dataQuality')) EXTRA.dataQuality(rows, S);
+    if(has('decisions')) EXTRA.decisions(rows, S);
+    if(has('thanks')) thanks(`تقرير متابعة الشكاوى والتعويضات – ${ctxLabel}`);
   }
 
   function thanks(sub){
@@ -6940,7 +7088,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   }
 
   /* ---------- تشغيل ---------- */
-  async function generate(){
+  async function generate(kind){
     const btn = document.getElementById('headerDeck'); const old = btn ? btn.innerHTML : '';
     if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الإعداد…'; }
     try{
@@ -6950,14 +7098,43 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       pptx.title = 'تقرير متابعة الشكاوى والتعويضات'; pptx.company = 'ARRIVE'; pptx.author = 'إدارة المراجعة التشغيلية';
       const cmp = (typeof compareModeActive!=='undefined' && compareModeActive && typeof getFilteredForPanel==='function');
       if(!cmp && !getFiltered().length){ alert('لا توجد بيانات متاحة وفقًا للفلاتر المحددة.'); return; }
-      if(cmp) buildCompare(); else buildSingle();
+      if(cmp) buildCompare(); else buildSingle(kind);
       const stamp = new Date().toISOString().slice(0,10);
-      await pptx.writeFile({ fileName:`ARRIVE_Complaints_${cmp?'Comparison':'Report'}_${stamp}.pptx` });
+      await pptx.writeFile({ fileName:`ARRIVE_Complaints_${cmp?'Comparison':('Deck_'+(DECK_PLANS[kind]?kind:'full'))}_${stamp}.pptx` });
     }catch(e){ console.error(e); alert('تعذّر إعداد العرض التقديمي. أعد المحاولة بعد تحديث اللوحة.'); }
     finally{ if(btn){ btn.disabled = false; btn.innerHTML = old; } }
   }
-  document.getElementById('headerDeck')?.addEventListener('click', generate);
-  window.ArriveDeck = { generate, ensureLib, _build: ()=>{ pptx = new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.rtlMode = true; const cmp = (typeof compareModeActive!=='undefined' && compareModeActive); if(cmp) buildCompare(); else buildSingle(); return pptx; } };
+  /* نافذة اختيار نوع العرض */
+  function chooseKind(){
+    if(document.getElementById('deckKindOverlay')) return;
+    const ov = document.createElement('div'); ov.id = 'deckKindOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(18,59,97,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;font-family:inherit';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;color:#222;border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.3)';
+    box.innerHTML = '<div style="font-size:18px;font-weight:700;color:#123B61;margin-bottom:4px">اختر نوع العرض التقديمي</div><div style="font-size:12px;color:#526C80;margin-bottom:12px">يُبنى العرض من البيانات والفلاتر الحالية.</div>';
+    let sel = 'full';
+    const items = Object.keys(DECK_PLANS).map(k=>{
+      const p = DECK_PLANS[k], lab = document.createElement('label');
+      lab.style.cssText = 'display:flex;gap:10px;align-items:flex-start;border:1.5px solid #CFE3EE;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer';
+      lab.innerHTML = `<input type="radio" name="deckKind" value="${k}" ${k==='full'?'checked':''} style="margin-top:4px"><span><b style="color:#123B61">${p.label}</b>${k==='full'?' <span style="color:#ED8B33;font-size:12px">(موصى به)</span>':''}<br><span style="font-size:12px;color:#526C80">${p.desc}</span></span>`;
+      lab.querySelector('input').addEventListener('change', ()=>{ sel = k; items.forEach(l=>l.style.borderColor='#CFE3EE'); lab.style.borderColor='#0837C9'; });
+      if(k==='full') lab.style.borderColor = '#0837C9';
+      box.appendChild(lab); return lab;
+    });
+    const bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-start;margin-top:12px';
+    const go = document.createElement('button'); go.type='button'; go.textContent = 'إنشاء العرض'; go.style.cssText = 'background:#0837C9;color:#fff;border:0;border-radius:8px;padding:9px 18px;font-weight:700;cursor:pointer;font-family:inherit';
+    const cancel = document.createElement('button'); cancel.type='button'; cancel.textContent = 'إلغاء'; cancel.style.cssText = 'background:#fff;color:#123B61;border:1px solid #CFE3EE;border-radius:8px;padding:9px 18px;cursor:pointer;font-family:inherit';
+    const close = ()=>ov.remove();
+    go.addEventListener('click', ()=>{ close(); generate(sel); });
+    cancel.addEventListener('click', close);
+    ov.addEventListener('click', e=>{ if(e.target===ov) close(); });
+    bar.appendChild(go); bar.appendChild(cancel); box.appendChild(bar); ov.appendChild(box); document.body.appendChild(ov);
+  }
+  document.getElementById('headerDeck')?.addEventListener('click', ()=>{
+    const cmp = (typeof compareModeActive!=='undefined' && compareModeActive && typeof getFilteredForPanel==='function');
+    if(cmp) generate(); else chooseKind();   // وضع المقارنة له عرض مقارنة واحد
+  });
+  window.ArriveDeck = { generate, chooseKind, plans: DECK_PLANS, ensureLib, _build: (kind)=>{ pptx = new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.rtlMode = true; const cmp = (typeof compareModeActive!=='undefined' && compareModeActive); if(cmp) buildCompare(); else buildSingle(kind); return pptx; } };
 })();
 </script>
 
