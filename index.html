@@ -1567,6 +1567,23 @@ body.report-open{overflow:hidden}
 
 @media print{.rp-page{height:296mm;overflow:hidden}}
 
+
+/* ===== قسم الربط: تابان (التعويضات المتحملة / الشكاوى وتفصيلها) + وضع التضمين ?embed= ===== */
+.link-tabs-nav{display:flex;gap:var(--space-2);margin:0 0 var(--space-3);flex-wrap:wrap}
+.link-tab-btn{font:inherit;cursor:pointer;border:1px solid var(--border,#d5dbe8);background:transparent;color:var(--navy-deep);padding:8px 16px;border-radius:var(--radius-sm,8px);font-weight:700}
+.link-tab-btn.active{background:var(--arrive-blue);color:#fff;border-color:var(--arrive-blue)}
+.link-tab-pane{display:none}.link-tab-pane.active{display:block}
+.link-tab-bar{display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-3)}
+.link-kpis{display:flex;gap:var(--space-3);flex-wrap:wrap;margin-bottom:var(--space-4)}
+.link-kpi{padding:12px 18px;border-radius:var(--radius-sm,8px);background:var(--arrive-light-blue);min-width:150px}
+.link-kpi b{display:block;font-size:1.4rem}.link-kpi span{font-size:.85rem;opacity:.8}
+.link-sub-title{margin:var(--space-5) 0 var(--space-2);font-size:1rem;font-weight:700;color:var(--navy-deep)}
+.link-tab-pane table{width:100%;border-collapse:collapse}
+.link-tab-pane th,.link-tab-pane td{padding:8px 10px;border-bottom:1px solid rgba(128,128,128,.25);text-align:right}
+.link-tab-pane tfoot td{font-weight:800}
+body.embed-mode header.top,body.embed-mode #filterBar,body.embed-mode #demoModeBanner,body.embed-mode #compareModeSection,body.embed-mode footer,body.embed-mode main > :not(#linkTabsSection){display:none!important}
+body.embed-mode main{padding-top:var(--space-3)}
+body.embed-mode #linkTabsSection .section-heading{display:none}
 </style>
 </head><body>
 
@@ -1929,6 +1946,36 @@ body.report-open{overflow:hidden}
     <div class="pager" id="tablePager">
       <div class="pager-info" id="pagerInfo">—</div>
       <div class="pager-ctl" id="pagerCtl"></div>
+    </div>
+  </section>
+
+  <section id="linkTabsSection">
+    <div class="section-heading">
+      <h2><span class="tag">ربط</span> التعويضات المتحملة والشكاوى</h2>
+      <span class="section-sub">تابان مجمّعان من نفس الفلاتر الحالية — يمكن عرضهما داخل لوحة أخرى عبر ?embed=comp أو ?embed=complaints</span>
+    </div>
+    <div class="link-tabs-nav" id="linkTabsNav" role="tablist">
+      <button class="link-tab-btn active" type="button" data-tab="comp" role="tab">التعويضات المتحملة والجهة</button>
+      <button class="link-tab-btn" type="button" data-tab="complaints" role="tab">عدد الشكاوى وتفصيلها</button>
+    </div>
+    <div class="link-tab-pane active" id="linkPaneComp" role="tabpanel">
+      <div class="link-tab-bar"><div class="panel-sub" style="margin:0">إجمالي التعويض المتحمَّل وعدد الشكاوى لكل جهة تحميل</div>
+        <button class="qa-btn" id="linkExportComp" type="button"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير CSV</button></div>
+      <div class="link-kpis" id="linkCompKpis"></div>
+      <div class="table-scroll"><table><thead><tr><th>الجهة المتحملة</th><th>إجمالي التعويض (ج.م)</th><th>% من الإجمالي</th><th>عدد الشكاوى</th><th>حالات بتعويض</th></tr></thead>
+        <tbody id="linkCompBody"></tbody><tfoot id="linkCompFoot"></tfoot></table></div>
+    </div>
+    <div class="link-tab-pane" id="linkPaneComplaints" role="tabpanel">
+      <div class="link-tab-bar"><div class="panel-sub" style="margin:0">إجمالي عدد الشكاوى، تجميع حسب الأبعاد، ثم التفصيل لكل شكوى</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="qa-btn" id="linkExportSummary" type="button"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير التجميع</button>
+          <button class="qa-btn" id="linkExportDetail" type="button"><i class="fa-solid fa-file-csv qa-icon"></i> تصدير التفصيل</button></div></div>
+      <div class="link-kpis" id="linkCmpKpis"></div>
+      <div id="linkCmpGroups"></div>
+      <div class="link-sub-title">تفصيل الشكاوى</div>
+      <div class="table-scroll"><table><thead><tr><th>رقم الشكوى</th><th>التاريخ</th><th>الفرع</th><th>النوع</th><th>التصنيف</th><th>الحالة</th><th>الجهة المتحملة</th><th>التعويض (ج.م)</th></tr></thead>
+        <tbody id="linkCmpBody"></tbody></table></div>
+      <div class="panel-sub" id="linkCmpNote"></div>
     </div>
   </section>
 
@@ -3144,6 +3191,93 @@ function arriveProfileData(){
 }
 window.arriveProfileData = arriveProfileData;
 
+
+// ---------- قسم الربط: التعويضات المتحملة + الشكاوى وتفصيلها (يعتمد على getFiltered وsumCompensation) ----------
+const LINK_NO_BEARER = 'غير محدد';
+const LINK_DETAIL_LIMIT = 300;
+function linkEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function linkNum(n){ return Number(n||0).toLocaleString('en-US'); }
+function linkPct(n,t){ return t ? (Math.round(n/t*1000)/10).toFixed(1)+'%' : '—'; }
+function computeBearerSummary(rows){
+  const m = {};
+  rows.forEach(d=>{
+    const k = (d.compensation_bearer||'').trim() || LINK_NO_BEARER;
+    const o = m[k] || (m[k]={bearer:k, amount:0, complaints:0, compensated:0});
+    const a = compensationAmountOf(d);
+    o.amount += a; o.complaints++; if(a>0) o.compensated++;
+  });
+  return Object.values(m).sort((a,b)=> b.amount-a.amount || b.complaints-a.complaints);
+}
+function groupCount(rows, key, clean){
+  const m = {};
+  rows.forEach(d=>{ let k = (d[key]||'').toString().trim(); if(clean) k = clean(k); k = k || 'غير محدد'; m[k]=(m[k]||0)+1; });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function downloadCsv(name, headers, lines){
+  const esc = v => `"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const csv = '\uFEFF' + [headers.map(esc).join(','), ...lines.map(r=>r.map(esc).join(','))].join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  const a = document.createElement('a'); a.href=url; a.download=`${name}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+const LINK_GROUPS = [['type','النوع',t=>t.replace('شكوى تخص ','')],['branch','الفرع'],['classification','التصنيف'],['status','الحالة']];
+function renderLinkTabs(rows){
+  if(!document.getElementById('linkCompBody')) return;
+  const total = rows.length, sum = sumCompensation(rows), bs = computeBearerSummary(rows);
+  document.getElementById('linkCompKpis').innerHTML =
+    `<div class="link-kpi"><b>${linkNum(sum)}</b><span>إجمالي التعويض (ج.م)</span></div>`+
+    `<div class="link-kpi"><b>${linkNum(total)}</b><span>عدد الشكاوى</span></div>`+
+    `<div class="link-kpi"><b>${bs.length}</b><span>عدد الجهات المتحملة</span></div>`;
+  document.getElementById('linkCompBody').innerHTML = bs.length ? bs.map(o=>
+    `<tr><td>${linkEsc(o.bearer)}</td><td class="num">${linkNum(o.amount)}</td><td class="num">${linkPct(o.amount,sum)}</td><td class="num">${linkNum(o.complaints)}</td><td class="num">${linkNum(o.compensated)}</td></tr>`).join('')
+    : '<tr><td colspan="5">لا توجد بيانات</td></tr>';
+  document.getElementById('linkCompFoot').innerHTML = `<tr><td>الإجمالي</td><td class="num">${linkNum(sum)}</td><td class="num">${sum?'100.0%':'—'}</td><td class="num">${linkNum(total)}</td><td class="num">${linkNum(bs.reduce((t,o)=>t+o.compensated,0))}</td></tr>`;
+
+  const open = rows.filter(d=> d.status && (d.status.includes('جارى')||d.status.includes('التحقيق'))).length;
+  document.getElementById('linkCmpKpis').innerHTML =
+    `<div class="link-kpi"><b>${linkNum(total)}</b><span>إجمالي الشكاوى</span></div>`+
+    `<div class="link-kpi"><b>${linkNum(open)}</b><span>مفتوحة</span></div>`+
+    `<div class="link-kpi"><b>${linkNum(rows.filter(isCompensationCountable).filter(d=>d.compensation_amount>0).length)}</b><span>بتعويض</span></div>`;
+  document.getElementById('linkCmpGroups').innerHTML = LINK_GROUPS.map(([k,label,clean])=>{
+    const g = groupCount(rows,k,clean);
+    return `<div class="link-sub-title">حسب ${label}</div><div class="table-scroll"><table><thead><tr><th>${label}</th><th>العدد</th><th>%</th></tr></thead><tbody>`+
+      g.map(([n,c])=>`<tr><td>${linkEsc(n)}</td><td class="num">${linkNum(c)}</td><td class="num">${linkPct(c,total)}</td></tr>`).join('')+`</tbody></table></div>`;
+  }).join('');
+  document.getElementById('linkCmpBody').innerHTML = rows.slice(0,LINK_DETAIL_LIMIT).map(d=>
+    `<tr><td>${linkEsc(d.id)}</td><td class="num">${linkEsc(d.date_added||'—')}</td><td>${linkEsc(d.branch)}</td><td>${linkEsc((d.type||'').replace('شكوى تخص ',''))}</td><td>${linkEsc(d.classification)}</td><td>${linkEsc(d.status)}</td><td>${linkEsc(d.compensation_bearer)}</td><td class="num">${isCompensationCountable(d)?linkNum(d.compensation_amount):'—'}</td></tr>`).join('') || '<tr><td colspan="8">لا توجد بيانات</td></tr>';
+  document.getElementById('linkCmpNote').textContent = total>LINK_DETAIL_LIMIT ? `معروض أول ${LINK_DETAIL_LIMIT} شكوى من ${total} — التصدير يشمل الكل.` : '';
+}
+function setLinkTab(name){
+  document.querySelectorAll('.link-tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.getElementById('linkPaneComp').classList.toggle('active', name==='comp');
+  document.getElementById('linkPaneComplaints').classList.toggle('active', name==='complaints');
+}
+(function initLinkTabs(){
+  document.querySelectorAll('.link-tab-btn').forEach(b=>b.addEventListener('click',()=>setLinkTab(b.dataset.tab)));
+  document.getElementById('linkExportComp').addEventListener('click',()=>{
+    const rows=getFiltered(), sum=sumCompensation(rows);
+    downloadCsv('compensation_by_bearer',['الجهة المتحملة','إجمالي التعويض','% من الإجمالي','عدد الشكاوى','حالات بتعويض'],
+      computeBearerSummary(rows).map(o=>[o.bearer,o.amount,linkPct(o.amount,sum),o.complaints,o.compensated]));
+  });
+  document.getElementById('linkExportSummary').addEventListener('click',()=>{
+    const rows=getFiltered(), out=[];
+    LINK_GROUPS.forEach(([k,label,clean])=> groupCount(rows,k,clean).forEach(([n,c])=>out.push([label,n,c,linkPct(c,rows.length)])));
+    downloadCsv('complaints_summary',['البعد','القيمة','العدد','%'],out);
+  });
+  document.getElementById('linkExportDetail').addEventListener('click',()=>{
+    downloadCsv('complaints_detail',['رقم الشكوى','التاريخ','الفرع','النوع','التصنيف','الحالة','الجهة المتحملة','التعويض'],
+      getFiltered().map(d=>[d.id,d.date_added,d.branch,(d.type||'').replace('شكوى تخص ',''),d.classification,d.status,d.compensation_bearer,isCompensationCountable(d)?d.compensation_amount:'']));
+  });
+  // وضع التضمين: ?embed=comp | complaints | all
+  try{
+    const e = new URLSearchParams(location.search).get('embed');
+    if(e){
+      document.body.classList.add('embed-mode');
+      if(e==='comp'||e==='complaints'){ setLinkTab(e); document.getElementById('linkTabsNav').style.display='none'; }
+    }
+  }catch(_){}
+})();
+
 function render(){
   const rows = getFiltered();
   document.getElementById('resultCount').textContent = rows.length;
@@ -3204,6 +3338,7 @@ function render(){
   renderTopPerformers(rows);
   renderHandlerPerformance(rows);
   renderKpiEnhancements(rows);
+  renderLinkTabs(rows);
   updateLiveStats(rows);
   renderActiveFilters();
   arriveAfterRender(rows);
