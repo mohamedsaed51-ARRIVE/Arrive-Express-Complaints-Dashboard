@@ -1,0 +1,239 @@
+<title>داشبورد تأجيلات الأوبريشن</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: sticky filter header, KPI strip, 2-col chart rows, tables, findings. ARRIVE brand tokens. */
+:root{
+  --bg:#F4F8FD; --card:#FFFFFF; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
+  --brand:#0837C9; --brand-soft:#E6F4FF; --teal:#00A9C4; --warn:#B45309; --warn-bg:#FEF3C7;
+  --bad:#B91C1C; --bad-bg:#FEE2E2; --good:#15803D; --good-bg:#DCFCE7;
+  --c-sub:#0837C9; --c-rider:#00C7E6; --grid:#E2E8F0;
+  --font-ar:'Cairo',system-ui,sans-serif; --font-num:'Inter','Cairo',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1220; --card:#121B2E; --ink:#E8EEF9; --muted:#94A3B8; --line:#24314A;
+  --brand:#6C8CFF; --brand-soft:#16264A; --teal:#35D3EE; --warn:#FBBF24; --warn-bg:#3A2E10;
+  --bad:#FCA5A5; --bad-bg:#40181A; --good:#86EFAC; --good-bg:#12331F;
+  --c-sub:#6C8CFF; --c-rider:#35D3EE; --grid:#24314A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --card:#121B2E; --ink:#E8EEF9; --muted:#94A3B8; --line:#24314A;
+  --brand:#6C8CFF; --brand-soft:#16264A; --teal:#35D3EE; --warn:#FBBF24; --warn-bg:#3A2E10;
+  --bad:#FCA5A5; --bad-bg:#40181A; --good:#86EFAC; --good-bg:#12331F;
+  --c-sub:#6C8CFF; --c-rider:#35D3EE; --grid:#24314A; color-scheme:dark}
+*{box-sizing:border-box}
+html{direction:rtl}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ar);font-size:14px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+.wrap{max-width:1200px;margin:0 auto}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-block:20px 8px}
+h1{font-size:22px;margin:0;font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.ctrls{display:flex;flex-wrap:wrap;gap:10px}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-block:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.kpi .l{color:var(--muted);font-size:12.5px;font-weight:600}
+.kpi .v{font-size:28px;font-weight:700;line-height:1.2;margin-top:2px}
+.kpi .n{color:var(--muted);font-size:12px;margin-top:2px}
+.grid{display:grid;gap:12px;margin-block:12px}
+.g2{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.g2b{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:860px){.g2,.g2b{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h2{font-size:15px;margin:0 0 2px;font-weight:700}
+.card .hint{color:var(--muted);font-size:12px;margin:0 0 10px}
+.chart{position:relative;height:300px}
+.chart.tall{height:420px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--brand);color:#fff;font-weight:600;text-align:start;padding:8px 10px;white-space:nowrap}
+th:first-child{border-radius:0 8px 0 0}th:last-child{border-radius:8px 0 0 0}
+td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.r,th.r{text-align:end}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--brand);vertical-align:middle;margin-inline-start:8px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.up{background:var(--bad-bg);color:var(--bad)}.down{background:var(--good-bg);color:var(--good)}.flat{background:var(--brand-soft);color:var(--brand)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:baseline}
+ul.f{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+ul.f li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.tag{font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:6px;white-space:nowrap;margin-top:2px}
+.t-fact{background:var(--brand-soft);color:var(--brand)}.t-warn{background:var(--warn-bg);color:var(--warn)}
+.note{background:var(--warn-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;margin-block:12px}
+footer{color:var(--muted);font-size:12px;margin-top:16px}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>داشبورد تأجيلات الأوبريشن</h1>
+    <p class="sub">المصدر: شيت «تاجيلات الاوبريشن» · أكتوبر 2026 كامل (26 يوم تشغيل) ونوفمبر 1–3</p>
+  </div>
+  <div class="ctrls">
+    <div class="seg" id="segMonth" role="group" aria-label="الشهر">
+      <button data-v="all" aria-pressed="false">الكل</button>
+      <button data-v="oct" aria-pressed="true">أكتوبر</button>
+      <button data-v="nov" aria-pressed="false">نوفمبر (3 أيام)</button>
+    </div>
+    <div class="seg" id="segReason" role="group" aria-label="السبب">
+      <button data-v="all" aria-pressed="true">كل الأسباب</button>
+      <button data-v="0" aria-pressed="false">ضواحي</button>
+      <button data-v="1" aria-pressed="false">عطل مندوب</button>
+    </div>
+  </div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="grid g2">
+  <div class="card"><h2>التأجيلات اليومية</h2><p class="hint">الأيام الفاضية في الشيت غير محسوبة. الخط المتقطع = المتوسط اليومي.</p>
+    <div class="legend"><span><i style="background:var(--c-sub)"></i>ضواحي</span><span><i style="background:var(--c-rider)"></i>عطل مندوب</span></div>
+    <div class="chart"><canvas id="cDaily" role="img" aria-label="التأجيلات اليومية"></canvas></div></div>
+  <div class="card"><h2>توزيع الأسباب</h2><p class="hint">نسبة كل سبب من إجمالي الفترة المختارة.</p>
+    <div class="chart"><canvas id="cReason" role="img" aria-label="توزيع الأسباب"></canvas></div></div>
+</div>
+
+<div class="grid g2b">
+  <div class="card"><h2>الفروع حسب التأجيلات</h2><p class="hint">مرتبة تنازليًا حسب الإجمالي.</p>
+    <div class="chart tall"><canvas id="cBranch" role="img" aria-label="التأجيلات حسب الفرع"></canvas></div></div>
+  <div class="card"><h2>تفصيل الفروع</h2><p class="hint">المتوسط اليومي = الإجمالي ÷ عدد أيام التشغيل في الفترة.</p>
+    <div class="tw"><table id="tBranch"></table></div></div>
+</div>
+
+<div class="grid g2b">
+  <div class="card"><h2>متوسط التأجيل حسب يوم الأسبوع</h2><p class="hint">عدد الأيام المحسوبة لكل يوم ظاهر تحت اسمه. الجمعة بدون بيانات.</p>
+    <div class="chart" style="height:260px"><canvas id="cWeek" role="img" aria-label="متوسط حسب اليوم"></canvas></div></div>
+  <div class="card"><h2>مقارنة المتوسط اليومي: أكتوبر ونوفمبر</h2><p class="hint">نوفمبر = 3 أيام فقط (1–3). تُقرأ كمؤشر مبكر وليست نتيجة شهر.</p>
+    <div class="tw"><table id="tCmp"></table></div></div>
+</div>
+
+<div class="card"><h2>نتائج التحليل</h2><p class="hint">كل الأرقام محسوبة من الشيت. التفسيرات التشغيلية تحتاج تأكيد من الفروع.</p>
+<ul class="f" id="findings"></ul></div>
+
+<div class="note"><b>ملاحظات جودة البيانات:</b>
+<ul class="f" style="margin-top:8px" id="dq"></ul></div>
+
+<footer>تاريخ الإعداد: 4 نوفمبر 2026 · الحساب يعتمد على أعمدة الفروع الـ14 فقط (أعمدة القاهرة/الجيزة/بحري تجميعات إقليمية ولا تُضاف).</footer>
+</div>
+
+<script>
+document.documentElement.dir="rtl";document.documentElement.lang="ar";
+const D={"branches":["مدينه نصر","اكتوبر","حدائق القبه","المعادي","الهرم","الاسكندريه","العجوزه","المؤسسه","الشروق","الاسماعيليه","قليوب","المنصوره","طنطا","الزقازيق"],"oct":{"1":[[0,30],[0,10],[0,16],[0,4],[179,0],[23,0],[0,11],[0,16],[0,43],[24,0],[0,16],[0,0],[49,0],[69,0]],"3":[[0,96],[0,13],[0,29],[0,2],[0,12],[42,0],[10,2],[4,10],[18,43],[19,3],[0,15],[9,0],[63,0],[84,0]],"4":[[0,60],[0,163],[0,15],[0,45],[85,29],[23,0],[0,2],[0,6],[40,11],[38,3],[14,15],[0,1],[38,0],[59,15]],"5":[[0,70],[0,146],[0,43],[0,1],[166,0],[32,0],[6,0],[11,4],[0,27],[15,22],[0,26],[2,0],[36,0],[59,11]],"6":[[0,26],[0,91],[0,28],[0,0],[20,69],[19,0],[0,1],[20,18],[0,45],[4,15],[15,31],[1,0],[25,0],[66,0]],"7":[[0,14],[0,14],[0,13],[0,1],[70,0],[4,0],[8,9],[0,30],[9,43],[10,0],[20,5],[3,0],[31,4],[14,51]],"8":[[0,69],[0,66],[0,4],[0,0],[97,0],[0,4],[0,13],[0,1],[18,18],[7,6],[0,12],[0,0],[24,0],[38,2]],"10":[[0,140],[0,86],[0,19],[0,0],[0,16],[6,0],[10,35],[0,10],[8,41],[8,8],[7,14],[1,0],[20,0],[16,0]],"11":[[0,138],[0,69],[0,19],[0,0],[78,12],[0,9],[0,1],[0,17],[0,39],[28,7],[0,6],[0,7],[35,0],[26,0]],"12":[[0,33],[0,27],[0,18],[0,0],[140,38],[0,10],[7,5],[6,3],[25,25],[53,0],[0,23],[2,0],[33,0],[36,0]],"13":[[0,23],[0,28],[0,19],[0,2],[0,51],[0,8],[0,8],[0,12],[18,78],[0,11],[0,35],[4,0],[21,21],[58,0]],"14":[[0,41],[0,31],[0,22],[0,3],[70,0],[0,3],[12,3],[4,26],[0,78],[6,7],[0,98],[6,0],[45,0],[20,11]],"15":[[0,82],[0,35],[0,10],[0,2],[76,0],[0,17],[0,4],[0,4],[0,33],[16,5],[0,62],[8,0],[24,0],[30,25]],"17":[[0,82],[0,28],[0,18],[0,0],[18,6],[0,14],[0,95],[8,0],[0,28],[6,8],[0,39],[13,0],[13,0],[28,0]],"18":[[0,76],[0,18],[0,27],[0,0],[151,75],[0,10],[0,1],[0,4],[0,34],[28,3],[0,66],[0,3],[12,0],[36,0]],"19":[[0,24],[0,12],[0,36],[0,0],[140,28],[0,5],[0,0],[9,0],[11,19],[48,5],[0,32],[18,0],[14,0],[40,0]],"20":[[0,93],[0,21],[0,49],[0,0],[25,26],[0,14],[0,16],[17,51],[0,53],[8,16],[0,19],[0,1],[12,0],[20,0]],"21":[[0,44],[0,19],[0,10],[0,1],[39,0],[0,23],[0,8],[0,5],[0,18],[8,11],[0,19],[3,0],[13,0],[24,0]],"22":[[0,16],[0,22],[0,23],[0,2],[79,0],[0,74],[0,1],[4,0],[9,33],[19,13],[0,13],[24,4],[13,0],[32,27]],"24":[[0,44],[0,48],[0,12],[0,1],[0,12],[0,37],[11,22],[8,3],[0,50],[7,12],[0,17],[3,0],[23,0],[25,0]],"25":[[0,114],[0,49],[0,62],[0,2],[37,56],[0,14],[0,22],[0,6],[0,38],[23,8],[0,5],[0,13],[14,0],[15,0]],"26":[[0,82],[0,43],[0,57],[0,1],[107,47],[0,33],[0,13],[5,107],[0,16],[42,9],[0,31],[5,0],[21,0],[26,0]],"27":[[0,92],[0,34],[0,28],[0,1],[12,30],[0,35],[0,42],[8,57],[4,11],[0,13],[0,39],[3,0],[16,0],[39,0]],"28":[[0,15],[0,47],[0,43],[0,0],[18,16],[0,8],[12,19],[0,64],[0,71],[21,5],[0,64],[3,0],[18,0],[12,0]],"29":[[0,8],[0,64],[0,9],[0,0],[72,8],[0,41],[0,15],[4,2],[0,29],[30,6],[0,0],[2,0],[7,0],[20,0]],"31":[[0,9],[0,14],[0,20],[0,1],[0,90],[0,31],[0,63],[10,1],[13,38],[0,7],[0,59],[5,0],[10,0],[29,0]]},"nov":{"1":[[0,123],[0,55],[0,13],[0,1],[38,146],[0,12],[0,0],[9,2],[0,102],[8,16],[0,16],[1,0],[10,0],[26,0]],"2":[[0,67],[0,70],[0,13],[0,17],[86,209],[0,27],[7,0],[0,10],[0,51],[32,0],[0,1],[1,0],[14,0],[12,0]],"3":[[0,83],[0,103],[0,18],[0,3],[32,108],[0,10],[0,24],[0,6],[25,33],[56,0],[0,1],[0,45],[2,0],[35,0]]}};
+const NAMES={"مدينه نصر":"مدينة نصر","اكتوبر":"أكتوبر","حدائق القبه":"حدائق القبة","المعادي":"المعادي","الهرم":"الهرم","الاسكندريه":"الإسكندرية","العجوزه":"العجوزة","المؤسسه":"المؤسسة","الشروق":"الشروق","الاسماعيليه":"الإسماعيلية","قليوب":"قليوب","المنصوره":"المنصورة","طنطا":"طنطا","الزقازيق":"الزقازيق"};
+const B=D.branches.map(n=>NAMES[n]||n);
+const WD=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const f1=n=>n.toLocaleString('en-US',{maximumFractionDigits:1});
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let st={month:'oct',reason:'all'},charts={};
+
+function rowsFor(m){
+  const out=[];
+  if(m!=='nov') for(const d in D.oct) out.push({m:'oct',d:+d,v:D.oct[d]});
+  if(m!=='oct') for(const d in D.nov) out.push({m:'nov',d:+d,v:D.nov[d]});
+  return out;
+}
+function val(pair){return st.reason==='all'?pair[0]+pair[1]:pair[+st.reason]}
+function agg(rows){
+  const days=rows.map(r=>({...r,t:r.v.reduce((s,p)=>s+val(p),0),sub:r.v.reduce((s,p)=>s+p[0],0),rid:r.v.reduce((s,p)=>s+p[1],0)}));
+  const br=B.map((n,i)=>({n,sub:rows.reduce((s,r)=>s+r.v[i][0],0),rid:rows.reduce((s,r)=>s+r.v[i][1],0)}));
+  br.forEach(b=>b.t=st.reason==='all'?b.sub+b.rid:(st.reason==='0'?b.sub:b.rid));
+  return {days,br,total:days.reduce((s,d)=>s+d.t,0),sub:br.reduce((s,b)=>s+b.sub,0),rid:br.reduce((s,b)=>s+b.rid,0)};
+}
+function dow(r){return new Date(2026,r.m==='oct'?9:10,r.d).getDay()}
+function lbl(r){return r.d+'/'+(r.m==='oct'?10:11)}
+
+function kpis(a){
+  const n=a.days.length, avg=a.total/n, pk=a.days.reduce((x,y)=>y.t>x.t?y:x), lo=a.days.reduce((x,y)=>y.t<x.t?y:x);
+  const top=[...a.br].sort((x,y)=>y.t-x.t)[0];
+  const k=[
+    ['إجمالي التأجيلات',fmt(a.total),n+' يوم تشغيل'],
+    ['المتوسط اليومي',fmt(avg),'تأجيل في اليوم'],
+    ['عطل مندوب',a.total?f1(a.rid/(a.sub+a.rid)*100)+'%':'—',fmt(a.rid)+' من '+fmt(a.sub+a.rid)+' (كل الأسباب)'],
+    ['أعلى يوم',fmt(pk.t),lbl(pk)],
+    ['أقل يوم',fmt(lo.t),lbl(lo)],
+    ['أعلى فرع',top.n,fmt(top.t)+' · '+f1(top.t/a.total*100)+'% من الإجمالي']
+  ];
+  document.getElementById('kpis').innerHTML=k.map(x=>`<div class="kpi"><div class="l">${x[0]}</div><div class="v ${/^[\d,%—]+$/.test(x[1])?'num':''}" ${/^[\d,%—]+$/.test(x[1])?'':'style="font-size:22px"'}>${x[1]}</div><div class="n">${x[2]}</div></div>`).join('');
+}
+function mk(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg)}
+function base(){
+  const tc=css('--muted');
+  Chart.defaults.font.family="'Cairo',system-ui,sans-serif";Chart.defaults.color=tc;
+  return {tc,grid:css('--grid'),sub:css('--c-sub'),rid:css('--c-rider'),ink:css('--ink')};
+}
+function render(){
+  const rows=rowsFor(st.month),a=agg(rows),c=base();
+  kpis(a);
+  const ds=[];
+  if(st.reason!=='1')ds.push({label:'ضواحي',data:a.days.map(d=>d.sub),backgroundColor:c.sub,stack:'s'});
+  if(st.reason!=='0')ds.push({label:'عطل مندوب',data:a.days.map(d=>d.rid),backgroundColor:c.rid,stack:'s'});
+  const avg=a.total/a.days.length;
+  mk('cDaily',{data:{labels:a.days.map(lbl),datasets:[...ds.map(x=>({type:'bar',...x})),{type:'line',label:'المتوسط',data:a.days.map(()=>avg),borderColor:c.ink,borderDash:[6,4],borderWidth:1.5,pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,callbacks:{footer:i=>'الإجمالي: '+fmt(i.filter(x=>x.dataset.type==='bar').reduce((s,x)=>s+x.parsed.y,0))}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkip:true,font:{family:'Inter'}}},y:{stacked:true,grid:{color:c.grid},ticks:{font:{family:'Inter'}}}}}});
+  const tot=a.sub+a.rid;
+  mk('cReason',{type:'doughnut',data:{labels:['ضواحي','عطل مندوب'],datasets:[{data:[a.sub,a.rid],backgroundColor:[c.sub,c.rid],borderColor:css('--card'),borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,generateLabels:ch=>ch.data.labels.map((l,i)=>({text:l+' — '+fmt(ch.data.datasets[0].data[i])+' ('+f1(ch.data.datasets[0].data[i]/tot*100)+'%)',fillStyle:ch.data.datasets[0].backgroundColor[i],strokeStyle:'transparent',index:i,fontColor:c.ink}))}},tooltip:{rtl:true}}}});
+  const br=[...a.br].sort((x,y)=>y.t-x.t);
+  const bds=[];
+  if(st.reason!=='1')bds.push({label:'ضواحي',data:br.map(b=>b.sub),backgroundColor:c.sub});
+  if(st.reason!=='0')bds.push({label:'عطل مندوب',data:br.map(b=>b.rid),backgroundColor:c.rid});
+  mk('cBranch',{type:'bar',data:{labels:br.map(b=>b.n),datasets:bds},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true}},
+    scales:{x:{stacked:true,grid:{color:c.grid},ticks:{font:{family:'Inter'}}},y:{stacked:true,grid:{display:false},position:'right'}}}});
+  const mx=br[0].t||1;
+  document.getElementById('tBranch').innerHTML='<thead><tr><th>الفرع</th><th class="r">ضواحي</th><th class="r">عطل مندوب</th><th class="r">الإجمالي</th><th class="r">النسبة</th><th class="r">متوسط/يوم</th></tr></thead><tbody>'+
+   br.map(b=>`<tr><td>${b.n}</td><td class="r num">${fmt(b.sub)}</td><td class="r num">${fmt(b.rid)}</td><td class="r num"><b>${fmt(b.t)}</b><span class="bar" style="width:${Math.round(b.t/mx*48)}px"></span></td><td class="r num">${f1(b.t/a.total*100)}%</td><td class="r num">${f1(b.t/a.days.length)}</td></tr>`).join('')+
+   `</tbody><tfoot><tr><td><b>الإجمالي</b></td><td class="r num"><b>${fmt(a.sub)}</b></td><td class="r num"><b>${fmt(a.rid)}</b></td><td class="r num"><b>${fmt(a.total)}</b></td><td class="r num">100%</td><td class="r num"><b>${f1(a.total/a.days.length)}</b></td></tr></tfoot>`;
+  // weekday
+  const w={};a.days.forEach(d=>{const k=dow(d);(w[k]=w[k]||[]).push(d.t)});
+  const order=[6,0,1,2,3,4],wl=order.filter(k=>w[k]);
+  mk('cWeek',{type:'bar',data:{labels:wl.map(k=>WD[k]+' ('+w[k].length+')'),datasets:[{data:wl.map(k=>w[k].reduce((s,x)=>s+x,0)/w[k].length),backgroundColor:c.sub}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{rtl:true,callbacks:{label:i=>'المتوسط: '+fmt(i.parsed.y)}}},scales:{x:{grid:{display:false}},y:{grid:{color:c.grid},ticks:{font:{family:'Inter'}}}}}});
+  cmp();
+}
+function cmp(){
+  const o=agg(rowsFor('oct')),n=agg(rowsFor('nov')),od=o.days.length,nd=n.days.length;
+  const rows=B.map((nm,i)=>({n:nm,a:o.br[i].t/od,b:n.br[i].t/nd})).sort((x,y)=>y.b-x.b);
+  const pill=(a,b)=>{if(a<1&&b<1)return '<span class="pill flat">—</span>';const p=a?(b/a-1)*100:null;if(p===null)return '<span class="pill up">جديد</span>';
+    return `<span class="pill ${p>10?'up':p<-10?'down':'flat'} num">${p>0?'+':''}${Math.round(p)}%</span>`};
+  document.getElementById('tCmp').innerHTML='<thead><tr><th>الفرع</th><th class="r">أكتوبر/يوم</th><th class="r">نوفمبر/يوم</th><th class="r">التغير</th></tr></thead><tbody>'+
+   rows.map(r=>`<tr><td>${r.n}</td><td class="r num">${f1(r.a)}</td><td class="r num">${f1(r.b)}</td><td class="r">${pill(r.a,r.b)}</td></tr>`).join('')+
+   `</tbody><tfoot><tr><td><b>الإجمالي</b></td><td class="r num"><b>${f1(o.total/od)}</b></td><td class="r num"><b>${f1(n.total/nd)}</b></td><td class="r">${pill(o.total/od,n.total/nd)}</td></tr></tfoot>`;
+}
+document.querySelectorAll('.seg').forEach(g=>g.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  st[g.id==='segMonth'?'month':'reason']=b.dataset.v;render();
+}));
+const F=[
+ ['t-fact','أكتوبر: 11,823 تأجيل خلال 26 يوم تشغيل، بمتوسط 455 يوميًا (الوسيط 443). أعلى يوم 5 أكتوبر (677) وأقل يوم 21 أكتوبر (245).'],
+ ['t-fact','عطل المندوب هو السبب الأكبر: 7,438 (62.9%) مقابل 4,385 ضواحي (37.1%).'],
+ ['t-fact','التركز مرتفع: الهرم (2,300 = 19.5%) ثم مدينة نصر (1,521) وأكتوبر (1,198). هذه الثلاثة = 42.5% من الإجمالي، وأعلى خمسة فروع = 61.0%.'],
+ ['t-fact','الأسباب تختلف حسب الفرع: مدينة نصر وأكتوبر وحدائق القبة والمعادي كلها عطل مندوب فقط (صفر ضواحي). الهرم وحده 1,679 ضواحي = 38.3% من كل الضواحي، ثم الزقازيق (921) وطنطا (630) والإسماعيلية (468).'],
+ ['t-fact','أعلى عطل مندوب: مدينة نصر 1,521 وأكتوبر 1,198 والشروق 962 وقليوب 761.'],
+ ['t-fact','اتجاه أكتوبر نزولي: متوسط 1–15 أكتوبر 482 يوميًا مقابل 428 يوميًا بعد 15 أكتوبر (−11.3%).'],
+ ['t-fact','يوما الأحد والاثنين الأعلى (544 و562 متوسطًا) والأربعاء الأقل (380)، بعدد أيام 4–5 لكل يوم، فالفرق مؤشر وليس قاعدة.'],
+ ['t-warn','نوفمبر 1–3: متوسط 593 يوميًا مقابل 455 في أكتوبر (+30%)، وعطل المندوب 77.9% من التأجيلات (1,385 من 1,779) مقابل 62.9%. العينة 3 أيام فقط.'],
+ ['t-warn','الهرم في نوفمبر: 206 يوميًا مقابل 88.5 في أكتوبر (×2.3)، والتحول من ضواحي إلى عطل مندوب (عطل المندوب 463 من 619). يحتاج سؤال مباشر للفرع عن السبب.'],
+ ['t-warn','فروع انخفضت في نوفمبر (3 أيام): قليوب (−81%) وطنطا (−66%) والمؤسسة (−59%). لا يُعتمد عليها قبل اكتمال الشهر.']
+];
+document.getElementById('findings').innerHTML=F.map(x=>`<li><span class="tag ${x[0]}">${x[0]==='t-fact'?'محسوب':'مؤشر مبكر'}</span><span>${x[1]}</span></li>`).join('');
+const Q=[
+ '<span class="tag t-fact">متطابق</span><span>إجمالي أكتوبر 11,823 + نوفمبر 1,779 = 13,602، وهو عدد صفوف شيت Data base (13,603 صف شامل العنوان). لم أراجع الصفوف واحدًا واحدًا.</span>',
+ '<span class="tag t-warn">فرق</span><span>أعمدة القاهرة والجيزة وبحري في الشيت مجموعها 11,759 مقابل 11,823 للفروع الـ14 (فرق 64). لذلك الداشبورد يعتمد على الفروع مباشرة.</span>',
+ '<span class="tag t-warn">افتراض</span><span>أيام 2 و9 و16 و23 و30 أكتوبر فاضية وكلها جمعة، واعتبرتها إجازة وليست نقص بيانات. يلزم تأكيد.</span>',
+ '<span class="tag t-warn">تاريخ</span><span>خانة 4 نوفمبر مكتوبة «411\\2026» بدل «4\\11\\2026»، وهذا اليوم بدون بيانات حتى الآن.</span>',
+ '<span class="tag t-warn">نطاق</span><span>التحليل على ملخص التأجيلات اليومي فقط. لم أحلل أسباب التأجيل التفصيلية ولا أعمار الشحنات من شيت Data base (13.6 ألف صف).</span>'
+];
+document.getElementById('dq').innerHTML=Q.map(x=>`<li>${x}</li>`).join('');
+render();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
