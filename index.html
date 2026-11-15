@@ -6717,16 +6717,21 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const dayNum = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m ? Date.UTC(+m[1], +m[2]-1, +m[3])/86400000 : null; };
   const groupStats = (rows, keyFn, skipUnk) => { let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>Object.assign({k}, stats(a))); if(skipUnk) g = g.filter(x=>!UNK.includes(x.k)); return g; };
   const ratePct = (a,b) => b ? N1(a/b*100)+'%' : '—';
+  // نسبة قبول التعويض داخل البند نفسه (سبب/فرع): المقبول ÷ (المقبول + المرفوض) من شكاوى البند فقط
+  const accOf = a => { const acc = a.filter(d=>compDecisionOf(d)==='accepted').length, rej = a.filter(d=>compDecisionOf(d)==='rejected').length; return { acc, dec:acc+rej }; };
+  const accCell = x => x.dec ? `${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${N(x.dec)})` : '—';
+  const accTxt = (x, what) => x.dec ? ` نسبة قبول التعويض في ${what} ${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${cntCase(x.dec)} محسومة).` : ` لا توجد حالات محسومة في ${what} لحساب نسبة القبول.`;
+  const ACC_NOTE = 'نسبة القبول = المقبول ÷ (المقبول + المرفوض) من شكاوى البند نفسه.';
 
   const EXTRA = {
     reasonsCost(rows, S){
       const g = groupStats(rows, d=>d.classification, true).filter(x=>x.comp>0).sort((a,b)=>b.comp-a.comp).slice(0,6);
       if(!g.length) return;
       const s = base('أسباب الشكاوى الأعلى تكلفة');
-      barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:5.3, h:3.5, dir:'bar', colors:[C.orange] });
-      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—']), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.9,1.74,1.3] });
-      insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).`, 5.3, 0.62);
-      note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ.', 6.05);
+      barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:4.2, h:3.5, dir:'bar', colors:[C.orange] });
+      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)','نسبة القبول'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—', accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.55,0.85,1.6,1.1,1.64] });
+      insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).${accTxt(g[0],'هذا السبب')}`, 5.3, 0.62);
+      note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ. '+ACC_NOTE, 6.05);
     },
     branchPerf(rows, S){
       const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
@@ -6950,20 +6955,22 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     }
 
     // 6-8) الأسباب والفروع والعملاء
-    const ranked = (title, keyFn, limit, head1, insightFn, skipUnk) => {
+    const ranked = (title, keyFn, limit, head1, insightFn, skipUnk, withAcc) => {
       const t = topBy(rows, keyFn, limit, skipUnk);
+      if(withAcc) t.forEach(x=>Object.assign(x, accOf(x.rows)));
       if(!t.length) return;
       const s2 = base(title);
-      barChart(s2, t.map(x=>x.k), [{name:'الشكاوى', values:t.map(x=>x.n)}], { x:0.9, y:1.55, w:5.3, h:3.5, dir:'bar', colors:[C.blue] });
-      table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
+      barChart(s2, t.map(x=>x.k), [{name:'الشكاوى', values:t.map(x=>x.n)}], { x:0.9, y:1.55, w: withAcc ? 4.2 : 5.3, h:3.5, dir:'bar', colors:[C.blue] });
+      if(withAcc) table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)', 'نسبة القبول'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.85,1.0,1.65,1.64] });
+      else table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
       const sum = t.reduce((a,x)=>a+x.n,0);
       insight(s2, insightFn(t, sum), 5.3, 0.62);
-      note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.`, 6.05);
+      note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.${withAcc ? ' '+ACC_NOTE : ''}`, 6.05);
     };
     const topOf = (n, one, two, pl) => n===1 ? [`أعلى ${one}`,'يمثل'] : n===2 ? [`أعلى ${two}`,'يمثلان'] : [`أعلى ${N(n)} ${pl}`,'تمثل'];
-    if(has('reasons')) ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`; }, true);
+    if(has('reasons')) ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.${accTxt(t[0],'هذا السبب')}`; }, true, true);
     if(has('reasonsCost')) EXTRA.reasonsCost(rows, S);
-    if(has('branches')) ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).`; }, true);
+    if(has('branches')) ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).${accTxt(t[0],'هذا الفرع')}`; }, true, true);
     if(has('branchPerf')) EXTRA.branchPerf(rows, S);
     if(has('customers')) ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${cntShk(t[0].n)}.`, true);
 
