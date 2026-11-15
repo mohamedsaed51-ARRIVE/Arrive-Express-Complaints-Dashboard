@@ -6714,11 +6714,11 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const dayNum = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m ? Date.UTC(+m[1], +m[2]-1, +m[3])/86400000 : null; };
   const groupStats = (rows, keyFn, skipUnk) => { let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>Object.assign({k}, stats(a))); if(skipUnk) g = g.filter(x=>!UNK.includes(x.k)); return g; };
   const ratePct = (a,b) => b ? N1(a/b*100)+'%' : '—';
-  // نسبة قبول الشكوى داخل البند نفسه (سبب/فرع) من عمود «حالة الشكوى الحاليه»: المقبول ÷ (المقبول + المرفوض) من شكاوى البند فقط
-  const accOf = a => { const acc = a.filter(d=>compDecisionOf(d)==='accepted').length, rej = a.filter(d=>compDecisionOf(d)==='rejected').length; return { acc, dec:acc+rej }; };
-  const accCell = x => x.dec ? `${N1(x.acc/x.dec*100)}%\n${N(x.acc)} من ${N(x.dec)}` : '—';   // النسبة في سطر والعدد في سطر، دون أقواس، حتى لا ينقلب الترتيب داخل النص العربي
-  const accTxt = (x, what) => x.dec ? ` نسبة قبول الشكاوى في ${what} ${N1(x.acc/x.dec*100)}%، بعدد ${N(x.acc)} مقبولة من ${N(x.dec)} محسومة.` : ` لا توجد شكاوى محسومة في ${what} لحساب نسبة القبول.`;
-  const ACC_NOTE = 'نسبة قبول الشكوى = الشكاوى المقبولة ÷ المحسومة (مقبولة + مرفوضة) من شكاوى البند نفسه، حسب عمود «حالة الشكوى الحاليه».';
+  // نسبة قبول الشكوى داخل البند نفسه (سبب/فرع): الشكاوى المقبولة حسب «حالة الشكوى الحاليه» ÷ كل شكاوى البند (x.n)
+  const accOf = a => ({ acc: a.filter(d=>compDecisionOf(d)==='accepted').length });
+  const accCell = x => x.n ? `${N1(x.acc/x.n*100)}%\n${N(x.acc)} من ${N(x.n)}` : '—';   // النسبة في سطر والعدد في سطر، دون أقواس، حتى لا ينقلب الترتيب داخل النص العربي
+  const accTxt = (x, what) => x.n ? ` نسبة قبول الشكاوى في ${what} ${N1(x.acc/x.n*100)}%، بعدد ${N(x.acc)} مقبولة من ${cntShk(x.n)}.` : '';
+  const ACC_NOTE = 'نسبة قبول الشكوى = الشكاوى بحالة «تم قبول التعويض» ÷ عدد شكاوى البند نفسه.';
 
   const EXTRA = {
     reasonsCost(rows, S){
