@@ -6714,11 +6714,11 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const dayNum = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m ? Date.UTC(+m[1], +m[2]-1, +m[3])/86400000 : null; };
   const groupStats = (rows, keyFn, skipUnk) => { let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>Object.assign({k}, stats(a))); if(skipUnk) g = g.filter(x=>!UNK.includes(x.k)); return g; };
   const ratePct = (a,b) => b ? N1(a/b*100)+'%' : '—';
-  // نسبة قبول التعويض داخل البند نفسه (سبب/فرع): المقبول ÷ (المقبول + المرفوض) من شكاوى البند فقط
+  // نسبة قبول الشكوى داخل البند نفسه (سبب/فرع) من عمود «حالة الشكوى الحاليه»: المقبول ÷ (المقبول + المرفوض) من شكاوى البند فقط
   const accOf = a => { const acc = a.filter(d=>compDecisionOf(d)==='accepted').length, rej = a.filter(d=>compDecisionOf(d)==='rejected').length; return { acc, dec:acc+rej }; };
-  const accCell = x => x.dec ? `${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${N(x.dec)})` : '—';
-  const accTxt = (x, what) => x.dec ? ` نسبة قبول التعويض في ${what} ${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${cntCase(x.dec)} محسومة).` : ` لا توجد حالات محسومة في ${what} لحساب نسبة القبول.`;
-  const ACC_NOTE = 'نسبة القبول = المقبول ÷ (المقبول + المرفوض) من شكاوى البند نفسه.';
+  const accCell = x => x.dec ? `${N1(x.acc/x.dec*100)}%\n${N(x.acc)} من ${N(x.dec)}` : '—';   // النسبة في سطر والعدد في سطر، دون أقواس، حتى لا ينقلب الترتيب داخل النص العربي
+  const accTxt = (x, what) => x.dec ? ` نسبة قبول الشكاوى في ${what} ${N1(x.acc/x.dec*100)}%، بعدد ${N(x.acc)} مقبولة من ${N(x.dec)} محسومة.` : ` لا توجد شكاوى محسومة في ${what} لحساب نسبة القبول.`;
+  const ACC_NOTE = 'نسبة قبول الشكوى = الشكاوى المقبولة ÷ المحسومة (مقبولة + مرفوضة) من شكاوى البند نفسه، حسب عمود «حالة الشكوى الحاليه».';
 
   const EXTRA = {
     reasonsCost(rows, S){
@@ -6726,7 +6726,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       if(!g.length) return;
       const s = base('أسباب الشكاوى الأعلى تكلفة');
       barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:4.2, h:3.5, dir:'bar', colors:[C.orange] });
-      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)','نسبة القبول'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—', accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.55,0.85,1.6,1.1,1.64] });
+      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)','نسبة قبول الشكوى'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—', accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.55,0.85,1.6,1.1,1.64] });
       insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).${accTxt(g[0],'هذا السبب')}`, 5.3, 0.62);
       note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ. '+ACC_NOTE, 6.05);
     },
@@ -6958,7 +6958,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       if(!t.length) return;
       const s2 = base(title);
       barChart(s2, t.map(x=>x.k), [{name:'الشكاوى', values:t.map(x=>x.n)}], { x:0.9, y:1.55, w: withAcc ? 4.2 : 5.3, h:3.5, dir:'bar', colors:[C.blue] });
-      if(withAcc) table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)', 'نسبة القبول'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.85,1.0,1.65,1.64] });
+      if(withAcc) table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)', 'نسبة قبول الشكوى'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.85,1.0,1.65,1.64] });
       else table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
       const sum = t.reduce((a,x)=>a+x.n,0);
       insight(s2, insightFn(t, sum), 5.3, 0.62);
