@@ -6734,18 +6734,18 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
       if(!g.length) return;
       const s = base('مؤشرات أداء الفروع');
-      table(s, ['الفرع','عدد الشكاوى','مبلغ التعويض (ج.م)','نسبة قبول التعويض','الحالات المفتوحة','الالتزام بمهلة التحقيق'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.dec ? `${N1(x.acc/x.dec*100)}%` : '—', `${N(x.open)} (${pc(x.open,x.n)})`, x.res.pct==null ? '—' : `${N1(x.res.pct)}%`]), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:11, colW:[2.4,1.5,2.4,1.7,1.8,1.74] });
+      table(s, ['الفرع','عدد الشكاوى','مبلغ التعويض (ج.م)','نسبة قبول التعويض','الحالات المفتوحة','الالتزام بمهلة التحقيق'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.n ? `${N1(x.acc/x.n*100)}%` : '—', `${N(x.open)} (${pc(x.open,x.n)})`, x.res.pct==null ? '—' : `${N1(x.res.pct)}%`]), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:11, colW:[2.4,1.5,2.4,1.7,1.8,1.74] });
       const top = g.slice().sort((a,b)=>b.comp-a.comp)[0];
       insight(s, top.comp>0 ? `أعلى فرع في مبلغ التعويضات هو «${top.k}» بمبلغ ${N(Math.round(top.comp))} ج.م (${pc(top.comp,S.comp)} من الإجمالي).` : 'لا توجد مبالغ تعويض مسجّلة للفروع المعروضة.', 5.75, 0.55);
-      note(s, `أعلى ${N(g.length)} فروع في عدد الشكاوى. نسبة القبول من الحالات المحسومة (قبول + رفض)، والمفتوحة من إجمالي شكاوى الفرع.`, 6.45);
+      note(s, `أعلى ${N(g.length)} فروع في عدد الشكاوى. نسبة القبول والمفتوحة من إجمالي شكاوى الفرع.`, 6.45);
     },
     custTable(rows, S){
       const g = groupStats(rows, d=>String(d.complainant||'').trim(), true).sort((a,b)=>b.n-a.n).slice(0,8);
       if(!g.length) return;
       const s = base('العملاء: قرارات القبول والرفض');
-      table(s, ['العميل','عدد الشكاوى','مبلغ التعويض (ج.م)','المقبولة','المرفوضة','نسبة القبول'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, N(x.acc), N(x.rej), x.dec ? `${N1(x.acc/x.dec*100)}%` : '—']), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:10.5, colW:[3.4,1.4,2.4,1.3,1.3,1.74] });
+      table(s, ['العميل','عدد الشكاوى','مبلغ التعويض (ج.م)','المقبولة','المرفوضة','نسبة القبول'], g.map(x=>[x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, N(x.acc), N(x.rej), x.n ? `${N1(x.acc/x.n*100)}%` : '—']), { x:0.9, y:1.6, w:11.54, rowH:0.42, fs:10.5, colW:[3.4,1.4,2.4,1.3,1.3,1.74] });
       insight(s, `أعلى ${N(g.length)} عملاء يمثلون ${pc(g.reduce((t,x)=>t+x.n,0), S.n)} من إجمالي الشكاوى.`, 5.75, 0.55);
-      note(s, 'نسبة القبول من الحالات المحسومة (قبول + رفض) لكل عميل.', 6.45);
+      note(s, 'نسبة القبول = الشكاوى المقبولة ÷ عدد شكاوى العميل.', 6.45);
     },
     slaBranch(rows, S){
       const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
@@ -6804,7 +6804,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       note(s, `الفحص على ${cntShk(n)} ضمن الفلاتر الحالية. وجود ملاحظة لا يعني خطأ بالضرورة، لكنه يؤثر على دقة المؤشرات المرتبطة بها.`, 5.75);
     },
     decisions(rows, S, ctx){
-      const accV = S.dec ? S.acc/S.dec*100 : null, openV = S.n ? S.open/S.n*100 : null;
+      const accV = S.n ? S.acc/S.n*100 : null, openV = S.n ? S.open/S.n*100 : null;
       const out = [];
       if(accV!=null && accV<ACCEPT_TARGET_PCT) out.push([`نسبة قبول التعويض ${N1(accV)}% أقل من الهدف (${ACCEPT_TARGET_PCT}%)`, 'مراجعة حالات الرفض وسياسات القبول مع الفروع المعنية']);
       if(openV!=null && openV>PENDING_TARGET_PCT) out.push([`نسبة الشكاوى المفتوحة ${N1(openV)}% أعلى من الهدف (${PENDING_TARGET_PCT}%)`, 'وضع خطة لإغلاق الحالات المفتوحة الأقدم وتحديد أولوياتها']);
@@ -6854,7 +6854,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     s = base(`الملخص التنفيذي — ${ctxLabel}`);
     card(s, 9.0, 1.6, 3.45, 1.5, N(S.n), 'إجمالي الشكاوى المسجلة');
     card(s, 5.4, 1.6, 3.45, 1.5, N(Math.round(S.comp)), 'إجمالي مبالغ التعويضات (ج.م)', null, C.orange);
-    card(s, 1.8, 1.6, 3.45, 1.5, S.dec ? N1(S.acc/S.dec*100)+'%' : '—', 'نسبة قبول التعويض من الحالات المحسومة', S.dec ? {text:cntShk(S.acc), color:C.orange} : null);
+    card(s, 1.8, 1.6, 3.45, 1.5, S.n ? N1(S.acc/S.n*100)+'%' : '—', 'نسبة قبول التعويض من إجمالي الشكاوى', S.n ? {text:cntShk(S.acc), color:C.orange} : null);
     const amt = v => `${N(Math.round(v))} (${pc(v,S.comp)})`;
     const body = [['تم قبول التعويض', N(S.acc), amt(sumCompensation(rows.filter(d=>compDecisionOf(d)==='accepted'))), pc(S.acc,S.n)],
       ['تم رفض التعويض', N(S.rej), amt(sumCompensation(rows.filter(d=>compDecisionOf(d)==='rejected'))), pc(S.rej,S.n)]];
@@ -6862,8 +6862,8 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     if(S.other>0) body.push(['حالات أخرى غير محسومة', N(S.other), amt(S.comp - sumCompensation(rows.filter(d=>compDecisionOf(d)==='accepted')) - sumCompensation(rows.filter(d=>compDecisionOf(d)==='rejected')) - sumCompensation(rows.filter(isOpenRow))), pc(S.other,S.n)]);
     body.push(['الإجمالي', N(S.n), amt(S.comp), '100%']);
     table(s, ['الحالة','عدد الشكاوى','مبلغ التعويض (ج.م)','النسبة من الإجمالي'], body, { x:0.9, y:3.35, w:11.54, totalRow:true, rowH:0.36 });
-    insight(s, S.dec ? `قُبل التعويض في ${cntShk(S.acc)} من أصل ${cntCase(S.dec)} محسومة (${N1(S.acc/S.dec*100)}%)، بإجمالي تعويضات ${N(Math.round(S.comp))} ج.م، ورُفض في ${cntShk(S.rej)}${S.open?`، وبقيت ${cntShk(S.open)} مفتوحة`:''}.` : `إجمالي الشكاوى ${cntShk(S.n)}، ولا توجد حالات محسومة (قبول أو رفض) ضمن النطاق الحالي.`, 5.55);
-    note(s, 'نسبة القبول = المقبول ÷ (المقبول + المرفوض). النسبة في الجدول من إجمالي الشكاوى. المفتوحة = حالة «جارى» أو «التحقيق».', 6.3);
+    insight(s, S.n ? `قُبل التعويض في ${cntShk(S.acc)} من أصل ${cntShk(S.n)} (${N1(S.acc/S.n*100)}%)، بإجمالي تعويضات ${N(Math.round(S.comp))} ج.م، ورُفض في ${cntShk(S.rej)}${S.open?`، وبقيت ${cntShk(S.open)} مفتوحة`:''}.` : `إجمالي الشكاوى ${cntShk(S.n)}، ضمن النطاق الحالي.`, 5.55);
+    note(s, 'نسبة القبول = المقبول ÷ إجمالي الشكاوى، وكذلك النسبة في الجدول. المفتوحة = حالة «جارى» أو «التحقيق».', 6.3);
 
     }
 
@@ -6879,7 +6879,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       const MS = mk.map(k=>({k, s:stats(mrows(k))}));
       const chg = (a,b) => b ? (a-b)/b*100 : null;
       const chgTxt = v => v==null ? '—' : (v>0?`زيادة ${N1(v)}%`:v<0?`انخفاض ${N1(Math.abs(v))}%`:'بدون تغيّر');
-      const accR = x => x.dec ? x.acc/x.dec*100 : null;
+      const accR = x => x.n ? x.acc/x.n*100 : null;
       const emptyMonths = MS.filter(x=>!x.s.n).map(x=>monthName(x.k));
       const emptyNote = emptyMonths.length ? ` لا توجد سجلات في: ${emptyMonths.join('، ')} ضمن الفلاتر الحالية.` : '';
 
@@ -6979,10 +6979,10 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     // 9) الأهداف مقابل الفعلي
     if(has('targets')){
     s = base('الأهداف مقابل الفعلي');
-    const accV = S.dec ? S.acc/S.dec*100 : null, openV = S.n ? S.open/S.n*100 : null;
+    const accV = S.n ? S.acc/S.n*100 : null, openV = S.n ? S.open/S.n*100 : null;
     const st = (v, ok) => v==null ? 'لا توجد بيانات كافية' : (ok ? 'محقق' : 'غير محقق');
     table(s, ['المؤشر','الهدف','الفعلي','الحالة'], [
-      ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`, accV==null?'—':`${N1(accV)}% (${N(S.acc)} من ${N(S.dec)})`, st(accV, accV!=null&&accV>=ACCEPT_TARGET_PCT)],
+      ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`, accV==null?'—':`${N1(accV)}% (${N(S.acc)} من ${N(S.n)})`, st(accV, accV!=null&&accV>=ACCEPT_TARGET_PCT)],
       ['نسبة الشكاوى المفتوحة', `أقل من ${PENDING_TARGET_PCT}%`, openV==null?'—':`${N1(openV)}% (${N(S.open)} من ${N(S.n)})`, st(openV, openV!=null&&openV<=PENDING_TARGET_PCT)],
       [`الالتزام بمهلة التحقيق (${daysTxt(RES_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.res.pct==null?'—':`${N1(S.res.pct)}% (${N(S.res.ok)} من ${N(S.res.count)})`, st(S.res.pct, S.res.pct!=null&&S.res.pct>=SLA_COMPLIANCE_MIN_PCT)],
       [`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`, S.cmpSla.pct==null?'—':`${N1(S.cmpSla.pct)}% (${N(S.cmpSla.ok)} من ${N(S.cmpSla.count)})`, st(S.cmpSla.pct, S.cmpSla.pct!=null&&S.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT)]
@@ -7033,7 +7033,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       s.addText(names[i], { x:cx+0.1, y:1.6, w:cw-0.2, h:0.35, fontFace:FONT, fontSize:13, bold:true, color:GROUP_COLORS[i], align:'center', rtlMode:true });
       s.addText(cntShk(x.n), { x:cx+0.1, y:1.95, w:cw-0.2, h:0.5, fontFace:FONT, fontSize:24, bold:true, color:C.navy, align:'center', rtlMode:true });
       s.addText(`تعويضات ${N(Math.round(x.comp))} ج.م`, { x:cx+0.1, y:2.5, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
-      s.addText(`نسبة القبول ${x.dec?N1(x.acc/x.dec*100)+'%':'—'} · نسبة المفتوحة ${pc(x.open,x.n)}`, { x:cx+0.1, y:2.85, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
+      s.addText(`نسبة القبول ${x.n?N1(x.acc/x.n*100)+'%':'—'} · نسبة المفتوحة ${pc(x.open,x.n)}`, { x:cx+0.1, y:2.85, w:cw-0.2, h:0.3, fontFace:FONT, fontSize:12, color:C.grey, align:'center', rtlMode:true });
     });
     const cell = (v, t) => t!=null ? `${N(v)} (${pc(v,t)})` : N(v);
     const diffN = (a,b) => `${sgn(b-a)}${N(Math.abs(b-a))}`;
@@ -7041,18 +7041,18 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     table(s, ['المؤشر'].concat(names).concat([n===2 ? 'الفرق (الثانية − الأولى)' : 'الفرق (الثالثة − الأولى)']), [
       ['عدد الشكاوى'].concat(SP.map(x=>N(x.n))).concat([diffN(SP[first].n,SP[last].n)]),
       ['المفتوحة'].concat(SP.map(x=>cell(x.open,x.n))).concat([diffN(SP[first].open,SP[last].open)]),
-      ['المقبولة (من المحسومة)'].concat(SP.map(x=>cell(x.acc,x.dec))).concat([diffN(SP[first].acc,SP[last].acc)]),
-      ['المرفوضة (من المحسومة)'].concat(SP.map(x=>cell(x.rej,x.dec))).concat([diffN(SP[first].rej,SP[last].rej)]),
+      ['المقبولة'].concat(SP.map(x=>cell(x.acc,x.n))).concat([diffN(SP[first].acc,SP[last].acc)]),
+      ['المرفوضة'].concat(SP.map(x=>cell(x.rej,x.n))).concat([diffN(SP[first].rej,SP[last].rej)]),
       ['شحنات تم التعويض عنها'].concat(SP.map(x=>cell(x.compN,x.n))).concat([diffN(SP[first].compN,SP[last].compN)]),
       ['مبلغ التعويض (ج.م)'].concat(SP.map(x=>N(Math.round(x.comp)))).concat([diffN(Math.round(SP[first].comp),Math.round(SP[last].comp))])
     ], { x:0.9, y:3.5, w:11.54, rowH:0.36, fs:11, colW:[2.6].concat(SP.map(()=>2.2)).concat([11.54-2.6-2.2*n]) });
-    note(s, 'النسبة بين القوسين من إجمالي المجموعة نفسها: المقبولة والمرفوضة من الحالات المحسومة، والمفتوحة والمعوَّض عنها من إجمالي الشكاوى.', 6.15);
+    note(s, 'النسبة بين القوسين من إجمالي شكاوى المجموعة نفسها.', 6.15);
 
     // الأهداف مقابل الفعلي
     s = base('الأهداف مقابل الفعلي لكل مجموعة');
     const g = (v, ok, extra) => v==null ? '—' : `${N1(v)}% ${extra||''} — ${ok?'محقق':'غير محقق'}`;
     table(s, ['المؤشر','الهدف'].concat(names), [
-      ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`].concat(SP.map(x=>{ const v = x.dec?x.acc/x.dec*100:null; return g(v, v!=null&&v>=ACCEPT_TARGET_PCT, `(${N(x.acc)} من ${N(x.dec)})`); })),
+      ['نسبة قبول التعويض', `${ACCEPT_TARGET_PCT}% أو أكثر`].concat(SP.map(x=>{ const v = x.n?x.acc/x.n*100:null; return g(v, v!=null&&v>=ACCEPT_TARGET_PCT, `(${N(x.acc)} من ${N(x.n)})`); })),
       ['نسبة الشكاوى المفتوحة', `أقل من ${PENDING_TARGET_PCT}%`].concat(SP.map(x=>{ const v = x.n?x.open/x.n*100:null; return g(v, v!=null&&v<=PENDING_TARGET_PCT, `(${N(x.open)} من ${N(x.n)})`); })),
       [`الالتزام بمهلة التحقيق (${daysTxt(RES_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.res.pct, x.res.pct!=null&&x.res.pct>=SLA_COMPLIANCE_MIN_PCT, x.res.count?`(${N(x.res.ok)} من ${N(x.res.count)})`:''))),
       [`الالتزام بمهلة تنفيذ التعويض (${daysTxt(COMP_SLA_TARGET_DAYS)})`, `${SLA_COMPLIANCE_MIN_PCT}% أو أكثر`].concat(SP.map(x=>g(x.cmpSla.pct, x.cmpSla.pct!=null&&x.cmpSla.pct>=SLA_COMPLIANCE_MIN_PCT, x.cmpSla.count?`(${N(x.cmpSla.ok)} من ${N(x.cmpSla.count)})`:'')))
