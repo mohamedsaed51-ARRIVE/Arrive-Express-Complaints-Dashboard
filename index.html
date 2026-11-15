@@ -1653,8 +1653,8 @@ body.report-open{overflow:hidden}
     <select id="fBranch" multiple></select>
   </div>
 <div class="fgroup">
-    <label for="fType">نوع الشكوى</label>
-    <select id="fType" multiple></select>
+    <label for="fSatisfaction">مستوى رضاء العميل</label>
+    <select id="fSatisfaction" multiple></select>
   </div>
 <div class="fgroup">
     <label for="fStatus">حالة الشكوى</label>
@@ -2642,7 +2642,7 @@ function clearMultiSelect(id){
 }
 
 // All filter-bar fields that are backed by the multi-select component.
-const MULTI_SELECT_IDS = ['fOwner','fBranch','fType','fStatus','fMonth','fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm'];
+const MULTI_SELECT_IDS = ['fOwner','fBranch','fSatisfaction','fStatus','fMonth','fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm'];
 MULTI_SELECT_IDS.forEach(id=> mountMultiSelect(id));
 // Every filter-bar control (multi-selects + date ranges) — used for the
 // change-listener wiring, the reset button, and the active-filter count.
@@ -2707,7 +2707,7 @@ let reviewDates = [];
 function populateFilters(){
   fillSelect('fOwner', uniqueSorted('owner'));
   fillSelect('fBranch', uniqueSorted('branch'));
-  fillSelect('fType', uniqueSorted('type'));
+  fillSelect('fSatisfaction', uniqueSorted('satisfaction'));
   fillSelect('fStatus', uniqueSorted('status'));
   fillSelect('fBearer', uniqueSorted('compensation_bearer'));
   fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
@@ -2862,7 +2862,7 @@ function getFiltered(opts){
   const noTime = !!(opts && opts.ignoreTime);
   const owner = getSelValues('fOwner');
   const branch = getSelValues('fBranch');
-  const type = getSelValues('fType');
+  const satisfaction = getSelValues('fSatisfaction');
   const status = getSelValues('fStatus');
   const month = getSelValues('fMonth');
   const classification = getSelValues('fClassification');
@@ -2880,7 +2880,7 @@ function getFiltered(opts){
   return DATA.filter(d=>{
     if(owner.length && !owner.includes(d.owner)) return false;
     if(branch.length && !branch.includes(d.branch)) return false;
-    if(type.length && !type.includes(d.type)) return false;
+    if(satisfaction.length && !satisfaction.includes(d.satisfaction)) return false;
     if(status.length && !status.includes(d.status)) return false;
     if(!noTime && month.length && !(d.date_added && month.includes(d.date_added.slice(0,7)))) return false;
     if(classification.length && !classification.includes(d.classification)) return false;
@@ -2920,7 +2920,7 @@ function clearExtraFilter(){ extraFilter = null; extraFilterLabel = ''; render()
 // Human-readable labels for every filter field that can appear as a chip.
 // This is display-only metadata; it does not participate in filtering logic.
 const FILTER_FIELD_LABELS = {
-  fOwner:'مسؤول الشكوى', fBranch:'الفرع المتسبب', fType:'نوع الشكوى', fStatus:'حالة الشكوى',
+  fOwner:'مسؤول الشكوى', fBranch:'الفرع المتسبب', fSatisfaction:'مستوى رضاء العميل', fStatus:'حالة الشكوى',
   fMonth:'شهر إضافة الشكوى', fClassification:'تصنيف المشكلة', fCompMonth:'شهر التعويض',
   fSender:'اسم الراسل', fBearer:'وظيفة المتحمل للتعويض', fReviewResult:'نتيجة مراجعة التعويض',
   fConfirm:'التأكيد على المراجعة',
@@ -3237,10 +3237,6 @@ function updateCharts(rows){
   const typeTop = topN(rows, 'type', 8);
   chartType.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
   chartType.data.datasets[0].data = typeTop.map(x=>x[1]);
-  // Raw (unstripped) type values, index-aligned with the display labels above —
-  // needed so a chart click can set the fType filter to the exact value it
-  // actually stores (fType's options keep the full "شكوى تخص …" prefix).
-  chartType.rawLabels = typeTop.map(x=>x[0]);
   chartType.data.datasets[0].total = keyTotal(rows,'type');
   chartType.update();
 
@@ -3341,6 +3337,7 @@ function openModal(d){
       ${field('الفرع المتسبب', d.branch)}
       ${field('نوع الشكوى', (d.type||'').replace('شكوى تخص ',''))}
       ${field('تصنيف المشكلة', d.classification)}
+      ${field('مستوى رضاء العميل', d.satisfaction)}
       ${field('رقم البوليصة', d.policy)}
       ${fieldFull('محتوى الشكوى', d.content)}
       ${field('نتيجة التحقيق', d.investigation_result)}
@@ -4682,13 +4679,7 @@ document.querySelectorAll('.panel h3').forEach(h=>{
 function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; syncMultiSelectUI(id); render(); } }
 chartBranch.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBranch', chartBranch.data.labels[els[0].index]); } };
 chartBearer.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBearer', chartBearer.data.labels[els[0].index]); } };
-chartType.options.onClick = (evt, els)=>{
-  if(!els.length) return;
-  // Use the raw (unstripped) type value so it matches an actual fType option.
-  const idx = els[0].index;
-  const rawValue = (chartType.rawLabels && chartType.rawLabels[idx]) || chartType.data.labels[idx];
-  drillSet('fType', rawValue);
-};
+// رسم «نوع الشكوى» للعرض فقط: فلتر النوع استُبدل بفلتر «مستوى رضاء العميل»، فلا يوجد فلتر يُضبط بالنقر.
 chartClassification.options.onClick = (evt, els)=>{
   if(!els.length) return;
   drillSet('fClassification', chartClassification.data.labels[els[0].index]);
@@ -4989,6 +4980,12 @@ function mapApiRecord(row){
       out[ARABIC_FIELD_MAP[arKey]] = row[arKey];
     }
   });
+  // «مستوى رضاء العميل»: يُقرأ من عمود الشيت مع تحمّل اختلافات الكتابة (رضا/رضاء، مستوى/مستوي، العميل/العملاء، مسافات زائدة)
+  if(out.satisfaction === undefined){
+    const sk = Object.keys(row).find(k=>{ const n = String(k).replace(/\s+/g,''); return /^مستو[ىي]رضا/.test(n) && /العم/.test(n); });
+    out.satisfaction = sk ? row[sk] : '';
+  }
+  out.satisfaction = safeStr(out.satisfaction).trim();
   out.date_added = normDate(out.date_added);
   out.compensation_amount = toNumberOrNull(out.compensation_amount);
   out.sla_days = toNumberOrNull(out.sla_days);
