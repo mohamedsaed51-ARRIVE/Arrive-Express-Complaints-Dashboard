@@ -1653,8 +1653,8 @@ body.report-open{overflow:hidden}
     <select id="fBranch" multiple></select>
   </div>
 <div class="fgroup">
-    <label for="fType">نوع الشكوى</label>
-    <select id="fType" multiple></select>
+    <label for="fSatisfaction">مستوى رضاء العميل</label>
+    <select id="fSatisfaction" multiple></select>
   </div>
 <div class="fgroup">
     <label for="fStatus">حالة الشكوى</label>
@@ -1829,8 +1829,8 @@ body.report-open{overflow:hidden}
 
   <section class="panel-grid halves">
     <div class="panel">
-      <h3>نوع الشكوى</h3>
-      <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+      <h3>مستوى رضاء العميل</h3>
+      <div class="panel-sub">توزيع الشكاوى حسب مستوى رضاء العميل</div>
       <div class="chart-wrap tall"><canvas id="chartType"></canvas></div>
     </div>
     <div class="panel">
@@ -1916,7 +1916,7 @@ body.report-open{overflow:hidden}
             <th data-key="date_added">التاريخ <span class="arrow"></span></th>
             <th data-key="owner">المسؤول <span class="arrow"></span></th>
             <th data-key="complainant">الشاكي <span class="arrow"></span></th>
-            <th data-key="type">النوع <span class="arrow"></span></th>
+            <th data-key="satisfaction">رضاء العميل <span class="arrow"></span></th>
             <th data-key="branch">الفرع <span class="arrow"></span></th>
             <th data-key="content">المحتوى</th>
             <th data-key="status">الحالة <span class="arrow"></span></th>
@@ -1945,7 +1945,7 @@ body.report-open{overflow:hidden}
       <label>قارن حسب (اختر عاملاً أو أكثر)</label>
       <div class="compare-by-checks" id="compareByChecks">
         <label class="compare-by-check"><input type="checkbox" value="branch" checked> الفرع</label>
-        <label class="compare-by-check"><input type="checkbox" value="type"> نوع الشكوى</label>
+        <label class="compare-by-check"><input type="checkbox" value="satisfaction"> مستوى رضاء العميل</label>
         <label class="compare-by-check"><input type="checkbox" value="status"> حالة الشكوى</label>
         <label class="compare-by-check"><input type="checkbox" value="owner"> مسؤول الشكوى</label>
         <label class="compare-by-check"><input type="checkbox" value="sender"> الراسل</label>
@@ -2023,8 +2023,8 @@ body.report-open{overflow:hidden}
           <div class="chart-wrap tall"><canvas id="chartBranch_L"></canvas></div>
         </div>
         <div class="panel">
-          <h3>نوع الشكوى</h3>
-          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <h3>مستوى رضاء العميل</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب مستوى رضاء العميل</div>
           <div class="chart-wrap tall"><canvas id="chartType_L"></canvas></div>
         </div>
         <div class="panel">
@@ -2092,8 +2092,8 @@ body.report-open{overflow:hidden}
           <div class="chart-wrap tall"><canvas id="chartBranch_M"></canvas></div>
         </div>
         <div class="panel">
-          <h3>نوع الشكوى</h3>
-          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <h3>مستوى رضاء العميل</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب مستوى رضاء العميل</div>
           <div class="chart-wrap tall"><canvas id="chartType_M"></canvas></div>
         </div>
         <div class="panel">
@@ -2161,8 +2161,8 @@ body.report-open{overflow:hidden}
           <div class="chart-wrap tall"><canvas id="chartBranch_R"></canvas></div>
         </div>
         <div class="panel">
-          <h3>نوع الشكوى</h3>
-          <div class="panel-sub">توزيع الشكاوى حسب نوعها الرئيسي</div>
+          <h3>مستوى رضاء العميل</h3>
+          <div class="panel-sub">توزيع الشكاوى حسب مستوى رضاء العميل</div>
           <div class="chart-wrap tall"><canvas id="chartType_R"></canvas></div>
         </div>
         <div class="panel">
@@ -2376,6 +2376,7 @@ function buildData(raw){
       owner: safeStr(d.owner).trim() || 'غير محدد',
       branch: safeStr(d.branch).trim() || 'غير محدد',
       type: safeStr(d.type).trim() || 'غير محدد',
+      satisfaction: safeStr(d.satisfaction).trim() || 'غير محدد',
       classification: safeStr(d.classification).trim() || 'غير مصنف',
       compensation_bearer: (d.compensation_bearer !== null && d.compensation_bearer !== undefined && d.compensation_bearer !== '') ? safeStr(d.compensation_bearer).trim() : null,
       compensation_review_result: (d.compensation_review_result !== null && d.compensation_review_result !== undefined && d.compensation_review_result !== '') ? safeStr(d.compensation_review_result).trim() : null,
@@ -2642,7 +2643,7 @@ function clearMultiSelect(id){
 }
 
 // All filter-bar fields that are backed by the multi-select component.
-const MULTI_SELECT_IDS = ['fOwner','fBranch','fType','fStatus','fMonth','fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm'];
+const MULTI_SELECT_IDS = ['fOwner','fBranch','fSatisfaction','fStatus','fMonth','fClassification','fCompMonth','fSender','fBearer','fReviewResult','fConfirm'];
 MULTI_SELECT_IDS.forEach(id=> mountMultiSelect(id));
 // Every filter-bar control (multi-selects + date ranges) — used for the
 // change-listener wiring, the reset button, and the active-filter count.
@@ -2707,7 +2708,7 @@ let reviewDates = [];
 function populateFilters(){
   fillSelect('fOwner', uniqueSorted('owner'));
   fillSelect('fBranch', uniqueSorted('branch'));
-  fillSelect('fType', uniqueSorted('type'));
+  fillSelect('fSatisfaction', uniqueSorted('satisfaction'));
   fillSelect('fStatus', uniqueSorted('status'));
   fillSelect('fBearer', uniqueSorted('compensation_bearer'));
   fillSelect('fReviewResult', uniqueSorted('compensation_review_result'));
@@ -2862,7 +2863,7 @@ function getFiltered(opts){
   const noTime = !!(opts && opts.ignoreTime);
   const owner = getSelValues('fOwner');
   const branch = getSelValues('fBranch');
-  const type = getSelValues('fType');
+  const satisfaction = getSelValues('fSatisfaction');
   const status = getSelValues('fStatus');
   const month = getSelValues('fMonth');
   const classification = getSelValues('fClassification');
@@ -2880,7 +2881,7 @@ function getFiltered(opts){
   return DATA.filter(d=>{
     if(owner.length && !owner.includes(d.owner)) return false;
     if(branch.length && !branch.includes(d.branch)) return false;
-    if(type.length && !type.includes(d.type)) return false;
+    if(satisfaction.length && !satisfaction.includes(d.satisfaction)) return false;
     if(status.length && !status.includes(d.status)) return false;
     if(!noTime && month.length && !(d.date_added && month.includes(d.date_added.slice(0,7)))) return false;
     if(classification.length && !classification.includes(d.classification)) return false;
@@ -2920,7 +2921,7 @@ function clearExtraFilter(){ extraFilter = null; extraFilterLabel = ''; render()
 // Human-readable labels for every filter field that can appear as a chip.
 // This is display-only metadata; it does not participate in filtering logic.
 const FILTER_FIELD_LABELS = {
-  fOwner:'مسؤول الشكوى', fBranch:'الفرع المتسبب', fType:'نوع الشكوى', fStatus:'حالة الشكوى',
+  fOwner:'مسؤول الشكوى', fBranch:'الفرع المتسبب', fSatisfaction:'مستوى رضاء العميل', fStatus:'حالة الشكوى',
   fMonth:'شهر إضافة الشكوى', fClassification:'تصنيف المشكلة', fCompMonth:'شهر التعويض',
   fSender:'اسم الراسل', fBearer:'وظيفة المتحمل للتعويض', fReviewResult:'نتيجة مراجعة التعويض',
   fConfirm:'التأكيد على المراجعة',
@@ -3234,14 +3235,10 @@ function updateCharts(rows){
   chartBranch.update();
 
   // type
-  const typeTop = topN(rows, 'type', 8);
-  chartType.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
+  const typeTop = topN(rows, 'satisfaction', 8);
+  chartType.data.labels = typeTop.map(x=>x[0]);
   chartType.data.datasets[0].data = typeTop.map(x=>x[1]);
-  // Raw (unstripped) type values, index-aligned with the display labels above —
-  // needed so a chart click can set the fType filter to the exact value it
-  // actually stores (fType's options keep the full "شكوى تخص …" prefix).
-  chartType.rawLabels = typeTop.map(x=>x[0]);
-  chartType.data.datasets[0].total = keyTotal(rows,'type');
+  chartType.data.datasets[0].total = keyTotal(rows,'satisfaction');
   chartType.update();
 
   // classification
@@ -3293,7 +3290,7 @@ function updateTable(rows){
       <td class="num">${d.date_added ?? '—'}</td>
       <td>${d.owner ?? ''}</td>
       <td>${d.complainant ?? ''}</td>
-      <td>${(d.type||'').replace('شكوى تخص ','')}</td>
+      <td>${d.satisfaction||''}</td>
       <td>${d.branch ?? ''}</td>
       <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
       <td>${statusBadge(d.status)}</td>
@@ -3339,8 +3336,8 @@ function openModal(d){
       ${field('التاريخ', d.date_added)}
       ${field('مسؤول الشكوى', d.owner)}
       ${field('الفرع المتسبب', d.branch)}
-      ${field('نوع الشكوى', (d.type||'').replace('شكوى تخص ',''))}
       ${field('تصنيف المشكلة', d.classification)}
+      ${field('مستوى رضاء العميل', d.satisfaction)}
       ${field('رقم البوليصة', d.policy)}
       ${fieldFull('محتوى الشكوى', d.content)}
       ${field('نتيجة التحقيق', d.investigation_result)}
@@ -4613,8 +4610,8 @@ document.getElementById('qaFullscreen').addEventListener('click', ()=>{
 });
 document.getElementById('qaExport').addEventListener('click', ()=>{
   const rows = getFiltered();
-  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
-  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
+  const cols = ['id','date_added','owner','complainant','satisfaction','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
+  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','رضاء العميل','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
   const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const lines = [headerLabels.map(escCsv).join(',')];
   rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
@@ -4682,13 +4679,7 @@ document.querySelectorAll('.panel h3').forEach(h=>{
 function drillSet(id, value){ const el = document.getElementById(id); if(el){ el.value = value; syncMultiSelectUI(id); render(); } }
 chartBranch.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBranch', chartBranch.data.labels[els[0].index]); } };
 chartBearer.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fBearer', chartBearer.data.labels[els[0].index]); } };
-chartType.options.onClick = (evt, els)=>{
-  if(!els.length) return;
-  // Use the raw (unstripped) type value so it matches an actual fType option.
-  const idx = els[0].index;
-  const rawValue = (chartType.rawLabels && chartType.rawLabels[idx]) || chartType.data.labels[idx];
-  drillSet('fType', rawValue);
-};
+chartType.options.onClick = (evt, els)=>{ if(els.length){ drillSet('fSatisfaction', chartType.data.labels[els[0].index]); } };   // chartType = رسم «مستوى رضاء العميل»
 chartClassification.options.onClick = (evt, els)=>{
   if(!els.length) return;
   drillSet('fClassification', chartClassification.data.labels[els[0].index]);
@@ -4751,7 +4742,7 @@ function renderTablePage(){
       <td class="num">${d.date_added ?? '—'}</td>
       <td>${d.owner ?? ''}</td>
       <td>${d.complainant ?? ''}</td>
-      <td>${(d.type||'').replace('شكوى تخص ','')}</td>
+      <td>${d.satisfaction||''}</td>
       <td>${d.branch ?? ''}</td>
       <td class="content-cell" title="${(d.content||'').replace(/"/g,'&quot;')}">${d.content ?? ''}</td>
       <td>${statusBadge(d.status)}</td>
@@ -4989,6 +4980,12 @@ function mapApiRecord(row){
       out[ARABIC_FIELD_MAP[arKey]] = row[arKey];
     }
   });
+  // «مستوى رضاء العميل»: يُقرأ من عمود الشيت مع تحمّل اختلافات الكتابة (رضا/رضاء، مستوى/مستوي، العميل/العملاء، مسافات زائدة)
+  if(out.satisfaction === undefined){
+    const sk = Object.keys(row).find(k=>{ const n = String(k).replace(/\s+/g,''); return /^مستو[ىي]رضا/.test(n) && /العم/.test(n); });
+    out.satisfaction = sk ? row[sk] : '';
+  }
+  out.satisfaction = safeStr(out.satisfaction).trim();
   out.date_added = normDate(out.date_added);
   out.compensation_amount = toNumberOrNull(out.compensation_amount);
   out.sla_days = toNumberOrNull(out.sla_days);
@@ -5271,10 +5268,10 @@ function updateCompareChartSet(set, rows){
   set.branch.update();
 
   // type
-  const typeTop = topN(rows, 'type', 8);
-  set.type.data.labels = typeTop.map(x=>x[0].replace('شكوى تخص ',''));
+  const typeTop = topN(rows, 'satisfaction', 8);
+  set.type.data.labels = typeTop.map(x=>x[0]);
   set.type.data.datasets[0].data = typeTop.map(x=>x[1]);
-  set.type.data.datasets[0].total = keyTotal(rows,'type');
+  set.type.data.datasets[0].total = keyTotal(rows,'satisfaction');
   set.type.update();
 
   // classification
@@ -5315,10 +5312,10 @@ const COMPARE_FIELDS = {
     getOptions: () => uniqueSorted('branch').map(v => ({ value:v, label:v })),
     match: (d, v) => d.branch === v
   },
-  type: {
-    label: 'نوع الشكوى',
-    getOptions: () => uniqueSorted('type').map(v => ({ value:v, label:v })),
-    match: (d, v) => d.type === v
+  satisfaction: {
+    label: 'مستوى رضاء العميل',
+    getOptions: () => uniqueSorted('satisfaction').map(v => ({ value:v, label:v })),
+    match: (d, v) => d.satisfaction === v
   },
   status: {
     label: 'حالة الشكوى',
@@ -5483,8 +5480,8 @@ function updateCompareBadges(){
 
 function exportPanelCsv(suf){
   const rows = getFilteredForPanel(suf);
-  const cols = ['id','date_added','owner','complainant','type','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
-  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','النوع','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
+  const cols = ['id','date_added','owner','complainant','satisfaction','branch','classification','status','compensation_amount','compensation_bearer','sla_resolution_days'];
+  const headerLabels = ['رقم الشكوى','التاريخ','المسؤول','الشاكي','رضاء العميل','الفرع','التصنيف','الحالة','التعويض','الجهة المتحملة','زمن الحل (يوم)'];
   const escCsv = v => `"${String(v??'').replace(/"/g,'""')}"`;
   const lines = [headerLabels.map(escCsv).join(',')];
   rows.forEach(d=> lines.push(cols.map(c=>escCsv(d[c])).join(',')));
@@ -5972,9 +5969,9 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     const fig = (t,sub,src) => `<div class="rp-fig"><div class="rp-cap"><b>${t}</b><span>${sub}</span></div>${src?`<img src="${src}" alt="${esc(t)}">`:`<div class="rp-note">${MISSING}</div>`}</div>`;
     pages.push(page(head('التحليل التفصيلي: الفروع والتوزيعات',ctx)+
       fig('الشكاوى حسب الفرع','أعلى الفروع من حيث عدد الشكاوى',imgs.branch)+
-      `<div class="rp-two">${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
+      `<div class="rp-two">${fig('مستوى رضاء العميل','توزيع الشكاوى حسب مستوى رضاء العميل',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
 
-    /* 4b) صفحات التحليل بالأرقام: الفروع، الجهة المتحملة، الأسباب والأنواع، الراسلون، مراجعة التعويض، الاتجاه الشهري */
+    /* 4b) صفحات التحليل بالأرقام: الفروع، الجهة المتحملة، الأسباب ومستوى رضاء العميل، الراسلون، مراجعة التعويض، الاتجاه الشهري */
     const isOpenRow = d => !!(d.status && (d.status.includes('جارى') || d.status.includes('التحقيق')));
     const lbl = v => { const s = (v==null?'':String(v)).trim(); return !s ? 'غير محدد' : (s.toLowerCase()==='not mentioned' ? 'غير مذكور بالمصدر' : s); };
     const groupBy = (arr, keyFn) => { const mp = new Map(); arr.forEach(d=>{ const k = keyFn(d); if(!mp.has(k)) mp.set(k, []); mp.get(k).push(d); }); return mp; };
@@ -6012,7 +6009,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         `<p class="rp-note">الجدول يشمل الحالات التي لها مبلغ تعويض مسجّل فقط (${N(compRows.length)} من ${N(totalRows)} سجل). الجهة من عمود «وظيفة المتحمل للتعويض»${noBearer?`؛ ${N(noBearer)} حالة لها مبلغ بلا جهة متحملة مسجّلة وتظهر تحت «غير محدد»`:''}.</p>`+foot()));
     }
 
-    // 4b-3) الأسباب والأنواع
+    // 4b-3) الأسباب ومستوى رضاء العميل
     const topTbl = (keyFn, title, limit) => {
       const g = [...groupBy(rows, keyFn).entries()].map(([k,a])=>({k,s:gstat(a)})).sort((a,b)=>b.s.n-a.s.n);
       const shown = g.slice(0,limit), rest = g.slice(limit);
@@ -6021,8 +6018,8 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       return `<h3>${title}</h3>`+tableWrap([{t:'البند'},{t:'الشكاوى',num:true},{t:'النسبة',num:true},{t:'مقبول',num:true},{t:'مرفوض',num:true},{t:'إجمالي التعويض (ج.م)',num:true}],body,'rp-compact');
     };
     if(totalRows){
-      pages.push(page(head('الأسباب وأنواع الشكاوى',ctx)+
-        topTbl(d=>lbl(d.type),'حسب نوع الشكوى',8)+topTbl(d=>lbl(d.classification),'حسب تصنيف المشكلة',10)+
+      pages.push(page(head('الأسباب ومستوى رضاء العميل',ctx)+
+        topTbl(d=>lbl(d.satisfaction),'حسب مستوى رضاء العميل',8)+topTbl(d=>lbl(d.classification),'حسب تصنيف المشكلة',10)+
         `<p class="rp-note">النسبة من إجمالي ${N(totalRows)} سجل. البنود الأقل تكرارًا مجمّعة تحت «أخرى».</p>`+foot()));
     }
 
@@ -6134,10 +6131,10 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
         kpx('الالتزام بمهلة التحقيق',numH(resC2.pct==null?'—':N1(resC2.pct)+'%'),resC2.count?`${N(resC2.ok)} من ${N(resC2.count)} حالة · المهلة ${RES_SLA_TARGET_DAYS} أيام`:`المهلة ${RES_SLA_TARGET_DAYS} أيام`)])); }
 
     // الأسباب والراسلون
-    { const tc=topOf(d=>lbl(d.classification),UNK), tt=topOf(d=>lbl(d.type),UNK), top10=sG.slice(0,10).reduce((t,r)=>t+r.s.n,0);
-      pages.push(introPg('الهدف والمؤشرات — الأسباب والراسلون','معرفة أكثر الأسباب والأنواع تكرارًا والراسلين الأكثر تأثيرًا، لمعالجة الأسباب المتكررة.',[
+    { const tc=topOf(d=>lbl(d.classification),UNK), tt=topOf(d=>lbl(d.satisfaction),UNK), top10=sG.slice(0,10).reduce((t,r)=>t+r.s.n,0);
+      pages.push(introPg('الهدف والمؤشرات — الأسباب والراسلون','معرفة أكثر الأسباب تكرارًا ومستوى رضاء العملاء والراسلين الأكثر تأثيرًا، لمعالجة الأسباب المتكررة.',[
         kpx('أكثر تصنيف مشكلة',tc?esc(tc.k):'—',tc?`${N(tc.n)} شكوى · ${pctOf(tc.n,totalRows)}`:'','tone-under-action'),
-        kpx('أكثر نوع شكوى',tt?esc(tt.k):'—',tt?`${N(tt.n)} شكوى · ${pctOf(tt.n,totalRows)}`:''),
+        kpx('أكثر مستوى رضاء تكرارًا',tt?esc(tt.k):'—',tt?`${N(tt.n)} شكوى · ${pctOf(tt.n,totalRows)}`:''),
         kpx('عدد الراسلين',numH(N(sG.length)),'راسلون مختلفون'),
         kpx('تركّز أعلى 10 راسلين',numH(pctOf(top10,totalRows)),'من إجمالي السجلات')])); }
 
@@ -6305,10 +6302,10 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
       duo('عدد المقبول (من المحسوم)', accP, fmt0, decP, 'tone-success'),
       duo('عدد المفتوح', opP, fmt0, tot, 'tone-under-action'),
       duo('الالتزام بمهلة التحقيق', slaP.map(x=>x.pct), pf, null, '')]));
-    const clTop = rowsP.map(r=>topKey(r,d=>d.classification)), tyTop = rowsP.map(r=>topKey(r,d=>d.type));
-    pages.push(intro('الهدف والمؤشرات — الأسباب والراسلون','مقارنة أكثر الأسباب والأنواع تكرارًا وعدد الراسلين بين المجموعات.',[
+    const clTop = rowsP.map(r=>topKey(r,d=>d.classification)), tyTop = rowsP.map(r=>topKey(r,d=>d.satisfaction));
+    pages.push(intro('الهدف والمؤشرات — الأسباب والراسلون','مقارنة أكثر الأسباب تكرارًا ومستوى رضاء العملاء وعدد الراسلين بين المجموعات.',[
       duo('أكثر تصنيف مشكلة', clTop.map((_,i)=>topTxt(clTop,i)), txt(), null, 'tone-under-action'),
-      duo('أكثر نوع شكوى', tyTop.map((_,i)=>topTxt(tyTop,i)), txt(), null, ''),
+      duo('أكثر مستوى رضاء تكرارًا', tyTop.map((_,i)=>topTxt(tyTop,i)), txt(), null, ''),
       duo('عدد الراسلين', rowsP.map(r=>new Set(r.map(d=>String(d.complainant||'').trim()).filter(Boolean)).size), fmt0, null, 'tone-brand')]));
     const owTop = rowsP.map(r=>topKey(r,d=>d.owner));
     pages.push(intro('الهدف والمؤشرات — مسؤولو الشكاوى','مقارنة حجم العمل لدى مسؤولي الشكاوى بين المجموعات.',[
@@ -6338,7 +6335,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     const sub = `<p class="rp-note">النسبة بين الأقواس = نسبة البند من إجمالي شكاوى (أو تعويضات) اللوحة نفسها. ${chgNote}</p>`;
     pages.push(page(head('مقارنة الفروع',ctx)+cmpTable('الفروع المتسببة في الشكاوى',d=>lbl(d.branch),14)+sub+foot()));
     pages.push(page(head('مقارنة التعويضات',ctx)+cmpTable('الجهة المتحملة للتعويض',d=>lbl(d.compensation_bearer),10)+cmpTable('حالة الشكوى',d=>lbl(d.status),8)+sub+foot()));
-    pages.push(page(head('مقارنة الأسباب والأنواع',ctx)+cmpTable('نوع الشكوى',d=>lbl(d.type),8)+cmpTable('تصنيف المشكلة',d=>lbl(d.classification),10)+sub+foot()));
+    pages.push(page(head('مقارنة الأسباب ومستوى الرضاء',ctx)+cmpTable('مستوى رضاء العميل',d=>lbl(d.satisfaction),8)+cmpTable('تصنيف المشكلة',d=>lbl(d.classification),10)+sub+foot()));
     const hasSender = d=>String(d.complainant||'').trim();
     pages.push(page(head('مقارنة الراسلين',ctx)+cmpTable('الراسلون الأكثر شكاوى',d=>hasSender(d)?String(d.complainant).trim():'غير محدد',12)+sub+foot()));
     pages.push(page(head('مقارنة مسؤولي الشكاوى',ctx)+cmpTable('مسؤول الشكوى',d=>lbl(d.owner),14)+sub+foot()));
@@ -6363,7 +6360,7 @@ document.getElementById('headerReport')?.addEventListener('click', ()=>{ if(wind
     {k:'mgmt',   t:'تقرير الإدارة',   m:['الغرض والنطاق','الأهداف مقابل الفعلي','الملخص التنفيذي','ملخص المؤشرات الرئيسية','مقارنة المؤشرات الرئيسية','منهجية المقارنة']},
     {k:'branch', t:'أداء الفروع',     m:['الهدف والمؤشرات — الفروع','التحليل التفصيلي','الفروع المتسببة في الشكاوى','مقارنة الفروع']},
     {k:'comp',   t:'التعويضات',       m:['الهدف والمؤشرات — التعويضات','الجهة المتحملة للتعويض','الاتجاه الشهري','مقارنة التعويضات','مقارنة الاتجاه الشهري']},
-    {k:'reason', t:'الأسباب والراسلون', m:['الهدف والمؤشرات — الأسباب والراسلون','الأسباب وأنواع الشكاوى','الراسلون الأكثر شكاوى','مقارنة الأسباب والأنواع','مقارنة الراسلين']},
+    {k:'reason', t:'الأسباب والراسلون', m:['الهدف والمؤشرات — الأسباب والراسلون','الأسباب ومستوى رضاء العميل','الراسلون الأكثر شكاوى','مقارنة الأسباب ومستوى الرضاء','مقارنة الراسلين']},
     {k:'owner',  t:'مسؤولو الشكاوى',  m:['الهدف والمؤشرات — مسؤولو الشكاوى','أداء مسؤولي الشكاوى','مقارنة مسؤولي الشكاوى']},
     {k:'action', t:'النتائج والتوصيات', m:['الهدف والمؤشرات — النتائج والتوصيات','النتائج والملاحظات','التوصيات وخطة الإجراءات','الختام ومنهجية الإعداد','لا توجد بيانات']}
   ];
@@ -6717,16 +6714,21 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
   const dayNum = v => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v||'')); return m ? Date.UTC(+m[1], +m[2]-1, +m[3])/86400000 : null; };
   const groupStats = (rows, keyFn, skipUnk) => { let g = [...groupBy(rows, d=>fixAr(lbl(keyFn(d)))).entries()].map(([k,a])=>Object.assign({k}, stats(a))); if(skipUnk) g = g.filter(x=>!UNK.includes(x.k)); return g; };
   const ratePct = (a,b) => b ? N1(a/b*100)+'%' : '—';
+  // نسبة قبول التعويض داخل البند نفسه (سبب/فرع): المقبول ÷ (المقبول + المرفوض) من شكاوى البند فقط
+  const accOf = a => { const acc = a.filter(d=>compDecisionOf(d)==='accepted').length, rej = a.filter(d=>compDecisionOf(d)==='rejected').length; return { acc, dec:acc+rej }; };
+  const accCell = x => x.dec ? `${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${N(x.dec)})` : '—';
+  const accTxt = (x, what) => x.dec ? ` نسبة قبول التعويض في ${what} ${N1(x.acc/x.dec*100)}% (${N(x.acc)} من ${cntCase(x.dec)} محسومة).` : ` لا توجد حالات محسومة في ${what} لحساب نسبة القبول.`;
+  const ACC_NOTE = 'نسبة القبول = المقبول ÷ (المقبول + المرفوض) من شكاوى البند نفسه.';
 
   const EXTRA = {
     reasonsCost(rows, S){
       const g = groupStats(rows, d=>d.classification, true).filter(x=>x.comp>0).sort((a,b)=>b.comp-a.comp).slice(0,6);
       if(!g.length) return;
       const s = base('أسباب الشكاوى الأعلى تكلفة');
-      barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:5.3, h:3.5, dir:'bar', colors:[C.orange] });
-      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—']), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.9,1.74,1.3] });
-      insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).`, 5.3, 0.62);
-      note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ.', 6.05);
+      barChart(s, g.map(x=>x.k), [{name:'مبلغ التعويض', values:g.map(x=>Math.round(x.comp))}], { x:0.9, y:1.55, w:4.2, h:3.5, dir:'bar', colors:[C.orange] });
+      table(s, ['م','السبب','عدد الشكاوى','مبلغ التعويض (ج.م)','متوسط التعويض (ج.م)','نسبة القبول'], g.map((x,i)=>[String(i+1), x.k, N(x.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, x.compN ? N(Math.round(x.comp/x.compN)) : '—', accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.55,0.85,1.6,1.1,1.64] });
+      insight(s, `أعلى سبب تكلفة هو «${g[0].k}» بمبلغ ${N(Math.round(g[0].comp))} ج.م (${pc(g[0].comp,S.comp)} من إجمالي التعويضات).${accTxt(g[0],'هذا السبب')}`, 5.3, 0.62);
+      note(s, 'الترتيب حسب مبلغ التعويض، ويشمل الحالات ذات مبلغ مسجّل فقط. متوسط التعويض = المبلغ ÷ عدد الحالات ذات المبلغ. '+ACC_NOTE, 6.05);
     },
     branchPerf(rows, S){
       const g = groupStats(rows, d=>d.branch, true).sort((a,b)=>b.n-a.n).slice(0,8);
@@ -6950,20 +6952,22 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     }
 
     // 6-8) الأسباب والفروع والعملاء
-    const ranked = (title, keyFn, limit, head1, insightFn, skipUnk) => {
+    const ranked = (title, keyFn, limit, head1, insightFn, skipUnk, withAcc) => {
       const t = topBy(rows, keyFn, limit, skipUnk);
+      if(withAcc) t.forEach(x=>Object.assign(x, accOf(x.rows)));
       if(!t.length) return;
       const s2 = base(title);
-      barChart(s2, t.map(x=>x.k), [{name:'الشكاوى', values:t.map(x=>x.n)}], { x:0.9, y:1.55, w:5.3, h:3.5, dir:'bar', colors:[C.blue] });
-      table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
+      barChart(s2, t.map(x=>x.k), [{name:'الشكاوى', values:t.map(x=>x.n)}], { x:0.9, y:1.55, w: withAcc ? 4.2 : 5.3, h:3.5, dir:'bar', colors:[C.blue] });
+      if(withAcc) table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)', 'نسبة القبول'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`, accCell(x)]), { x:5.3, y:1.6, w:7.14, rowH:0.45, fs:10.5, colW:[0.4,1.6,0.85,1.0,1.65,1.64] });
+      else table(s2, ['م', head1, 'عدد الشكاوى', 'النسبة من الإجمالي', 'مبلغ التعويض (ج.م)'], t.map((x,i)=>[String(i+1), x.k, N(x.n), pc(x.n,S.n), `${N(Math.round(x.comp))} (${pc(x.comp,S.comp)})`]), { x:6.5, y:1.6, w:5.94, rowH:0.45, fs:10.5, colW:[0.4,1.7,0.85,1.1,1.89] });
       const sum = t.reduce((a,x)=>a+x.n,0);
       insight(s2, insightFn(t, sum), 5.3, 0.62);
-      note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.`, 6.05);
+      note(s2, `النسبة من إجمالي ${cntShk(S.n)} مسجلة ضمن الفترة والفلاتر المعروضة.${withAcc ? ' '+ACC_NOTE : ''}`, 6.05);
     };
     const topOf = (n, one, two, pl) => n===1 ? [`أعلى ${one}`,'يمثل'] : n===2 ? [`أعلى ${two}`,'يمثلان'] : [`أعلى ${N(n)} ${pl}`,'تمثل'];
-    if(has('reasons')) ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.`; }, true);
+    if(has('reasons')) ranked('أكثر أسباب الشكاوى تكرارًا', d=>d.classification, 5, 'السبب', (t,sum)=>{ const [a,v] = topOf(t.length,'سبب','سببين','أسباب'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى (${N(sum)} من ${N(S.n)})، وأعلى سبب هو «${t[0].k}» بنسبة ${pc(t[0].n,S.n)}.${accTxt(t[0],'هذا السبب')}`; }, true, true);
     if(has('reasonsCost')) EXTRA.reasonsCost(rows, S);
-    if(has('branches')) ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).`; }, true);
+    if(has('branches')) ranked('أعلى الفروع في عدد الشكاوى', d=>d.branch, 6, 'الفرع', (t,sum)=>{ const [a,v] = topOf(t.length,'فرع','فرعين','فروع'); return `${a} ${v} ${pc(sum,S.n)} من الشكاوى، وأعلى فرع هو «${t[0].k}» بعدد ${cntShk(t[0].n)} (${pc(t[0].n,S.n)}).${accTxt(t[0],'هذا الفرع')}`; }, true, true);
     if(has('branchPerf')) EXTRA.branchPerf(rows, S);
     if(has('customers')) ranked('أعلى العملاء تقديمًا للشكاوى', d=>String(d.complainant||'').trim(), 5, 'العميل', (t,sum)=>`أعلى عميل هو «${t[0].k}» ويمثل ${pc(t[0].n,S.n)} من إجمالي الشكاوى بعدد ${cntShk(t[0].n)}.`, true);
 

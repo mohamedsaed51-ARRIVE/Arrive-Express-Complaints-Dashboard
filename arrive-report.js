@@ -184,7 +184,7 @@
     const fig = (t,sub,src) => `<div class="rp-fig"><div class="rp-cap"><b>${t}</b><span>${sub}</span></div>${src?`<img src="${src}" alt="${esc(t)}">`:`<div class="rp-note">${MISSING}</div>`}</div>`;
     pages.push(page(head('التحليل التفصيلي: الفروع والتوزيعات',ctx)+
       fig('الشكاوى حسب الفرع','أعلى الفروع من حيث عدد الشكاوى',imgs.branch)+
-      `<div class="rp-two">${fig('نوع الشكوى','توزيع الشكاوى حسب النوع',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
+      `<div class="rp-two">${fig('مستوى رضاء العميل','توزيع الشكاوى حسب مستوى رضاء العميل',imgs.type)}${fig('تصنيف المشكلة','أكثر الأسباب تكرارًا',imgs.cls)}</div>`+foot()));
 
     /* 5) أداء مسؤولي الشكاوى */
     let handlers = [];
