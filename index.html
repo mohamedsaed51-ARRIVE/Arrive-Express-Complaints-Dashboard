@@ -1588,6 +1588,7 @@ body.report-open{overflow:hidden}
       <button class="icon-btn" id="headerCompareToggle" type="button" title="وضع المقارنة"><i class="fa-solid fa-right-left"></i> <span id="headerCompareLabel">وضع المقارنة</span></button>
       <button class="icon-btn" id="headerExport" type="button" title="تصدير البيانات"><i class="fa-solid fa-download"></i> تصدير</button>
       <button class="icon-btn" id="headerSettings" type="button" title="الإعدادات"><i class="fa-solid fa-gear"></i> إعدادات</button>
+      <button class="icon-btn" id="snakeToggle" type="button"><i class="fa-solid fa-pause" id="snakeToggleIcon"></i> <span id="snakeToggleLabel">إيقاف الحركة</span></button>
       <button class="icon-btn" id="themeToggle" type="button"><i class="fa-solid fa-moon" id="themeToggleIcon"></i> <span id="themeToggleLabel">الوضع الداكن</span></button>
     </div>
   </div>
@@ -7139,6 +7140,119 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     if(cmp) generate(); else chooseKind();   // وضع المقارنة له عرض مقارنة واحد
   });
   window.ArriveDeck = { generate, chooseKind, plans: DECK_PLANS, ensureLib, _build: (kind)=>{ pptx = new PptxGenJS(); pptx.layout='LAYOUT_WIDE'; pptx.rtlMode = true; const cmp = (typeof compareModeActive!=='undefined' && compareModeActive); if(cmp) buildCompare(); else buildSingle(kind); return pptx; } };
+})();
+</script>
+
+<!-- ===== ثعبان الخلفية: يتحرك على شبكة ويلتقط النقاط (بديل الفقاعات في لوحة Operations Audit) ===== -->
+<style>
+.snake-layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30;opacity:.5}
+.snake-n{position:fixed;inset-inline-end:12px;bottom:6px;font-size:11px;color:var(--ink-faint);pointer-events:none;z-index:31}
+:root[data-motion="off"] .snake-layer,:root[data-motion="off"] .snake-n,body.report-open .snake-layer,body.report-open .snake-n{display:none}
+@media print{.snake-layer,.snake-n,#snakeToggle{display:none!important}}
+</style>
+<canvas class="snake-layer" id="snakeLayer" aria-hidden="true"></canvas><div class="snake-n" id="snakeN" aria-hidden="true"></div>
+<script>
+/* الثعبان يتحرك خطوة بخطوة على شبكة ويتجه لأقرب نقطة؛ الضغط على نقطة يجعله يسرع نحوها.
+   يتوقف مع «إيقاف الحركة»، عند إخفاء الصفحة، أثناء فتح التقرير، ومع إعداد النظام «تقليل الحركة». */
+(function(){
+  const cv=document.getElementById('snakeLayer'), nEl=document.getElementById('snakeN'), btn=document.getElementById('snakeToggle');
+  if(!cv||!cv.getContext||!btn) return;
+  const ctx=cv.getContext('2d'), CELL=18, STEP=120, FAST=55, START=5, MAXLEN=36, FOODS=3;
+  const sysReduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let off=sysReduce; try{ const v=localStorage.getItem('arrive_complaints_motion'); if(v) off=(v==='off'); }catch(e){}
+  let cols=0, rows=0, snake=[], dir={x:1,y:0}, len=START, foods=[], rush=null, eaten=0, acc=0, last=0, colors={};
+  const rnd=n=>Math.floor(Math.random()*n);
+  function readColors(){
+    const cs=getComputedStyle(document.documentElement);
+    colors={body:cs.getPropertyValue('--arrive-blue').trim()||'#0837C9', head:cs.getPropertyValue('--arrive-teal').trim()||'#00C7E6'};
+  }
+  function applyMotion(){
+    document.documentElement.dataset.motion=off?'off':'on';
+    document.getElementById('snakeToggleIcon').className='fa-solid '+(off?'fa-play':'fa-pause');
+    document.getElementById('snakeToggleLabel').textContent=off?'تشغيل الحركة':'إيقاف الحركة';
+  }
+  btn.addEventListener('click',()=>{ off=!off; try{ localStorage.setItem('arrive_complaints_motion',off?'off':'on'); }catch(e){} applyMotion(); });
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    cv.width=innerWidth*dpr; cv.height=innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    cols=Math.max(4,Math.floor(innerWidth/CELL)); rows=Math.max(4,Math.floor(innerHeight/CELL));
+    reset();
+  }
+  function reset(){
+    const y=rnd(rows); snake=[]; len=START; dir={x:1,y:0}; rush=null; foods=[];
+    for(let i=0;i<START;i++) snake.push({x:START-1-i,y});
+    while(foods.length<FOODS) addFood();
+  }
+  const onSnake=(x,y)=>snake.some(s=>s.x===x&&s.y===y);
+  function addFood(){
+    for(let i=0;i<40;i++){
+      const f={x:1+rnd(cols-2),y:1+rnd(rows-2)};
+      if(!onSnake(f.x,f.y)&&!foods.some(o=>o.x===f.x&&o.y===f.y)){ foods.push(f); return; }
+    }
+  }
+  function step(){
+    const h=snake[0];
+    let t=(rush&&foods.includes(rush))?rush:null;
+    if(!t){ rush=null; let best=1e9; foods.forEach(f=>{ const d=Math.abs(f.x-h.x)+Math.abs(f.y-h.y); if(d<best){best=d;t=f;} }); }
+    /* ترتيب الاتجاهات: الأقرب للهدف أولًا، بدون رجوع للخلف وبدون اصطدام بالجسم أو الحواف */
+    const opts=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]
+      .filter(d=>!(d.x===-dir.x&&d.y===-dir.y))
+      .map(d=>({d,nx:h.x+d.x,ny:h.y+d.y}))
+      .filter(o=>o.nx>=0&&o.ny>=0&&o.nx<cols&&o.ny<rows&&!onSnake(o.nx,o.ny))
+      .sort((a,b)=>{
+        const da=t?Math.abs(t.x-a.nx)+Math.abs(t.y-a.ny):0, db=t?Math.abs(t.x-b.nx)+Math.abs(t.y-b.ny):0;
+        return (da-db) || ((b.d.x===dir.x&&b.d.y===dir.y)-(a.d.x===dir.x&&a.d.y===dir.y));
+      });
+    if(!opts.length){ reset(); return; }             /* محاصر: يبدأ جولة جديدة */
+    const o=opts[0]; dir=o.d; snake.unshift({x:o.nx,y:o.ny});
+    const i=foods.findIndex(f=>f.x===o.nx&&f.y===o.ny);
+    if(i>=0){
+      if(foods[i]===rush) rush=null;
+      foods.splice(i,1); addFood(); eaten++; len++;
+      nEl.textContent='نقاط التقطها الثعبان: '+eaten;
+      if(len>MAXLEN) len=START;                      /* وصل للحد الأقصى: يرجع لطوله الأول */
+    }
+    while(snake.length>len) snake.pop();
+  }
+  function rr(x,y,w,h,r){ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.5; ctx.stroke(); }  /* حد أبيض ليظهر فوق الهيدر الأزرق */
+  function draw(ts){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    const pulse=1+Math.sin(ts/260)*.14;
+    foods.forEach(f=>{
+      const cx=f.x*CELL+CELL/2, cy=f.y*CELL+CELL/2;
+      ctx.fillStyle=(f===rush)?colors.head:'#F59E0B';
+      ctx.beginPath(); ctx.arc(cx,cy,(CELL/2-4)*pulse,0,Math.PI*2); ctx.fill();
+    });
+    for(let i=snake.length-1;i>=0;i--){
+      const s=snake[i];
+      ctx.globalAlpha=i?Math.max(.35,1-i/snake.length*.65):1;
+      ctx.fillStyle=i?colors.body:colors.head;
+      rr(s.x*CELL+1,s.y*CELL+1,CELL-2,CELL-2,i?4:6);
+    }
+    ctx.globalAlpha=1;
+    const h=snake[0]; if(h){                          /* عينا الثعبان في اتجاه الحركة */
+      const cx=h.x*CELL+CELL/2+dir.x*3, cy=h.y*CELL+CELL/2+dir.y*3, px=dir.y*3.5, py=dir.x*3.5;
+      ctx.fillStyle='#fff';
+      ctx.beginPath(); ctx.arc(cx+px,cy+py,1.8,0,Math.PI*2); ctx.arc(cx-px,cy-py,1.8,0,Math.PI*2); ctx.fill();
+    }
+  }
+  function tick(ts){
+    requestAnimationFrame(tick);
+    const dt=Math.min(250,ts-last||0); last=ts;
+    if(off||document.hidden||document.body.classList.contains('report-open')) return;
+    acc+=dt; const every=rush?FAST:STEP;
+    while(acc>=every){ acc-=every; step(); }
+    draw(ts);
+  }
+  /* الضغط على نقطة (بدون تعطيل ما تحتها) يجعل الثعبان يسرع نحوها */
+  document.addEventListener('pointerdown',e=>{
+    if(off||document.body.classList.contains('report-open')) return;
+    const f=foods.find(f=>Math.hypot(f.x*CELL+CELL/2-e.clientX,f.y*CELL+CELL/2-e.clientY)<=CELL);
+    if(f) rush=f;
+  },true);
+  let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(resize,150); });
+  new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  readColors(); applyMotion(); resize(); requestAnimationFrame(tick);
 })();
 </script>
 
