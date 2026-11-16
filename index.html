@@ -7152,15 +7152,16 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
 </style>
 <canvas class="snake-layer" id="snakeLayer" aria-hidden="true"></canvas><div class="snake-n" id="snakeN" aria-hidden="true"></div>
 <script>
-/* الثعبان يتحرك خطوة بخطوة على شبكة ويتجه لأقرب نقطة؛ الضغط على نقطة يجعله يسرع نحوها.
+/* الثعبان لا يتحرك وحده: يقف حتى يُضغط سهم، ثم يمشي في اتجاه السهم كلعبة الثعبان.
+   الاصطدام بالحافة أو بجسمه ينهي الجولة فيرجع لطوله الأول ويقف. الأسهم لا تُلتقط أثناء الكتابة في حقل.
    يتوقف مع «إيقاف الحركة»، عند إخفاء الصفحة، أثناء فتح التقرير، ومع إعداد النظام «تقليل الحركة». */
 (function(){
   const cv=document.getElementById('snakeLayer'), nEl=document.getElementById('snakeN'), btn=document.getElementById('snakeToggle');
   if(!cv||!cv.getContext||!btn) return;
-  const ctx=cv.getContext('2d'), CELL=18, STEP=120, FAST=55, START=5, MAXLEN=36, FOODS=3;
+  const ctx=cv.getContext('2d'), CELL=18, STEP=110, START=5, MAXLEN=36, FOODS=3;
   const sysReduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let off=sysReduce; try{ const v=localStorage.getItem('arrive_complaints_motion'); if(v) off=(v==='off'); }catch(e){}
-  let cols=0, rows=0, snake=[], dir={x:1,y:0}, len=START, foods=[], rush=null, eaten=0, acc=0, last=0, colors={};
+  let cols=0, rows=0, snake=[], dir={x:1,y:0}, want=null, moving=false, len=START, foods=[], eaten=0, acc=0, last=0, colors={};
   const rnd=n=>Math.floor(Math.random()*n);
   function readColors(){
     const cs=getComputedStyle(document.documentElement);
@@ -7179,7 +7180,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     reset();
   }
   function reset(){
-    const y=rnd(rows); snake=[]; len=START; dir={x:1,y:0}; rush=null; foods=[];
+    const y=rnd(rows); snake=[]; len=START; dir={x:1,y:0}; want=null; moving=false; foods=[];
     for(let i=0;i<START;i++) snake.push({x:START-1-i,y});
     while(foods.length<FOODS) addFood();
   }
@@ -7190,26 +7191,17 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
       if(!onSnake(f.x,f.y)&&!foods.some(o=>o.x===f.x&&o.y===f.y)){ foods.push(f); return; }
     }
   }
+  function label(){ nEl.textContent='نقاط التقطها الثعبان: '+eaten+' · التحكم بالأسهم'; }
   function step(){
     const h=snake[0];
-    let t=(rush&&foods.includes(rush))?rush:null;
-    if(!t){ rush=null; let best=1e9; foods.forEach(f=>{ const d=Math.abs(f.x-h.x)+Math.abs(f.y-h.y); if(d<best){best=d;t=f;} }); }
-    /* ترتيب الاتجاهات: الأقرب للهدف أولًا، بدون رجوع للخلف وبدون اصطدام بالجسم أو الحواف */
-    const opts=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]
-      .filter(d=>!(d.x===-dir.x&&d.y===-dir.y))
-      .map(d=>({d,nx:h.x+d.x,ny:h.y+d.y}))
-      .filter(o=>o.nx>=0&&o.ny>=0&&o.nx<cols&&o.ny<rows&&!onSnake(o.nx,o.ny))
-      .sort((a,b)=>{
-        const da=t?Math.abs(t.x-a.nx)+Math.abs(t.y-a.ny):0, db=t?Math.abs(t.x-b.nx)+Math.abs(t.y-b.ny):0;
-        return (da-db) || ((b.d.x===dir.x&&b.d.y===dir.y)-(a.d.x===dir.x&&a.d.y===dir.y));
-      });
-    if(!opts.length){ reset(); return; }             /* محاصر: يبدأ جولة جديدة */
-    const o=opts[0]; dir=o.d; snake.unshift({x:o.nx,y:o.ny});
-    const i=foods.findIndex(f=>f.x===o.nx&&f.y===o.ny);
+    if(want&&!(want.x===-dir.x&&want.y===-dir.y)) dir=want;   /* لا رجوع للخلف مباشرة */
+    want=null;
+    const nx=h.x+dir.x, ny=h.y+dir.y;
+    if(nx<0||ny<0||nx>=cols||ny>=rows||onSnake(nx,ny)){ reset(); return; }   /* اصطدام: جولة جديدة والثعبان واقف */
+    snake.unshift({x:nx,y:ny});
+    const i=foods.findIndex(f=>f.x===nx&&f.y===ny);
     if(i>=0){
-      if(foods[i]===rush) rush=null;
-      foods.splice(i,1); addFood(); eaten++; len++;
-      nEl.textContent='نقاط التقطها الثعبان: '+eaten;
+      foods.splice(i,1); addFood(); eaten++; len++; label();
       if(len>MAXLEN) len=START;                      /* وصل للحد الأقصى: يرجع لطوله الأول */
     }
     while(snake.length>len) snake.pop();
@@ -7220,7 +7212,7 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     const pulse=1+Math.sin(ts/260)*.14;
     foods.forEach(f=>{
       const cx=f.x*CELL+CELL/2, cy=f.y*CELL+CELL/2;
-      ctx.fillStyle=(f===rush)?colors.head:'#F59E0B';
+      ctx.fillStyle='#F59E0B';
       ctx.beginPath(); ctx.arc(cx,cy,(CELL/2-4)*pulse,0,Math.PI*2); ctx.fill();
     });
     for(let i=snake.length-1;i>=0;i--){
@@ -7240,19 +7232,22 @@ window.ArrivePolicy={open:openPolicy,POL,MAP,evalWith:(id,a)=>{cur=POL.find(p=>p
     requestAnimationFrame(tick);
     const dt=Math.min(250,ts-last||0); last=ts;
     if(off||document.hidden||document.body.classList.contains('report-open')) return;
-    acc+=dt; const every=rush?FAST:STEP;
-    while(acc>=every){ acc-=every; step(); }
+    if(moving){ acc+=dt; while(moving&&acc>=STEP){ acc-=STEP; step(); } } else acc=0;
     draw(ts);
   }
-  /* الضغط على نقطة (بدون تعطيل ما تحتها) يجعل الثعبان يسرع نحوها */
-  document.addEventListener('pointerdown',e=>{
+  const KEYS={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}};
+  document.addEventListener('keydown',e=>{
+    const d=KEYS[e.key]; if(!d||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey) return;
     if(off||document.body.classList.contains('report-open')) return;
-    const f=foods.find(f=>Math.hypot(f.x*CELL+CELL/2-e.clientX,f.y*CELL+CELL/2-e.clientY)<=CELL);
-    if(f) rush=f;
-  },true);
+    const t=e.target;
+    if(t&&t.closest&&t.closest('input,select,textarea,[contenteditable],[role="listbox"],[role="slider"]')) return;
+    e.preventDefault();                               /* السهم يحرّك الثعبان بدل تمرير الصفحة */
+    if(!moving){ if(d.x===-dir.x&&d.y===-dir.y) snake.reverse(); dir=d; moving=true; }   /* أول ضغطة: يبدأ في أي اتجاه */
+    else want=d;
+  });
   let rz; window.addEventListener('resize',()=>{ clearTimeout(rz); rz=setTimeout(resize,150); });
   new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  readColors(); applyMotion(); resize(); requestAnimationFrame(tick);
+  readColors(); applyMotion(); label(); resize(); requestAnimationFrame(tick);
 })();
 </script>
 
